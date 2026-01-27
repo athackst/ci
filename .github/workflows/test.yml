@@ -9,6 +9,9 @@ permissions:
   pull-requests: write
 
 jobs:
+  test-pr-labeler:
+    uses: ./.github/workflows/pr_labeler.yml
+    secrets: inherit
   # local-path-from-workflows-dir:
   #   # This is intentionally pointed at ./workflows/ to validate whether
   #   # GitHub accepts reusable workflows outside .github/workflows.
