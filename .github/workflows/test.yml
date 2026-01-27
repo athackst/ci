@@ -2,17 +2,14 @@ name: Reusable workflow path test
 
 on:
   workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  copy-workflows:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Copy workflows to ./workflows/
-        run: |
-          mkdir -p ./.github/workflows
-          cp -r ./workflows/* ./.github/workflows/
   local-path-from-workflows-dir:
-    needs: copy-workflows
     # This is intentionally pointed at ./workflows/ to validate whether
     # GitHub accepts reusable workflows outside .github/workflows.
     uses: ./.github/workflows/pr_labeler.yml

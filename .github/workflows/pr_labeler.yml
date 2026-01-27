@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: athackst/buildsmith/actions/pr-labeler@main
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
