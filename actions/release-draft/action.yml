@@ -1,0 +1,24 @@
+name: Release draft
+description: Draft release notes for your next release based on merged PRs.
+inputs:
+  github_token:
+    description: GitHub token used to draft the release.
+    required: true
+outputs:
+  tag_name:
+    description: The tag name of the drafted release.
+    value: ${{ steps.release-draft.outputs.tag_name }}
+runs:
+  using: composite
+  steps:
+    - name: Setup release-drafter config
+      shell: bash
+      run: |
+        mkdir -p .github
+        cp "${{ github.action_path }}/release-drafter.yml" .github/release-drafter.yml
+    - uses: release-drafter/release-drafter@v5.20.0
+      id: release-draft
+      with:
+        config-name: release-drafter.yml
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}

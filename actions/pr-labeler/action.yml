@@ -1,0 +1,19 @@
+name: PR labeler
+description: Label PRs using a centralized configuration file shipped with this action.
+inputs:
+  github_token:
+    description: GitHub token used to apply labels to PRs.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup pr-labeler config
+      shell: bash
+      run: |
+        mkdir -p .github
+        cp "${{ github.action_path }}/pr-labeler.yml" .github/pr-labeler.yml
+    - uses: TimonVS/pr-labeler-action@v4.1.1
+      with:
+        configuration-path: .github/pr-labeler.yml
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}

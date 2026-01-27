@@ -1,0 +1,14 @@
+name: PR labeler
+on:
+  workflow_call:
+
+jobs:
+  pr-labeler:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: athackst/buildsmith/actions/pr-labeler@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
