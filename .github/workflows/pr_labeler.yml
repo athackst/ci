@@ -1,14 +1,14 @@
-name: PR labeler
+name: pr labeler
 on:
-  workflow_call:
+  pull_request:
+    types: [opened]
 
 jobs:
   pr-labeler:
-    permissions:
-      contents: read
-      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: athackst/buildsmith/actions/pr-labeler@main
+      - uses: TimonVS/pr-labeler-action@v5.0.0
         with:
-          github_token: ${{ github.token }}
+          configuration-path: .github/pr-labeler.yml # optional, .github/pr-labeler.yml is the default value
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
