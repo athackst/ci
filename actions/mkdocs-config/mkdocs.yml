@@ -1,0 +1,91 @@
+plugins:
+  - simple
+  - search
+  - mkdocstrings:
+      default_handler: python
+  - awesome-pages:
+      collapse_single_pages: true
+theme:
+  name: material
+  custom_dir: overrides
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+
+  features:
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.annotation
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes # for footnote support
+  - markdown_gfm_admonition # for github style admonitions
+  - md_in_html
+  - pymdownx.arithmatex: # for latex support
+      generic: true
+  - pymdownx.details # For details expansion
+  - pymdownx.emoji: # For emojis
+      emoji_index: !!python/name:pymdownx.emoji.gemoji
+      emoji_generator: !!python/name:pymdownx.emoji.to_png
+  - pymdownx.highlight: # For code highlighting
+      use_pygments: true
+      pygments_lang_class: true
+      anchor_linenums: true
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+  - pymdownx.tilde # strikethrough with ~~ ~~
+  - sane_lists
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/althack
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/u/althack
+    - icon: fontawesome/regular/face-laugh
+      link: https://allisonthackston.com
+  consent:
+    title: Cookie consent
+    description: >-
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+  analytics:
+    provider: google
+    property: G-JG29YKVRKH
+  version:
+    provider: mike
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/extra_admonitions.css
