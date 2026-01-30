@@ -1,4 +1,4 @@
-# buildsmith
+# ci
 
 Central home for my reusable GitHub Actions workflows and composite actions.
 

@@ -9,6 +9,10 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: athackst/buildsmith/actions/pr-labeler@main
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run PR Labeler
+        uses: athackst/ci/actions/pr-labeler@main
         with:
           github_token: ${{ github.token }}

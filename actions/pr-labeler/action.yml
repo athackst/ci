@@ -7,6 +7,16 @@ inputs:
 runs:
   using: composite
   steps:
+
+    - name: Action info
+      shell: bash
+      run: |
+        echo "Running PR Labeler reusable workflow from ./workflows/pr_labeler.yml"
+        echo "GitHub Action path: ${{ github.action_path }}"
+        ls ${{ github.action_path }}
+        echo "GitHub workspace: ${{ github.workspace }}"
+        ls ${{ github.workspace }}
+
     - name: Setup pr-labeler config
       shell: bash
       run: |
