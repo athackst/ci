@@ -1,4 +1,4 @@
-name: Reusable workflow path test
+name: Test workflows and actions
 
 on:
   workflow_dispatch:
@@ -9,11 +9,36 @@ permissions:
   pull-requests: write
 
 jobs:
-  test-pr-labeler:
+  workflow-pr-labeler:
     uses: ./.github/workflows/pr_labeler.yml
     secrets: inherit
-  # local-path-from-workflows-dir:
-  #   # This is intentionally pointed at ./workflows/ to validate whether
-  #   # GitHub accepts reusable workflows outside .github/workflows.
-  #   uses: ./.github/workflows/pr_labeler.yml
-  #   secrets: inherit
+
+  action-pr-labeler-test:
+    if: github.event_name == 'pull_request'
+    needs: workflow-pr-labeler
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert label applied
+        run: python3 .github/scripts/check_pr_label.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_LABELER_BRANCH: ${{ github.head_ref }}
+          PR_LABELER_REPO: ${{ github.repository }}
+          PR_LABELER_PR: ${{ github.event.pull_request.number }}
+
+  action-mkdocs-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run mkdocs-config action
+        id: mkdocs-config
+        uses: ./actions/mkdocs-config
+
+      - name: Test mkdocs-config outputs
+        run: |
+          echo "Mkdocs Config Action Outputs:"
+          echo "Base URL: ${{ steps.mkdocs-config.outputs.base_url }}"
+          echo "Origin: ${{ steps.mkdocs-config.outputs.origin }}"
+          echo "Host: ${{ steps.mkdocs-config.outputs.host }}"
+          echo "Base Path: ${{ steps.mkdocs-config.outputs.base_path }}"

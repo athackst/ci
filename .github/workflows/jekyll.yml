@@ -1,4 +1,4 @@
-name: CI/CD mkdocs
+name: Jekyll site CI/CD
 
 on:
   workflow_call:
@@ -11,51 +11,60 @@ permissions:
 
 # Allow one concurrent deployment
 concurrency:
-  group: "docs"
+  group: "pages"
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      artifact: ${{ steps.mkdocs.outputs.artifact }}
+      base_url: ${{ steps.pages.outputs.base_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.161.0
+        with:
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
-      - name: Setup config
-        uses: athackst/athackst.mkdocs@main
-      - name: Build and push docs to gh-pages
-        id: mkdocs
-        uses: athackst/mkdocs-simple-plugin@main
         with:
-          push: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          enablement: true
+      - name: Build with Jekyll
+        # Outputs to the './_site' directory by default
+        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+        env:
+          JEKYLL_ENV: production
+          JEKYLL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Debug output
+        run: |
+          tree
+          cat _site/index.html
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: 'github-pages'
-          path: ${{ steps.mkdocs.outputs.artifact }}
-          retention-days: 1
+        # Automatically uploads an artifact from the './_site' directory by default
+        uses: actions/upload-pages-artifact@v2
 
   test:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: github-pages
       - name: Extract
         run: |
           mkdir _site
-          tar --directory _site -xvf ${{ needs.build.outputs.artifact }}
+          tar --directory _site -xvf "artifact.tar"
           tree
       - name: Generate ignore list from HTML files
+        id: generate-ignore-list
         run: |
-          # Find all .html files and remove the _site prefix for path-based ignores
-          IGNORE_LIST=$(find _site -name "*.html" | sed "s|^_site||")
+          HOSTNAME="${{ needs.build.outputs.base_url }}"
+          
+          # Find all .html files, remove the _site prefix, and prepend the hostname
+          IGNORE_LIST=$(find _site -name "*.html" | sed "s|^_site|$HOSTNAME|")
 
           # Add additional ignored URLs manually
           IGNORE_LIST+="
@@ -67,14 +76,13 @@ jobs:
             echo "ignore_list<<EOF"
             echo "$IGNORE_LIST"
             echo "EOF"
-          } >> $GITHUB_ENV
+          } >> $GITHUB_OUTPUT
 
       - name: Test with htmlproofer
         uses: athackst/htmlproofer-action@main
         with:
           ignore_urls: |
-            ${{ env.ignore_list }}
-          ignore_new_files: true
+            ${{ steps.generate-ignore-list.outputs.ignore_list }}
 
   # Deployment job
   deploy:
@@ -83,7 +91,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: [build,test]
+    needs: [ build, test ]
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

@@ -1,7 +1,0 @@
-breaking: ['major/*', 'breaking/*']
-bug: ['fix/*', 'bugfix/*', 'bug/*']
-dependencies: ['deps/*', 'dependencies/*']
-documentation: ['docs/*', 'doc/*']
-enhancement: ['feature/*', 'feat/*', 'new/*']
-maintenance: ['chore/*', 'maint/*', 'noop/*', 'no-op/*', 'dev/*', 'devops/*']
-skip-changelog: ['skip/*']

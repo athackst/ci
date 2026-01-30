@@ -13,12 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PR Labeler config
+      - name: Run PR Labeler
         uses: athackst/buildsmith/actions/pr-labeler@main
         with:
           github_token: ${{ github.token }}
-
-      - name: Check PR Label config
-        run: |
-          echo "Using the following PR Labeler configuration:"
-          cat .github/pr-labeler.yml
