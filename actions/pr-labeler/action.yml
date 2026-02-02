@@ -17,19 +17,11 @@ runs:
         echo "GitHub workspace: ${{ github.workspace }}"
         ls ${{ github.workspace }}
 
-    - name: Setup pr-labeler config
-      shell: bash
-      run: |
-        mkdir -p .github
-        cp "${{ github.action_path }}/pr-labeler.yml" .github/pr-labeler.yml
-
-    - name: PR Labeler configuration
-      shell: bash
-      run: |
-        echo "Using the following PR Labeler configuration:"
-        cat .github/pr-labeler.yml
+        echo "PR Labeler configuration file path: ${{ github.action_path }}/pr-labeler.yml"
+        echo "Contents of PR Labeler configuration file:"
+        cat "${{ github.action_path }}/pr-labeler.yml"
         
     - uses: TimonVS/pr-labeler-action@v5
       with:
-        configuration-path: .github/pr-labeler.yml
+        configuration-path: "${{ github.action_path }}/pr-labeler.yml"
         repo-token: ${{ inputs.github_token }}

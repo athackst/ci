@@ -19,29 +19,38 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
-      - name: Run action from local path
-        uses: ./actions/pr-labeler
+      - name: Run action from remote path
+        uses: athackst/ci/actions/pr-labeler@dev/pr-labeler
         with:
-          github_token: ${{ github.token }}
-        env:
-          GITHUB_REF: refs/heads/${{ github.head_ref }}
-          GITHUB_REF_NAME: ${{ github.head_ref }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug PR ref
-        run: |
-          echo "github.head_ref: ${{ github.head_ref }}"
-          echo "github.event.pull_request.head.ref: ${{ github.event.pull_request.head.ref }}"
-          echo "github.event.pull_request.base.ref: ${{ github.event.pull_request.base.ref }}"
-          echo "github.ref: ${{ github.ref }}"
-          echo "github.ref_name: ${{ github.ref_name }}"
-          echo "github.event.action: ${{ github.event.action }}"
+  #     - name: Debug PR ref
+  #       run: |
+  #         echo "github.head_ref: ${{ github.head_ref }}"
+  #         echo "github.event.pull_request.head.ref: ${{ github.event.pull_request.head.ref }}"
+  #         echo "github.event.pull_request.base.ref: ${{ github.event.pull_request.base.ref }}"
+  #         echo "github.ref: ${{ github.ref }}"
+  #         echo "github.ref_name: ${{ github.ref_name }}"
+  #         echo "github.event.action: ${{ github.event.action }}"
 
-      - name: Assert label applied
-        run: python3 .github/scripts/check_pr_label.py
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PR_LABELER_BRANCH: ${{ github.head_ref }}
-          PR_LABELER_REPO: ${{ github.repository }}
-          PR_LABELER_PR: ${{ github.event.pull_request.number }}
+  #     - name: Assert label applied
+  #       run: python3 .github/scripts/check_pr_label.py
+  #       env:
+  #         GITHUB_TOKEN: ${{ github.token }}
+  #         PR_LABELER_BRANCH: ${{ github.head_ref }}
+  #         PR_LABELER_REPO: ${{ github.repository }}
+  #         PR_LABELER_PR: ${{ github.event.pull_request.number }}
+
+  # test-pr-labeler:
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request'
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v6
+
+  #     - uses: TimonVS/pr-labeler-action@v5
+  #       with:
+  #         configuration-path: actions/pr-labeler/pr-labeler.yml
+  #         repo-token: ${{ github.token }}
