@@ -1,0 +1,14 @@
+name: Labeler
+description: Label PRs using a centralized configuration file shipped with this action.
+runs:
+  using: composite
+  steps:
+    - name: PR Labeler configuration
+      shell: bash
+      run: |
+        echo "Using the following PR Labeler configuration:"
+        cat ${{ github.action_path }}/labeler.yml
+        
+    - uses: athackst/labeler@feature/label-color
+      with:
+        configuration-path: ${{ github.action_path }}/labeler.yml
