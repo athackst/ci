@@ -9,8 +9,18 @@ permissions:
   pull-requests: write
 
 jobs:
-  local-path-from-workflows-dir:
-    # This is intentionally pointed at ./workflows/ to validate whether
-    # GitHub accepts reusable workflows outside .github/workflows.
-    uses: ./.github/workflows/pr_labeler.yml
-    secrets: inherit
+  # workflow-pr-labeler:
+  #   # This is intentionally pointed at ./workflows/ to validate whether
+  #   # GitHub accepts reusable workflows outside .github/workflows.
+  #   uses: ./.github/workflows/pr_labeler.yml
+  #   secrets: inherit
+
+  action-pr-labeler:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: athackst/buildsmith/actions/labeler@main
+        with:
+          github_token: ${{ github.token }}
