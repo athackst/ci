@@ -1,0 +1,62 @@
+name: Test actions
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  actions-labeler:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./actions/labeler
+        with:
+          configuration-path: ./tests/fixtures/test-labeler.yml
+      
+      - name: Check PR label
+        id: check_labels
+        shell: bash
+        run: |
+          set +e
+          SCRIPT_OUTPUT="$(python3 tests/scripts/check_pr_label.py 2>&1)"
+          SCRIPT_STATUS=$?
+          set -e
+
+          echo "$SCRIPT_OUTPUT"
+
+          EXPECTED_LABELS_JSON="$(printf '%s\n' "$SCRIPT_OUTPUT" | sed -n 's/^EXPECTED_LABELS_JSON=//p' | tail -n1)"
+          if [ -z "$EXPECTED_LABELS_JSON" ]; then
+            echo "Failed to parse EXPECTED_LABELS_JSON from script output."
+            exit 1
+          fi
+
+          echo "expected-labels-json=$EXPECTED_LABELS_JSON" >> "$GITHUB_OUTPUT"
+          exit "$SCRIPT_STATUS"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_LABELER_REPO: ${{ github.repository }}
+          PR_LABELER_PR: ${{ github.event.pull_request.number }}
+          PR_LABELER_BRANCH: ${{ github.head_ref }}
+          PR_LABELER_CONFIG_PATH: ./tests/fixtures/test-labeler.yml
+
+      - name: Clean up PR label
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_LABELS_JSON: ${{ steps.check_labels.outputs.expected-labels-json }}
+        run: |
+          echo "Removing test label from PR #${{ github.event.pull_request.number }}"
+          echo "Expected labels: $EXPECTED_LABELS_JSON"
+
+          jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
+            echo "Removing label: $label"
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present
+          done
