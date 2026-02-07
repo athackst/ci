@@ -1,14 +1,32 @@
 name: Labeler
 description: Label PRs using a centralized configuration file shipped with this action.
+inputs:
+  configuration-path:
+    description: "Path to the labeler configuration file. Defaults to 'labeler.yml' in the action's root directory."
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
     - name: PR Labeler configuration
+      id: config
       shell: bash
       run: |
         echo "Using the following PR Labeler configuration:"
-        cat ${{ github.action_path }}/labeler.yml
-        
+
+        if [ -z "${{ inputs.configuration-path }}" ]; then
+          CONFIG_PATH="${{ github.action_path }}/labeler.yml"
+          echo "No configuration path provided, using default '$CONFIG_PATH'."
+        else
+          CONFIG_PATH="${{ inputs.configuration-path }}"
+          echo "Using configuration from '$CONFIG_PATH':"
+        fi
+
+        [ -f "$CONFIG_PATH" ] || { echo "Config not found: $CONFIG_PATH"; exit 1; }
+
+        echo "config-path=$CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
+        cat "$CONFIG_PATH"
+
     - uses: athackst/labeler@feature/label-color
       with:
-        configuration-path: ${{ github.action_path }}/labeler.yml
+        configuration-path: ${{ steps.config.outputs.config-path }}
