@@ -14,49 +14,113 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./actions/labeler
-        with:
-          configuration-path: ./tests/fixtures/test-labeler.yml
-      
-      - name: Check PR label
-        id: check_labels
+
+      - name: Set configuration path
+        id: config
         shell: bash
         run: |
-          set +e
-          SCRIPT_OUTPUT="$(python3 tests/scripts/check_pr_label.py 2>&1)"
-          SCRIPT_STATUS=$?
-          set -e
+          echo "path=./tests/fixtures/test-labeler.yml" >> "$GITHUB_OUTPUT"
 
-          echo "$SCRIPT_OUTPUT"
+      - name: Read expected labels from config
+        id: expected
+        shell: bash
+        run: |
+          EXPECTED_LABELS_JSON="$(python3 tests/scripts/get_expected_labels.py "${{ steps.config.outputs.path }}")"
+          echo "labels-json=$EXPECTED_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
 
-          EXPECTED_LABELS_JSON="$(printf '%s\n' "$SCRIPT_OUTPUT" | sed -n 's/^EXPECTED_LABELS_JSON=//p' | tail -n1)"
-          if [ -z "$EXPECTED_LABELS_JSON" ]; then
-            echo "Failed to parse EXPECTED_LABELS_JSON from script output."
-            exit 1
-          fi
-
-          echo "expected-labels-json=$EXPECTED_LABELS_JSON" >> "$GITHUB_OUTPUT"
-          exit "$SCRIPT_STATUS"
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PR_LABELER_REPO: ${{ github.repository }}
-          PR_LABELER_PR: ${{ github.event.pull_request.number }}
-          PR_LABELER_BRANCH: ${{ github.head_ref }}
-          PR_LABELER_CONFIG_PATH: ./tests/fixtures/test-labeler.yml
-
-      - name: Clean up PR label
-        if: ${{ always() && github.event_name == 'pull_request' }}
+      - name: Pre-clean expected labels
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          EXPECTED_LABELS_JSON: ${{ steps.check_labels.outputs.expected-labels-json }}
+          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
-          echo "Removing test label from PR #${{ github.event.pull_request.number }}"
-          echo "Expected labels: $EXPECTED_LABELS_JSON"
-
+          echo "Pre-clean labels on PR #${{ github.event.pull_request.number }}"
           jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
             echo "Removing label: $label"
-            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
+          done
+
+      - uses: ./actions/labeler
+        with:
+          configuration-path: ${{ steps.config.outputs.path }}
+
+      - name: Get PR labels after action
+        id: actual
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          ACTUAL_LABELS_JSON="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels | map(.name)')"
+          echo "actual-labels-json=$ACTUAL_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Check PR label assertion
+        id: check_labels
+        shell: bash
+        env:
+          ACTUAL_LABELS_JSON: ${{ steps.actual.outputs.actual-labels-json }}
+          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
+        run: |
+          set +e
+          ASSERT_OUTPUT="$(python3 tests/scripts/expect_json_contains_all.py \
+            --expected "$EXPECTED_LABELS_JSON" \
+            --actual "$ACTUAL_LABELS_JSON" 2>&1)"
+          ASSERT_STATUS=$?
+          if [ "$ASSERT_STATUS" -eq 0 ]; then
+            echo "Assertion passed"
+          else
+            echo "Assertion failed"
+          fi
+          EXPECTED_COUNT="$(jq 'length' <<< "$EXPECTED_LABELS_JSON")"
+          ACTUAL_COUNT="$(jq 'length' <<< "$ACTUAL_LABELS_JSON")"
+          set -e
+          {
+            echo "### Action labeler results"
+            echo ""
+            echo "<details><summary>Expected labels ($EXPECTED_COUNT)</summary>"
+            echo ""
+            echo '```json'
+            jq . <<< "$EXPECTED_LABELS_JSON"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "<details><summary>Actual labels ($ACTUAL_COUNT)</summary>"
+            echo ""
+            echo '```json'
+            jq . <<< "$ACTUAL_LABELS_JSON"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$ASSERT_STATUS" -ne 0 ]; then
+            {
+              echo ""
+              echo ":exclamation: **Label assertion failed** :exclamation:"
+              echo ""
+              echo "$ASSERT_OUTPUT"
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo ":white_check_mark: Expected labels found" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          exit "$ASSERT_STATUS"
+
+      - name: Post-clean expected labels
+        if: ${{ always() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
+        run: |
+          echo "Post-clean labels on PR #${{ github.event.pull_request.number }}"
+          jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
+            echo "Removing label: $label"
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
           done
