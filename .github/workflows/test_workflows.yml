@@ -1,4 +1,4 @@
-name: Reusable workflow path test
+name: Test workflows
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  local-path-from-workflows-dir:
+  workflow-pr-labeler:
     # This is intentionally pointed at ./workflows/ to validate whether
     # GitHub accepts reusable workflows outside .github/workflows.
     uses: ./.github/workflows/pr_labeler.yml
