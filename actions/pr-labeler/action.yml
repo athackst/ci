@@ -1,8 +1,8 @@
-name: PR labeler
+name: PR Labeler
 description: Label PRs using a centralized configuration file shipped with this action.
 inputs:
   github_token:
-    description: GitHub token used to apply labels to PRs.
+    description: "GitHub token with permissions to read PRs and add labels. Defaults to the provided GITHUB_TOKEN secret."
     required: false
     default: "${{ github.token }}"
   configuration-path:
@@ -30,8 +30,8 @@ runs:
 
         echo "config-path=$CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
         cat "$CONFIG_PATH"
-        
-    - uses: TimonVS/pr-labeler-action@v5
+
+    - uses: athackst/labeler@feature/label-color
       with:
         configuration-path: ${{ steps.config.outputs.config-path }}
         repo-token: ${{ inputs.github_token }}

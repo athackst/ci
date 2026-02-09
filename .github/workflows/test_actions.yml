@@ -9,7 +9,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  actions-labeler:
+  actions-pr-labeler:
     permissions:
       contents: read
       pull-requests: write
@@ -43,7 +43,7 @@ jobs:
             gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
           done
 
-      - uses: ./actions/labeler
+      - uses: ./actions/pr-labeler
         with:
           configuration-path: ${{ steps.config.outputs.path }}
 
