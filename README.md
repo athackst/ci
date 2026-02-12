@@ -1,4 +1,4 @@
-# buildsmith
+# ci
 
 Central home for my reusable GitHub Actions workflows and composite actions.
 
@@ -12,14 +12,14 @@ Workflows live in `workflows/` and are called from another repo like this:
 ```yaml
 jobs:
   pr-labels:
-    uses: athackst/buildsmith/workflows/pr_labeler.yml@main
+    uses: athackst/ci/workflows/pr_labeler.yml@main
     secrets: inherit
 ```
 
 ```yaml
 jobs:
   release:
-    uses: athackst/buildsmith/workflows/release_draft.yml@main
+    uses: athackst/ci/workflows/release_draft.yml@main
     with:
       bump_script: .github/bump.sh
       github_token: ${{ secrets.RELEASE_TOKEN }}
@@ -28,13 +28,13 @@ jobs:
 ```yaml
 jobs:
   docs:
-    uses: athackst/buildsmith/workflows/jekyll.yml@main
+    uses: athackst/ci/workflows/jekyll.yml@main
 ```
 
 ```yaml
 jobs:
   docs:
-    uses: athackst/buildsmith/workflows/mkdocs.yml@main
+    uses: athackst/ci/workflows/mkdocs.yml@main
 ```
 
 Available workflows:
@@ -52,7 +52,7 @@ Composite actions live in `actions/` and can be used directly:
 
 ```yaml
 steps:
-  - uses: athackst/buildsmith/actions/pr-labeler@main
+  - uses: athackst/ci/actions/pr-labeler@main
     with:
       github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -61,7 +61,7 @@ steps:
 
 ```yaml
 steps:
-  - uses: athackst/buildsmith/actions/release-draft@main
+  - uses: athackst/ci/actions/release-draft@main
     id: draft
     with:
       github_token: ${{ secrets.GITHUB_TOKEN }}

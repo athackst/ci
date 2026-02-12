@@ -4,13 +4,24 @@ on:
   workflow_dispatch:
   pull_request:
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   workflow-pr-labeler:
+    permissions:
+      contents: read
+      pull-requests: write
     # This is intentionally pointed at ./workflows/ to validate whether
     # GitHub accepts reusable workflows outside .github/workflows.
     uses: ./.github/workflows/pr_labeler.yml
     secrets: inherit
+
+  workflow-mkdocs-site:
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/mkdocs_site.yml
+    secrets: inherit
+    with:
+      pages: false
+      htmlproofer-ignore-urls: |
+        /^https://github.com/athackst/ci$/

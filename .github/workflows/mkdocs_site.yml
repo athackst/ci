@@ -1,0 +1,131 @@
+name: Mkdocs Site
+on:
+  workflow_call:
+    inputs:
+      token:
+        description: "GitHub token required to enable Pages if not already enabled. Defaults to the provided GITHUB_TOKEN secret, but that token does not have sufficient permissions to enable Pages if it is not already enabled."
+        default: ${{ github.token }}
+        type: string
+        required: false
+      pages:
+        description: "Whether to deploy to GitHub Pages. If false, the workflow will build the site and run htmlproofer tests, but not deploy. Default: true."
+        type: boolean
+        default: true
+        required: false
+      enablement:
+        description: "Try to enable Pages for the repository if it is not already enabled. This option requires a token other than `GITHUB_TOKEN` to be provided. In the context of a Personal Access Token, the `repo` scope or Pages write permission is required. In the context of a GitHub App, the `administration:write` and `pages:write` permissions are required."
+        type: boolean
+        default: false
+        required: false
+      htmlproofer-ignore-urls:
+        description: "Optional newline-delimited URLs or regexes for htmlproofer to ignore."
+        type: string
+        required: false
+        default: ""
+      version:
+        description: "Optional version of deployment."
+        type: string
+        required: false
+        default: ""
+      release-tag:
+        description: "Optional release tag for release-mode version publish."
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  setup-pages:
+    if: ${{ inputs.pages }}
+    permissions:
+      contents: read
+      pages: write
+    outputs:
+      host: ${{ steps.configure-pages.outputs.page_host }}
+      base-path: ${{ steps.configure-pages.outputs.page_base_path }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Pages for MkDocs
+        id: configure-pages
+        uses: actions/configure-pages@v3
+        with:
+          token: ${{ inputs.token }}
+          enablement: ${{ inputs.enablement }}
+
+  build-docs:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        
+      - name: Setup mkdocs config
+        uses: athackst/ci/actions/mkdocs-config@main
+
+      - name: Build docs
+        id: mkdocs
+        uses: athackst/mkdocs-simple-plugin@main
+        with:
+          push: false
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "github-pages"
+          path: ${{ steps.mkdocs.outputs.artifact }}
+          retention-days: 1
+
+  test-docs:
+    needs: [setup-pages, build-docs]
+    if: ${{ always() }}
+    uses: ./.github/workflows/htmlproofer.yml
+    with:
+      host: ${{ needs.setup-pages.outputs.host || 'https://athackst.github.io'}}
+      base-path: ${{ needs.setup-pages.outputs.base-path || '/ci' }}
+      ignore-urls: |
+        ${{ inputs.htmlproofer-ignore-urls }}
+
+  deploy-docs:
+    # Use artifact deploy if no version is specified and we're on the main branch.
+    if: ${{ inputs.pages && inputs.version == '' && github.ref == 'refs/heads/main' }}
+    needs: [setup-pages, build-docs]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-version-docs:
+    # Use mkdocs mike to deploy if a version is specified
+    if: ${{ inputs.pages && inputs.version != '' && ( github.ref == 'refs/heads/main' || inputs.release-tag != '' ) }}
+    needs: [setup-pages, build-docs]
+    permissions:
+      contents: write
+      pages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup mkdocs config
+        uses: athackst/ci/actions/mkdocs-config@main
+      - name: Setup environment (release)
+        if: ${{ inputs.release-tag != '' }}
+        run: |
+          echo "VERSION=${{ inputs.release-tag }} ${{ inputs.version }}" >> $GITHUB_ENV
+          echo "DEFAULT_VERSION=${{ inputs.release-tag }}" >> $GITHUB_ENV
+      - name: Setup environment (dev)
+        if: ${{ inputs.release-tag == '' }}
+        run: |
+          echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+          echo "DEFAULT_VERSION=" >> $GITHUB_ENV
+      - name: Publish Release docs
+        uses: athackst/mkdocs-simple-plugin@main
+        with:
+          version: ${{ env.VERSION }}
+          default_version: ${{ env.DEFAULT_VERSION }}
