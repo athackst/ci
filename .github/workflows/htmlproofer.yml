@@ -1,0 +1,67 @@
+name: "HTMLProofer"
+on:
+  workflow_call:
+    inputs:
+      host:
+        description: "Site host for htmlproofer URL swapping (for example, user.github.io)."
+        type: string
+        required: true
+      base-path:
+        description: "Site base path for htmlproofer URL swapping (for example, /repo)."
+        type: string
+        required: false
+        default: ""
+      ignore-urls:
+        description: "Optional newline-delimited URLs or regexes to ignore."
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  test-docs:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "github-pages"
+          path: ./artifact
+
+      - name: Extract
+        shell: bash
+        run: |
+          mkdir -p _site
+          if [ -f ./artifact/artifact.tar ]; then
+            tar --directory _site -xvf ./artifact/artifact.tar
+          else
+            TAR_FILE="$(find ./artifact -maxdepth 2 -type f -name '*.tar' | head -n1)"
+            if [ -n "$TAR_FILE" ]; then
+              tar --directory _site -xvf "$TAR_FILE"
+            else
+              cp -R ./artifact/. _site/
+            fi
+          fi
+
+      - name: Build ignore URLs for htmlproofer
+        id: ignore-urls
+        shell: bash
+        run: |
+          {
+            echo "ignore_urls<<EOF"
+            echo '/^https?://(www\.)?twitter\.com(/.*)?/'
+            echo '/^https?://x\.com(/.*)?/'
+            echo '/^https?://platform\.twitter\.com(/.*)?/'
+            echo '/^https?://fonts\.googleapis\.com(/.*)?/'
+            echo '/^https?://fonts\.gstatic\.com(/.*)?/'
+            echo '${{ inputs.ignore-urls }}'
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Test with htmlproofer
+        uses: athackst/htmlproofer-action@main
+        with:
+          host: ${{ inputs.host }}
+          base_path: ${{ inputs.base-path }}
+          ignore_urls: ${{ steps.ignore-urls.outputs.ignore_urls }}
