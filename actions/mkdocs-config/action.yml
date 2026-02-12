@@ -1,51 +1,10 @@
 name: 'Configure Mkdocs for GitHub Pages'
 description: 'A GitHub Action to enable mkdocs for Pages and extract various metadata about a site.'
-author: 'GitHub'
-inputs:
-  config_file:
-    description: 'Optional file path to static site generator configuration file'
-    required: false
-  token:
-    description: 'GitHub token'
-    default: ${{ github.token }}
-    required: true
-  enablement:
-    description: 'Try to enable Pages for the repository if it is not already enabled. This option requires a token other than `GITHUB_TOKEN` to be provided. In the context of a Personal Access Token, the `repo` scope or Pages write permission is required. In the context of a GitHub App, the `administration:write` and `pages:write` permissions are required.'
-    default: 'true'
-    required: false
-outputs:
-  base_url:
-    description: 'GitHub Pages site full base URL. Examples: "https://octocat.github.io/my-repo", "https://octocat.github.io", "https://www.example.com"'
-    value: ${{ steps.configure-mkdocs.outputs.page_url }}
-  origin:
-    description: 'GitHub Pages site origin. Examples: "https://octocat.github.io", "https://www.example.com"'
-    value: ${{ steps.configure-mkdocs.outputs.page_origin }}
-  host:
-    description: 'GitHub Pages site host. Examples: "octocat.github.io", "www.example.com"'
-    value: ${{ steps.configure-mkdocs.outputs.page_host }}
-  base_path:
-    description: 'GitHub Pages site full base path. Examples: "/my-repo" or ""'
-    value: ${{ steps.configure-mkdocs.outputs.page_base_path }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Configure Pages for MkDocs
-      id: configure-mkdocs
-      uses: actions/configure-pages@v3
-      with:
-        token: ${{ inputs.token }}
-        enablement: ${{ inputs.enablement }}
-
-    - name: Set outputs
-      shell: bash
-      run: |
-        echo "base_url=${{ steps.configure-mkdocs.outputs.page_url }}" >> $GITHUB_OUTPUT
-        echo "origin=${{ steps.configure-mkdocs.outputs.page_origin }}" >> $GITHUB_OUTPUT
-        echo "host=${{ steps.configure-mkdocs.outputs.page_host }}" >> $GITHUB_OUTPUT
-        echo "base_path=${{ steps.configure-mkdocs.outputs.page_base_path }}" >> $GITHUB_OUTPUT
-
     - name: Setup mkdocs config
       shell: bash
-      run: ${{ github.action_path }}/setup_mkdocs.sh
-      
+      run: |
+        bash "${{ github.action_path }}/setup_mkdocs.sh"
