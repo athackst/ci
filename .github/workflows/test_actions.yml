@@ -123,9 +123,7 @@ jobs:
 
   actions-mkdocs-config:
     permissions:
-      contents: write
-      pages: write
-      id-token: write
+      contents: read
 
     runs-on: ubuntu-latest
 
@@ -161,3 +159,26 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           exit "$BATS_STATUS"
+
+      - name: Test build docs
+        id: mkdocs
+        uses: athackst/mkdocs-simple-plugin@main
+        with:
+          push: false
+
+      - name: Build docs status
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ "${{ steps.mkdocs.outcome }}" == "success" ]; then
+            BUILD_STATUS=":white_check_mark: MkDocs build succeeded"
+          else
+            BUILD_STATUS=":x: MkDocs build failed"
+          fi
+
+          {
+            echo "### MkDocs build status"
+            echo ""
+            echo "$BUILD_STATUS"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
