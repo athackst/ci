@@ -47,6 +47,12 @@ jobs:
         with:
           configuration-path: ${{ steps.config.outputs.path }}
 
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
       - name: Get PR labels after action
         id: actual
         shell: bash
@@ -65,9 +71,7 @@ jobs:
           EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
           set +e
-          ASSERT_OUTPUT="$(python3 tests/scripts/expect_json_contains_all.py \
-            --expected "$EXPECTED_LABELS_JSON" \
-            --actual "$ACTUAL_LABELS_JSON" 2>&1)"
+          ASSERT_OUTPUT="$(bats tests/bats/pr_labeler_assertion.bats 2>&1)"
           ASSERT_STATUS=$?
           if [ "$ASSERT_STATUS" -eq 0 ]; then
             echo "Assertion passed"
@@ -96,19 +100,11 @@ jobs:
             echo ""
             echo "</details>"
             echo ""
+            echo '```text'
+            echo "$ASSERT_OUTPUT"
+            echo '```'
+            echo ""
           } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$ASSERT_STATUS" -ne 0 ]; then
-            {
-              echo ""
-              echo ":exclamation: **Label assertion failed** :exclamation:"
-              echo ""
-              echo "$ASSERT_OUTPUT"
-              echo ""
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo ":white_check_mark: Expected labels found" >> "$GITHUB_STEP_SUMMARY"
-          fi
 
           exit "$ASSERT_STATUS"
 
@@ -124,3 +120,44 @@ jobs:
             echo "Removing label: $label"
             gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
           done
+
+  actions-mkdocs-config:
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Test mkdocs config action
+        uses: ./actions/mkdocs-config
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify mkdocs config artifacts (bats)
+        shell: bash
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats tests/bats/mkdocs_config.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+
+          echo "$BATS_OUTPUT"
+
+          {
+            echo "### mkdocs-config action test"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
