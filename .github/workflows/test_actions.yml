@@ -28,7 +28,7 @@ jobs:
         id: expected
         shell: bash
         run: |
-          EXPECTED_LABELS_JSON="$(python3 tests/scripts/get_expected_labels.py "${{ steps.config.outputs.path }}")"
+          EXPECTED_LABELS_JSON="$(python3 .github/scripts/get_expected_labels.py "${{ steps.config.outputs.path }}")"
           echo "labels-json=$EXPECTED_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
 
       - name: Pre-clean expected labels
