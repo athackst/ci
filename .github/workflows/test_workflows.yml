@@ -25,3 +25,14 @@ jobs:
       pages: false
       htmlproofer-ignore-urls: |
         /^https://github.com/athackst/ci$/
+
+  actions-success:
+    needs:
+      - workflow-pr-labeler
+      - workflow-mkdocs-site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate upstream job results
+        shell: bash
+        run: |
+          echo "All workflow tests passed."

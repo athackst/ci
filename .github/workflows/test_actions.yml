@@ -182,3 +182,14 @@ jobs:
             echo "$BUILD_STATUS"
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
+
+  actions-success:
+    needs:
+      - actions-pr-labeler
+      - actions-mkdocs-config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate upstream job results
+        shell: bash
+        run: |
+          echo "All action tests passed."
