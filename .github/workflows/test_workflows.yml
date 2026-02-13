@@ -26,7 +26,7 @@ jobs:
       htmlproofer-ignore-urls: |
         /^https://github.com/athackst/ci$/
 
-  actions-success:
+  workflow-success:
     needs:
       - workflow-pr-labeler
       - workflow-mkdocs-site

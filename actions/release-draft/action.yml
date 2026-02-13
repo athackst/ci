@@ -4,6 +4,10 @@ inputs:
   github_token:
     description: GitHub token used to draft the release.
     required: true
+  tag-suffix:
+    description: Optional suffix appended to tag-template (test/debug use).
+    required: false
+    default: ""
 outputs:
   tag_name:
     description: The tag name of the drafted release.
@@ -16,6 +20,24 @@ runs:
       run: |
         mkdir -p .github
         cp "${{ github.action_path }}/release-drafter.yml" .github/release-drafter.yml
+        python3 - "$PWD/.github/release-drafter.yml" "${{ inputs.tag-suffix }}" <<'PY'
+        import sys
+        from pathlib import Path
+
+        config_path = Path(sys.argv[1])
+        tag_suffix = sys.argv[2]
+
+        lines = config_path.read_text(encoding="utf-8").splitlines()
+        out = []
+        for line in lines:
+            if tag_suffix and line.startswith('tag-template: "') and line.endswith('"'):
+                base = line[len('tag-template: "'):-1]
+                suffix = tag_suffix.replace('"', '\\"')
+                line = f'tag-template: "{base}{suffix}"'
+            out.append(line)
+
+        config_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+        PY
     - uses: release-drafter/release-drafter@v5.20.0
       id: release-draft
       with:

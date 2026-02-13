@@ -71,13 +71,10 @@ jobs:
           EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
           set +e
-          ASSERT_OUTPUT="$(bats tests/bats/pr_labeler_assertion.bats 2>&1)"
+          ASSERT_OUTPUT="$(bats tests/bats/pr_labeler.bats 2>&1)"
           ASSERT_STATUS=$?
-          if [ "$ASSERT_STATUS" -eq 0 ]; then
-            echo "Assertion passed"
-          else
-            echo "Assertion failed"
-          fi
+          echo "Test status: $ASSERT_STATUS"
+          echo "$ASSERT_OUTPUT"
           EXPECTED_COUNT="$(jq 'length' <<< "$EXPECTED_LABELS_JSON")"
           ACTUAL_COUNT="$(jq 'length' <<< "$ACTUAL_LABELS_JSON")"
           set -e
@@ -183,10 +180,67 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
+  actions-release-draft:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build test marker
+        id: marker
+        shell: bash
+        run: |
+          echo "marker=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Create draft release
+        id: release_draft
+        uses: ./actions/release-draft
+        with:
+          github_token: ${{ github.token }}
+          tag-suffix: "-ci-${{ steps.marker.outputs.marker }}"
+
+      - name: Verify draft release exists
+        id: verify_release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.release_draft.outputs.tag_name }}
+        run: |
+          RELEASE_ID="$(gh api "repos/${GITHUB_REPOSITORY}/releases" | jq -r --arg tag "$TAG_NAME" '.[] | select(.draft == true and .tag_name == $tag) | .id' | head -n1)"
+          if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+            echo "Draft release not found for tag: $TAG_NAME"
+            exit 1
+          fi
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+          {
+            echo "### release-draft action test"
+            echo ""
+            echo "- marker: \`${{ steps.marker.outputs.marker }}\`"
+            echo "- tag: \`$TAG_NAME\`"
+            echo "- draft release id: \`$RELEASE_ID\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete draft release
+        if: ${{ always() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.verify_release.outputs.release_id }}
+        run: |
+          if [ -n "${RELEASE_ID}" ]; then
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"
+            echo "Deleted draft release id: ${RELEASE_ID}"
+          else
+            echo "No draft release id found to delete."
+          fi
+
   actions-success:
     needs:
       - actions-pr-labeler
       - actions-mkdocs-config
+      - actions-release-draft
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results

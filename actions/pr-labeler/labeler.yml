@@ -1,4 +1,9 @@
-# Add 'feature' label to any PR where the head branch name starts with `feature` or has a `feature` section in the name
+# Apply labels from branch naming conventions and file patterns.
+major:
+  - head-branch: ["^major", "^breaking", "^break"]
+  - description: "Breaking or major-version change"
+  - color: "b60205"
+
 enhancement:
   - head-branch: ["^feat", "^new", "^enhance"]
   - description: "New feature or request"
