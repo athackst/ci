@@ -193,6 +193,26 @@ jobs:
         run: |
           echo "marker=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" | tee -a "$GITHUB_OUTPUT"
 
+      - name: Pre-clean stale test releases for marker
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUFFIX: -ci-${{ steps.marker.outputs.marker }}
+        run: |
+          set -euo pipefail
+          MATCHES="$(gh api "repos/${GITHUB_REPOSITORY}/releases" | jq -r --arg suffix "$SUFFIX" '.[] | select(.tag_name | endswith($suffix)) | [.id, .tag_name] | @tsv')"
+          if [ -z "$MATCHES" ]; then
+            echo "No stale releases found for suffix ${SUFFIX}"
+            exit 0
+          fi
+
+          while IFS=$'\t' read -r release_id tag_name; do
+            [ -n "$release_id" ] || continue
+            echo "Deleting stale release ${release_id} (${tag_name})"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${release_id}"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag_name}" >/dev/null 2>&1 || true
+          done <<< "$MATCHES"
+
       - name: Create draft release
         id: release_draft
         uses: ./actions/release-draft
@@ -228,12 +248,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ steps.verify_release.outputs.release_id }}
+          TAG_NAME: ${{ steps.release_draft.outputs.tag_name }}
         run: |
           if [ -n "${RELEASE_ID}" ]; then
             gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"
             echo "Deleted draft release id: ${RELEASE_ID}"
           else
             echo "No draft release id found to delete."
+          fi
+          if [ -n "${TAG_NAME}" ]; then
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${TAG_NAME}" >/dev/null 2>&1 || true
+            echo "Deleted tag ref (if present): ${TAG_NAME}"
           fi
 
   actions-success:
