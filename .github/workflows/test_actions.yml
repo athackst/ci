@@ -183,6 +183,7 @@ jobs:
   actions-release-draft:
     permissions:
       contents: write
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -197,12 +198,12 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          SUFFIX: -ci-${{ steps.marker.outputs.marker }}
+          MARKER: ${{ steps.marker.outputs.marker }}
         run: |
           set -euo pipefail
-          MATCHES="$(gh api "repos/${GITHUB_REPOSITORY}/releases" | jq -r --arg suffix "$SUFFIX" '.[] | select(.tag_name | endswith($suffix)) | [.id, .tag_name] | @tsv')"
+          MATCHES="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" | jq -r --arg marker "$MARKER" '.[] | select(.tag_name == $marker) | [.id, .tag_name] | @tsv')"
           if [ -z "$MATCHES" ]; then
-            echo "No stale releases found for suffix ${SUFFIX}"
+            echo "No stale releases found for marker ${MARKER}"
             exit 0
           fi
 
@@ -217,28 +218,78 @@ jobs:
         id: release_draft
         uses: ./actions/release-draft
         with:
-          github_token: ${{ github.token }}
-          tag-suffix: "-ci-${{ steps.marker.outputs.marker }}"
+          gh_token: ${{ github.token }}
+          tag_name: ${{ steps.marker.outputs.marker }}
+          name: test-release-${{ steps.marker.outputs.marker }}
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify release-draft outputs
+        id: verify_outputs
+        shell: bash
+        env:
+          RELEASE_ID: ${{ steps.release_draft.outputs.id }}
+          RELEASE_NAME: ${{ steps.release_draft.outputs.name }}
+          TAG_NAME: ${{ steps.release_draft.outputs.tag_name }}
+          HTML_URL: ${{ steps.release_draft.outputs.html_url }}
+          UPLOAD_URL: ${{ steps.release_draft.outputs.upload_url }}
+          RESOLVED_VERSION: ${{ steps.release_draft.outputs.resolved_version }}
+          MARKER: ${{ steps.marker.outputs.marker }}
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats tests/bats/release_draft_outputs.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+
+          echo "$BATS_OUTPUT"
+          {
+            echo "### release-draft output results"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
 
       - name: Verify draft release exists
         id: verify_release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.release_draft.outputs.id }}
           TAG_NAME: ${{ steps.release_draft.outputs.tag_name }}
         run: |
-          RELEASE_ID="$(gh api "repos/${GITHUB_REPOSITORY}/releases" | jq -r --arg tag "$TAG_NAME" '.[] | select(.draft == true and .tag_name == $tag) | .id' | head -n1)"
-          if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+          FOUND_RELEASE_ID="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" | jq -r --arg tag "$TAG_NAME" '.[] | select(.draft == true and .tag_name == $tag) | .id' | head -n1)"
+          if [ -z "$FOUND_RELEASE_ID" ] || [ "$FOUND_RELEASE_ID" = "null" ]; then
             echo "Draft release not found for tag: $TAG_NAME"
+            exit 1
+          fi
+          if [ "$FOUND_RELEASE_ID" != "$RELEASE_ID" ]; then
+            echo "Release ID mismatch. expected=$RELEASE_ID found=$FOUND_RELEASE_ID"
             exit 1
           fi
           echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
           {
-            echo "### release-draft action test"
+            echo "### release-draft action results"
             echo ""
-            echo "- marker: \`${{ steps.marker.outputs.marker }}\`"
             echo "- tag: \`$TAG_NAME\`"
+            echo "- name: \`${{ steps.release_draft.outputs.name }}\`"
+            echo "- resolved version: \`${{ steps.release_draft.outputs.resolved_version }}\`"
             echo "- draft release id: \`$RELEASE_ID\`"
+            echo "- html_url: ${{ steps.release_draft.outputs.html_url }}"
+            echo "- upload_url: ${{ steps.release_draft.outputs.upload_url }}"
+            echo ""
+            echo "<details><summary>release body</summary>"
+            echo ""
+            echo "${{ steps.release_draft.outputs.body }}"
+            echo ""
+            echo "</details>"
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -261,11 +312,68 @@ jobs:
             echo "Deleted tag ref (if present): ${TAG_NAME}"
           fi
 
+  actions-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install test dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --quiet pyyaml
+
+      - name: Run action unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TEST_FILES < <(find actions -type f -path "*/tests/test_*.py" | sort)
+          if [ "${#TEST_FILES[@]}" -eq 0 ]; then
+            echo "No action unit tests found."
+            {
+              echo "### action unit tests"
+              echo ""
+              echo "No action unit tests found."
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          OVERALL_STATUS=0
+          for test_file in "${TEST_FILES[@]}"; do
+            echo "Running $test_file"
+            set +e
+            TEST_OUTPUT="$(python3 -m unittest "$test_file" 2>&1)"
+            TEST_STATUS=$?
+            set -e
+
+            echo "$TEST_OUTPUT"
+            if [ "$TEST_STATUS" -ne 0 ]; then
+              OVERALL_STATUS=$TEST_STATUS
+              TEST_RESULT=":x: failed"
+            else
+              TEST_RESULT=":white_check_mark: passed"
+            fi
+
+            {
+              echo "### unit test: \`$test_file\`"
+              echo ""
+              echo "$TEST_RESULT"
+              echo ""
+              echo '```text'
+              echo "$TEST_OUTPUT"
+              echo '```'
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          exit "$OVERALL_STATUS"
+
   actions-success:
     needs:
       - actions-pr-labeler
       - actions-mkdocs-config
       - actions-release-draft
+      - actions-unit-tests
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results

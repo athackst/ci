@@ -1,17 +1,39 @@
 name: Release draft
 description: Draft release notes for your next release based on merged PRs.
 inputs:
-  github_token:
+  gh_token:
     description: GitHub token used to draft the release.
     required: true
-  tag-suffix:
-    description: Optional suffix appended to tag-template (test/debug use).
+  name:
+    description: Optional explicit release name override.
+    required: false
+    default: ""
+  tag_name:
+    description: Optional explicit tag name override.
     required: false
     default: ""
 outputs:
+  id:
+    description: The release ID.
+    value: ${{ steps.upsert-release.outputs.id }}
+  name:
+    description: The release name.
+    value: ${{ steps.upsert-release.outputs.name }}
   tag_name:
     description: The tag name of the drafted release.
-    value: ${{ steps.resolve-version.outputs.tag_name }}
+    value: ${{ steps.upsert-release.outputs.tag_name }}
+  html_url:
+    description: The HTML URL for the release.
+    value: ${{ steps.upsert-release.outputs.html_url }}
+  upload_url:
+    description: The upload URL for release assets.
+    value: ${{ steps.upsert-release.outputs.upload_url }}
+  body:
+    description: The generated release notes body.
+    value: ${{ steps.upsert-release.outputs.body }}
+  resolved_version:
+    description: The resolved semantic version.
+    value: ${{ steps.resolve-version.outputs.resolved_version }}
 runs:
   using: composite
   steps:
@@ -20,140 +42,80 @@ runs:
       with:
         fetch-depth: 0
 
-    - name: Ensure at least one local tag exists
+    - name: Install Python dependencies
       shell: bash
       run: |
-        if [ -z "$(git tag --list)" ]; then
-          git tag v0.0.0 "${GITHUB_SHA}"
-          echo "Bootstrapped local tag v0.0.0 for changelog generation."
-        fi
+        python3 -m pip install --quiet pyyaml
 
-    - name: Setup changelog config
+    - name: Resolve changelog base
+      id: changelog-base
       shell: bash
       run: |
-        mkdir -p .github
-        cp "${{ github.action_path }}/changelog-config.json" .github/release-changelog-config.json
+        BASE_JSON="$(python3 "${{ github.action_path }}/resolve_next_version.py" --mode base)"
+        echo "from_ref=$(jq -r '.from_ref' <<< "$BASE_JSON")" | tee -a "$GITHUB_OUTPUT"
 
     - name: Build changelog
       id: changelog
-      uses: mikepenz/release-changelog-builder-action@v6.0.1
-      with:
-        configuration: .github/release-changelog-config.json
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+        REPO: ${{ github.repository }}
+        FROM_REF: ${{ steps.changelog-base.outputs.from_ref }}
+        TO_REF: ${{ github.sha }}
+        RELEASE_DRAFTER_CONFIG: ${{ github.action_path }}/release-drafter.yml
+      run: |
+        CHANGELOG_JSON="$(python3 "${{ github.action_path }}/build_changelog.py")"
+        echo "pull_requests=$(jq -r '.pull_requests' <<< "$CHANGELOG_JSON")" | tee -a "$GITHUB_OUTPUT"
+        {
+          echo "changelog<<EOF_RELEASE_DRAFT_CHANGELOG"
+          jq -r '.changelog' <<< "$CHANGELOG_JSON"
+          echo "EOF_RELEASE_DRAFT_CHANGELOG"
+        } | tee -a "$GITHUB_OUTPUT"
 
     - name: Resolve next version
       id: resolve-version
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.github_token }}
+        GH_TOKEN: ${{ inputs.gh_token }}
         REPO: ${{ github.repository }}
-        FROM_TAG: ${{ steps.changelog.outputs.fromTag }}
+        FROM_TAG: ${{ steps.changelog-base.outputs.from_ref }}
         PR_IDS: ${{ steps.changelog.outputs.pull_requests }}
-        TAG_SUFFIX: ${{ inputs.tag-suffix }}
+        RELEASE_DRAFTER_CONFIG: ${{ github.action_path }}/release-drafter.yml
       run: |
-        python3 - <<'PY'
-        import json
-        import os
-        import re
-        import urllib.request
+        VERSION_JSON="$(python3 "${{ github.action_path }}/resolve_next_version.py" --mode next)"
+        echo "tag_name=$(jq -r '.tag_name' <<< "$VERSION_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "release_name=$(jq -r '.release_name' <<< "$VERSION_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "resolved_version=$(jq -r '.resolved_version' <<< "$VERSION_JSON")" | tee -a "$GITHUB_OUTPUT"
 
-        def parse_version(tag: str):
-            if not tag:
-                return (0, 0, 0)
-            match = re.match(r"^v?(\d+)\.(\d+)\.(\d+)$", tag.strip())
-            if not match:
-                return (0, 0, 0)
-            return tuple(int(x) for x in match.groups())
+    - name: Resolve tag name override
+      id: resolve-tag-name
+      shell: bash
+      run: |
+        echo "tag_name=${{ inputs.tag_name || steps.resolve-version.outputs.tag_name }}" | tee -a "$GITHUB_OUTPUT"
 
-        def bump_version(version, bump):
-            major, minor, patch = version
-            if bump == "major":
-                return (major + 1, 0, 0)
-            if bump == "minor":
-                return (major, minor + 1, 0)
-            return (major, minor, patch + 1)
-
-        token = os.environ["GH_TOKEN"]
-        repo = os.environ["REPO"]
-        from_tag = os.environ.get("FROM_TAG", "")
-        pr_ids_raw = os.environ.get("PR_IDS", "")
-        tag_suffix = os.environ.get("TAG_SUFFIX", "")
-
-        pr_ids = [x.strip() for x in pr_ids_raw.split(",") if x.strip()]
-        labels = set()
-        for pr_id in pr_ids:
-            url = f"https://api.github.com/repos/{repo}/pulls/{pr_id}"
-            req = urllib.request.Request(
-                url,
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/vnd.github+json",
-                    "User-Agent": "release-draft-action",
-                },
-            )
-            with urllib.request.urlopen(req) as resp:
-                payload = json.loads(resp.read().decode("utf-8"))
-            for label in payload.get("labels", []):
-                name = label.get("name")
-                if name:
-                    labels.add(name)
-
-        if "major" in labels or "breaking" in labels:
-            bump = "major"
-        elif "enhancement" in labels:
-            bump = "minor"
-        else:
-            bump = "patch"
-
-        next_version = bump_version(parse_version(from_tag), bump)
-        version = f"{next_version[0]}.{next_version[1]}.{next_version[2]}"
-        tag_name = f"v{version}{tag_suffix}"
-        release_name = f"Release v{version}{tag_suffix}"
-
-        output_path = os.environ["GITHUB_OUTPUT"]
-        with open(output_path, "a", encoding="utf-8") as fh:
-            fh.write(f"tag_name={tag_name}\n")
-            fh.write(f"release_name={release_name}\n")
-        PY
+    - name: Resolve release name override
+      id: resolve-release-name
+      shell: bash
+      run: |
+        echo "name=${{ inputs.name || steps.resolve-version.outputs.release_name }}" | tee -a "$GITHUB_OUTPUT"
 
     - name: Create or update draft release
+      id: upsert-release
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.github_token }}
-        TAG_NAME: ${{ steps.resolve-version.outputs.tag_name }}
-        RELEASE_NAME: ${{ steps.resolve-version.outputs.release_name }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+        TAG_NAME: ${{ steps.resolve-tag-name.outputs.tag_name }}
+        RELEASE_NAME: ${{ steps.resolve-release-name.outputs.name }}
         CHANGELOG: ${{ steps.changelog.outputs.changelog }}
       run: |
-        set -euo pipefail
-
-        EXISTING_RELEASE_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}" 2>/dev/null || true)"
-        if [ -n "$EXISTING_RELEASE_JSON" ]; then
-          DRAFT_STATE="$(jq -r '.draft' <<< "$EXISTING_RELEASE_JSON")"
-          RELEASE_ID="$(jq -r '.id' <<< "$EXISTING_RELEASE_JSON")"
-          if [ "$DRAFT_STATE" != "true" ]; then
-            echo "Release ${TAG_NAME} already exists and is not a draft."
-            exit 1
-          fi
-
-          jq -n \
-            --arg name "$RELEASE_NAME" \
-            --arg body "$CHANGELOG" \
-            '{name: $name, body: $body, draft: true}' > /tmp/release-payload.json
-          gh api \
-            -X PATCH \
-            "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
-            --input /tmp/release-payload.json >/dev/null
-          echo "Updated existing draft release ${TAG_NAME} (${RELEASE_ID})."
-        else
-          jq -n \
-            --arg tag_name "$TAG_NAME" \
-            --arg name "$RELEASE_NAME" \
-            --arg body "$CHANGELOG" \
-            '{tag_name: $tag_name, name: $name, body: $body, draft: true, prerelease: false}' > /tmp/release-payload.json
-          gh api \
-            -X POST \
-            "repos/${GITHUB_REPOSITORY}/releases" \
-            --input /tmp/release-payload.json >/dev/null
-          echo "Created new draft release ${TAG_NAME}."
-        fi
+        RELEASE_JSON="$(bash "${{ github.action_path }}/upsert_draft_release.sh")"
+        echo "id=$(jq -r '.id' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "name=$(jq -r '.name' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "tag_name=$(jq -r '.tag_name' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "html_url=$(jq -r '.html_url' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "upload_url=$(jq -r '.upload_url' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        {
+          echo "body<<EOF_RELEASE_DRAFT_BODY"
+          jq -r '.body' <<< "$RELEASE_JSON"
+          echo "EOF_RELEASE_DRAFT_BODY"
+        } | tee -a "$GITHUB_OUTPUT"
