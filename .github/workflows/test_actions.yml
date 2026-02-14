@@ -344,12 +344,180 @@ jobs:
 
           exit "$BATS_STATUS"
 
+  actions-changelog:
+    permissions:
+      contents: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Run version-resolver action
+        id: resolver
+        uses: ./actions/version-resolver
+        with:
+          gh-token: ${{ github.token }}
+
+      - name: Run changelog action
+        id: changelog
+        uses: ./actions/changelog
+        with:
+          pr-info-path: ${{ steps.resolver.outputs.pr-info-path }}
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify changelog outputs
+        shell: bash
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+          CHANGES: ${{ steps.changelog.outputs.changes }}
+          PULL_REQUESTS: ${{ steps.changelog.outputs.pull-requests }}
+          PR_INFO_PATH: ${{ steps.resolver.outputs.pr-info-path }}
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats tests/bats/changelog_outputs.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+          TEST_SUMMARY="Changelog output test"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
+          else
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
+          fi
+          echo "$TEST_SUMMARY"
+
+          echo "$BATS_OUTPUT"
+
+          {
+            echo "### Changelog outputs"
+            echo ""
+            echo "pull_requests: \`$PULL_REQUESTS\`"
+            echo ""
+            echo "<details><summary>Changelog</summary>"
+            echo ""
+            echo "$CHANGELOG"
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
+
+  actions-release-draft:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set draft release test values
+        id: test-values
+        shell: bash
+        run: |
+          TAG_NAME="ci-draft-${{ github.run_id }}-${{ github.run_attempt }}"
+          RELEASE_NAME="test-release-${{ github.run_id }}-${{ github.run_attempt }}"
+          echo "tag-name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "release-name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Run release-draft action
+        id: release-draft
+        uses: ./actions/release-draft
+        with:
+          token: ${{ github.token }}
+          name: ${{ steps.test-values.outputs.release-name }}
+          tag-name: ${{ steps.test-values.outputs.tag-name }}
+          changelog: |
+            # Test Changelog
+
+            - Release draft integration test.
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify release-draft outputs
+        shell: bash
+        env:
+          RELEASE_ID: ${{ steps.release-draft.outputs.id }}
+          RELEASE_NAME: ${{ steps.release-draft.outputs.name }}
+          RELEASE_TAG_NAME: ${{ steps.release-draft.outputs.tag-name }}
+          RELEASE_HTML_URL: ${{ steps.release-draft.outputs.html-url }}
+          RELEASE_UPLOAD_URL: ${{ steps.release-draft.outputs.upload-url }}
+          EXPECTED_RELEASE_NAME: ${{ steps.test-values.outputs.release-name }}
+          EXPECTED_RELEASE_TAG_NAME: ${{ steps.test-values.outputs.tag-name }}
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats tests/bats/release_draft_outputs.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+          TEST_SUMMARY="Release draft output test"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
+          else
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
+          fi
+          echo "$TEST_SUMMARY"
+
+          {
+            echo "### Release draft outputs"
+            echo ""
+            echo "id: \`$RELEASE_ID\`"
+            echo "name: \`$RELEASE_NAME\`"
+            echo "tag-name: \`$RELEASE_TAG_NAME\`"
+            echo "html-url: \`$RELEASE_HTML_URL\`"
+            echo "upload-url: \`$RELEASE_UPLOAD_URL\`"
+            echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
+
+      - name: Delete draft release
+        if: ${{ always() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.release-draft.outputs.id }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_ID:-}" ]; then
+            echo "No release id to clean up."
+            exit 0
+          fi
+          gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
+
   actions-success:
     needs:
       - actions-unit-tests
       - actions-pr-labeler
       - actions-mkdocs-config
       - actions-version-resolver
+      - actions-changelog
+      - actions-release-draft
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
