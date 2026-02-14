@@ -1,24 +1,50 @@
 name: Release draft
-description: Draft release notes for your next release based on merged PRs.
+description: Create or update a draft release from provided name/tag/changelog.
 inputs:
-  github_token:
+  token:
     description: GitHub token used to draft the release.
     required: true
+  name:
+    description: Release name.
+    required: true
+  tag-name:
+    description: Release tag name.
+    required: true
+  changelog:
+    description: Changelog body used for release notes.
+    required: true
 outputs:
-  tag_name:
-    description: The tag name of the drafted release.
-    value: ${{ steps.release-draft.outputs.tag_name }}
+  id:
+    description: The release ID.
+    value: ${{ steps.upsert.outputs.id }}
+  name:
+    description: The release name.
+    value: ${{ steps.upsert.outputs.name }}
+  tag-name:
+    description: The release tag name.
+    value: ${{ steps.upsert.outputs.tag-name }}
+  html-url:
+    description: The HTML URL for the release.
+    value: ${{ steps.upsert.outputs.html-url }}
+  upload-url:
+    description: The upload URL for release assets.
+    value: ${{ steps.upsert.outputs.upload-url }}
 runs:
   using: composite
   steps:
-    - name: Setup release-drafter config
+    - name: Create or update draft release
+      id: upsert
       shell: bash
-      run: |
-        mkdir -p .github
-        cp "${{ github.action_path }}/release-drafter.yml" .github/release-drafter.yml
-    - uses: release-drafter/release-drafter@v5.20.0
-      id: release-draft
-      with:
-        config-name: release-drafter.yml
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GH_TOKEN: ${{ inputs.token }}
+        TAG_NAME: ${{ inputs.tag-name }}
+        RELEASE_NAME: ${{ inputs.name }}
+        CHANGELOG: ${{ inputs.changelog }}
+      run: |
+        set -euo pipefail
+        RELEASE_JSON="$(bash "${{ github.action_path }}/upsert_draft_release.sh")"
+        echo "id=$(jq -r '.id' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
+        echo "name=$(jq -r '.name' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
+        echo "tag-name=$(jq -r '.tag_name' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
+        echo "html-url=$(jq -r '.html_url' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
+        echo "upload-url=$(jq -r '.upload_url' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
