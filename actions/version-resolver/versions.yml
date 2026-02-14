@@ -1,0 +1,16 @@
+version-resolver:
+  major:
+    labels:
+      - 'breaking'
+      - 'major'
+  minor:
+    labels:
+      - 'feature'
+      - 'minor'
+  patch:
+    labels:
+      - 'bug'
+      - 'maintenance'
+      - 'docs'
+      - 'dependencies'
+      - 'security'

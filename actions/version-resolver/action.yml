@@ -1,0 +1,90 @@
+name: Version resolver
+description: Resolve changelog base ref and next semantic version from version-resolver labels.
+inputs:
+  configuration-path:
+    description: Path to version-resolver config.
+    required: false
+    default: ""
+  repo:
+    description: Repository in owner/repo format for PR lookup.
+    required: false
+    default: ${{ github.repository }}
+  gh-token:
+    description: GitHub token used for API lookup.
+    required: false
+    default: ${{ github.token }}
+  pr-info-path:
+    description: Optional output path for resolver PR info JSON data.
+    required: false
+    default: ""
+outputs:
+  from-ref:
+    description: Resolved changelog base reference.
+    value: ${{ steps.resolve.outputs.from-ref }}
+  resolved-version:
+    description: Resolved semantic version.
+    value: ${{ steps.resolve.outputs.resolved-version }}
+  major-version:
+    description: Resolved major version.
+    value: ${{ steps.resolve.outputs.major-version }}
+  minor-version:
+    description: Resolved minor version.
+    value: ${{ steps.resolve.outputs.minor-version }}
+  patch-version:
+    description: Resolved patch version.
+    value: ${{ steps.resolve.outputs.patch-version }}
+  pr-info-path:
+    description: Path to resolver PR info JSON data file.
+    value: ${{ steps.resolve.outputs.pr-info-path }}
+runs:
+  using: composite
+  steps:
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python3 -m pip install --quiet pyyaml
+
+    - name: Version resolver configuration
+      id: config
+      shell: bash
+      run: |
+        echo "Using the following Version resolver configuration:"
+
+        if [ -z "${{ inputs.configuration-path }}" ]; then
+          CONFIG_PATH="${{ github.action_path }}/versions.yml"
+          echo "No configuration path provided, using default '$CONFIG_PATH'."
+        else
+          CONFIG_PATH="${{ inputs.configuration-path }}"
+          echo "Using configuration from '$CONFIG_PATH':"
+        fi
+
+        [ -f "$CONFIG_PATH" ] || { echo "Config not found: $CONFIG_PATH"; exit 1; }
+
+        echo "config-path=$CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
+        cat "$CONFIG_PATH"
+
+    - name: Resolve version metadata
+      id: resolve
+      shell: bash
+      env:
+        INPUT_CONFIG_PATH: ${{ steps.config.outputs.config-path }}
+        INPUT_REPO: ${{ inputs.repo }}
+        INPUT_GH_TOKEN: ${{ inputs.gh-token }}
+        INPUT_PR_INFO_PATH: ${{ inputs.pr-info-path }}
+      run: |
+        set -euo pipefail
+
+        CONFIG_PATH="$INPUT_CONFIG_PATH"
+        PR_INFO_PATH="$INPUT_PR_INFO_PATH"
+        if [ -z "$PR_INFO_PATH" ]; then
+          PR_INFO_PATH="$RUNNER_TEMP/version-resolver-pr-info.json"
+        fi
+
+        python3 "${{ github.action_path }}/version_resolver.py" \
+          --config-path "$CONFIG_PATH" \
+          --repo "$INPUT_REPO" \
+          --gh-token "$INPUT_GH_TOKEN" \
+          --to-ref "${{ github.sha }}" \
+          --output-path "$PR_INFO_PATH" \
+          --output-format line | tee -a "$GITHUB_OUTPUT"
+        echo "pr-info-path=$PR_INFO_PATH" | tee -a "$GITHUB_OUTPUT"

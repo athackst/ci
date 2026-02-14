@@ -9,6 +9,69 @@ permissions:
   pull-requests: write
 
 jobs:
+  actions-unit-tests:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Python test dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --quiet pyyaml
+
+      - name: Run action unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TEST_FILES < <(find actions -type f -path "*/tests/test_*.py" | sort)
+          if [ "${#TEST_FILES[@]}" -eq 0 ]; then
+            echo "No action unit tests found."
+            {
+              echo "### Action unit tests"
+              echo ""
+              echo "No action unit tests found."
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "### Action unit tests"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          ALL_STATUS=0
+
+          for test_file in "${TEST_FILES[@]}"; do
+            echo "Running $test_file"
+            set +e
+            TEST_OUTPUT="$(python3 -m unittest "$test_file" 2>&1)"
+            TEST_STATUS=$?
+            ALL_STATUS=$((ALL_STATUS + TEST_STATUS))
+            set -e
+            echo "$TEST_OUTPUT"
+            if [ "$TEST_STATUS" -eq 0 ]; then
+              TEST_STATUS_EMOJI=":white_check_mark:"
+            else
+              TEST_STATUS_EMOJI=":x:"
+            fi
+
+            {
+              echo "<details><summary>$TEST_STATUS_EMOJI $test_file</summary>"
+              echo ""
+              echo '```text'
+              echo "$TEST_OUTPUT"
+              echo '```'
+              echo ""
+              echo "</details>"
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+          
+          exit "$ALL_STATUS"
+          
   actions-pr-labeler:
     permissions:
       contents: read
@@ -71,15 +134,19 @@ jobs:
           EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
           set +e
-          ASSERT_OUTPUT="$(bats tests/bats/pr_labeler_assertion.bats 2>&1)"
-          ASSERT_STATUS=$?
-          if [ "$ASSERT_STATUS" -eq 0 ]; then
-            echo "Assertion passed"
+          BATS_OUTPUT="$(bats tests/bats/pr_labeler_assertion.bats 2>&1)"
+          BATS_STATUS=$?
+          TEST_SUMMARY="PR label assertion"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
           else
-            echo "Assertion failed"
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
           fi
+          echo $TEST_SUMMARY
+
           EXPECTED_COUNT="$(jq 'length' <<< "$EXPECTED_LABELS_JSON")"
           ACTUAL_COUNT="$(jq 'length' <<< "$ACTUAL_LABELS_JSON")"
+
           set -e
           {
             echo "### Action labeler results"
@@ -100,13 +167,17 @@ jobs:
             echo ""
             echo "</details>"
             echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
             echo '```text'
-            echo "$ASSERT_OUTPUT"
+            echo "$BATS_OUTPUT"
             echo '```'
+            echo ""
+            echo "</details>"
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
-          exit "$ASSERT_STATUS"
+          exit "$BATS_STATUS"
 
       - name: Post-clean expected labels
         if: ${{ always() }}
@@ -146,15 +217,26 @@ jobs:
           BATS_OUTPUT="$(bats tests/bats/mkdocs_config.bats 2>&1)"
           BATS_STATUS=$?
           set -e
+          TEST_SUMMARY="MkDocs config action test"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
+          else
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
+          fi
+          echo "$TEST_SUMMARY"
 
           echo "$BATS_OUTPUT"
 
           {
             echo "### mkdocs-config action test"
             echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
             echo '```text'
             echo "$BATS_OUTPUT"
             echo '```'
+            echo ""
+            echo "</details>"
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -183,10 +265,91 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
+  actions-version-resolver:
+    permissions:
+      contents: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Run version-resolver action
+        id: resolver
+        uses: ./actions/version-resolver
+        with:
+          gh-token: ${{ github.token }}
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify version-resolver outputs
+        shell: bash
+        env:
+          FROM_REF: ${{ steps.resolver.outputs.from-ref }}
+          RESOLVED_VERSION: ${{ steps.resolver.outputs.resolved-version }}
+          MAJOR_VERSION: ${{ steps.resolver.outputs.major-version }}
+          MINOR_VERSION: ${{ steps.resolver.outputs.minor-version }}
+          PATCH_VERSION: ${{ steps.resolver.outputs.patch-version }}
+          PR_INFO_PATH: ${{ steps.resolver.outputs.pr-info-path }}
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats tests/bats/version_resolver_outputs.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+          TEST_SUMMARY="Version resolver output test"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
+          else
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
+          fi
+          echo "$TEST_SUMMARY"
+
+          echo "$BATS_OUTPUT"
+
+          {
+            echo "### Version resolver outputs"
+            echo ""
+            echo "from_ref: \`$FROM_REF\`"
+            echo "resolved_version: \`$RESOLVED_VERSION\`"
+            echo "major_version: \`$MAJOR_VERSION\`"
+            echo "minor_version: \`$MINOR_VERSION\`"
+            echo "patch_version: \`$PATCH_VERSION\`"
+            echo "pr_info_path: \`$PR_INFO_PATH\`"
+            echo ""
+            echo "<details><summary>$PR_INFO_PATH</summary>"
+            echo ""
+            echo '```json'
+            echo ""
+            echo "$(cat "$PR_INFO_PATH")"
+            echo ""
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
+
   actions-success:
     needs:
+      - actions-unit-tests
       - actions-pr-labeler
       - actions-mkdocs-config
+      - actions-version-resolver
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
