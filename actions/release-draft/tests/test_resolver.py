@@ -2,6 +2,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ACTION_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ACTION_DIR))
@@ -114,6 +115,47 @@ exclude-labels:
         self.assertIn("#3", changes)
         self.assertNotIn("#2", changes)
         self.assertEqual(pr_ids, ["1", "3"])
+
+    def test_fetch_merged_prs_from_compare_deduplicates_and_filters(self):
+        compare_payload = {
+            "commits": [
+                {"sha": "sha1"},
+                {"sha": "sha2"},
+            ]
+        }
+        pulls_sha1 = [
+            {"number": 1, "merged_at": "2024-01-01T00:00:00Z"},
+            {"number": 2, "merged_at": None},
+        ]
+        pulls_sha2 = [
+            {"number": 1, "merged_at": "2024-01-01T00:00:00Z"},
+            {"number": 3, "merged_at": "2024-01-03T00:00:00Z"},
+        ]
+        with mock.patch.object(
+            changelog,
+            "gh_get",
+            side_effect=[compare_payload, pulls_sha1, pulls_sha2],
+        ):
+            prs = changelog.fetch_merged_prs_from_compare(
+                "owner/repo", "token", "from", "to"
+            )
+        self.assertEqual([pr["number"] for pr in prs], [1, 3])
+
+    def test_fetch_merged_prs_falls_back_to_pagination(self):
+        with mock.patch.object(
+            changelog,
+            "fetch_merged_prs_from_compare",
+            side_effect=RuntimeError("boom"),
+        ), mock.patch.object(
+            changelog,
+            "fetch_merged_prs_from_pagination",
+            return_value=[{"number": 42, "merged_at": "2024-01-01T00:00:00Z"}],
+        ) as fallback:
+            prs = changelog.fetch_merged_prs(
+                "owner/repo", "token", "from", "to", {"abc"}
+            )
+        fallback.assert_called_once()
+        self.assertEqual([pr["number"] for pr in prs], [42])
 
     def test_resolve_base_ref_prefers_latest_tag(self):
         from_ref, used_tag = resolver.resolve_base_ref(["v2.0.0", "v1.0.0"], "abc123")
