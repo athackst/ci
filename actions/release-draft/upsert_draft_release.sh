@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TMP_EXISTING_JSON="$(mktemp)"
-TMP_EXISTING_ERR="$(mktemp)"
-set +e
-gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}" >"$TMP_EXISTING_JSON" 2>"$TMP_EXISTING_ERR"
-LOOKUP_STATUS=$?
-set -e
+EXISTING_RELEASE_JSON="$(
+  gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" |
+    jq -c --arg tag "$TAG_NAME" 'map(select(.tag_name == $tag)) | first // empty'
+)"
 
-if [ "$LOOKUP_STATUS" -eq 0 ]; then
-  EXISTING_RELEASE_JSON="$(cat "$TMP_EXISTING_JSON")"
+if [ -n "$EXISTING_RELEASE_JSON" ]; then
   DRAFT_STATE="$(jq -r '.draft' <<< "$EXISTING_RELEASE_JSON")"
   RELEASE_ID="$(jq -r '.id' <<< "$EXISTING_RELEASE_JSON")"
   if [ "$DRAFT_STATE" != "true" ]; then
@@ -27,7 +24,7 @@ if [ "$LOOKUP_STATUS" -eq 0 ]; then
     --input /tmp/release-payload.json)"
   echo "Updated existing draft release ${TAG_NAME} (${RELEASE_ID})." >&2
   echo "$UPDATED_RELEASE_JSON"
-elif grep -q "HTTP 404" "$TMP_EXISTING_ERR"; then
+else
   jq -n \
     --arg tag_name "$TAG_NAME" \
     --arg name "$RELEASE_NAME" \
@@ -39,8 +36,4 @@ elif grep -q "HTTP 404" "$TMP_EXISTING_ERR"; then
     --input /tmp/release-payload.json)"
   echo "Created new draft release ${TAG_NAME}." >&2
   echo "$CREATED_RELEASE_JSON"
-else
-  echo "Failed to query release by tag '${TAG_NAME}'." >&2
-  cat "$TMP_EXISTING_ERR" >&2
-  exit 1
 fi
