@@ -26,10 +26,55 @@ jobs:
       htmlproofer-ignore-urls: |
         /^https://github.com/athackst/ci$/
 
+  workflow-release-draft:
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/release_draft.yml
+    secrets: inherit
+    with:
+      name: test-release-${{ github.run_id }}-${{ github.run_attempt }}
+      tag-name: ci-workflow-draft-${{ github.run_id }}-${{ github.run_attempt }}
+
+  workflow-release-draft-verify-and-cleanup:
+    permissions:
+      contents: write
+    needs: [workflow-release-draft]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify and cleanup workflow release draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.workflow-release-draft.outputs.id }}
+          EXPECTED_NAME: ${{ needs.workflow-release-draft.outputs.name }}
+          EXPECTED_TAG: ${{ needs.workflow-release-draft.outputs.tag-name }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${RELEASE_ID:-}" ]; then
+            echo "No release id returned; nothing to verify or clean up."
+            exit 0
+          fi
+
+          RELEASE_JSON="$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}")"
+          ACTUAL_NAME="$(jq -r '.name' <<< "$RELEASE_JSON")"
+          ACTUAL_TAG="$(jq -r '.tag_name' <<< "$RELEASE_JSON")"
+          ACTUAL_DRAFT="$(jq -r '.draft' <<< "$RELEASE_JSON")"
+
+          [ "$ACTUAL_DRAFT" = "true" ] || { echo "Expected draft release"; exit 1; }
+          [ "$ACTUAL_NAME" = "$EXPECTED_NAME" ] || { echo "Name mismatch"; exit 1; }
+          [ "$ACTUAL_TAG" = "$EXPECTED_TAG" ] || { echo "Tag mismatch"; exit 1; }
+
+          gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
+
   actions-success:
     needs:
       - workflow-pr-labeler
       - workflow-mkdocs-site
+      - workflow-release-draft
+      - workflow-release-draft-verify-and-cleanup
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results

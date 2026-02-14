@@ -7,42 +7,35 @@ or by using the composite actions under `actions/`.
 
 ## Reusable workflows
 
-Workflows live in `workflows/` and are called from another repo like this:
+Reusable workflows live in `.github/workflows/` and are called from another repo like this:
 
 ```yaml
 jobs:
   pr-labels:
-    uses: athackst/ci/workflows/pr_labeler.yml@main
+    uses: athackst/ci/.github/workflows/pr_labeler.yml@main
     secrets: inherit
 ```
 
 ```yaml
 jobs:
-  release:
-    uses: athackst/ci/workflows/release_draft.yml@main
+  draft-release:
+    uses: athackst/ci/.github/workflows/release_draft.yml@main
+    secrets: inherit
     with:
-      bump_script: .github/bump.sh
-      github_token: ${{ secrets.RELEASE_TOKEN }}
+      token: ${{ secrets.RELEASE_TOKEN }}
 ```
 
 ```yaml
 jobs:
   docs:
-    uses: athackst/ci/workflows/jekyll.yml@main
-```
-
-```yaml
-jobs:
-  docs:
-    uses: athackst/ci/workflows/mkdocs.yml@main
+    uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
 ```
 
 Available workflows:
 
 - `pr_labeler.yml` - Apply labels to PRs based on branch naming.
-- `release_draft.yml` - Draft release notes and optionally run a bump script.
-- `jekyll.yml` - Build, test, and deploy a Jekyll site to GitHub Pages.
-- `mkdocs.yml` - Build, test, and deploy MkDocs to GitHub Pages.
+- `release_draft.yml` - Resolve version metadata, generate changelog, and create/update a draft release.
+- `mkdocs_site.yml` - Build, test, and deploy MkDocs to GitHub Pages.
 
 ## Composite actions
 
@@ -57,6 +50,28 @@ steps:
       github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+### Version resolver
+
+```yaml
+steps:
+  - uses: athackst/ci/actions/version-resolver@main
+    id: version
+    with:
+      gh-token: ${{ secrets.GITHUB_TOKEN }}
+  - run: echo "Resolved version: ${{ steps.version.outputs.resolved-version }}"
+```
+
+### Changelog
+
+```yaml
+steps:
+  - uses: athackst/ci/actions/changelog@main
+    id: changelog
+    with:
+      pr-info-path: ${{ steps.version.outputs.pr-info-path }}
+  - run: echo "${{ steps.changelog.outputs.changelog }}"
+```
+
 ### Release draft
 
 ```yaml
@@ -64,6 +79,9 @@ steps:
   - uses: athackst/ci/actions/release-draft@main
     id: draft
     with:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
-  - run: echo "Drafted tag: ${{ steps.draft.outputs.tag_name }}"
+      token: ${{ secrets.GITHUB_TOKEN }}
+      name: Release v1.2.3
+      tag-name: v1.2.3
+      changelog: ${{ steps.changelog.outputs.changelog }}
+  - run: echo "Draft release id: ${{ steps.draft.outputs.id }}"
 ```
