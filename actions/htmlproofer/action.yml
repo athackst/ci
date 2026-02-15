@@ -1,0 +1,72 @@
+name: HTMLProofer
+description: Download built site artifact and run htmlproofer checks.
+inputs:
+  host:
+    description: Site host for htmlproofer URL swapping (for example, user.github.io).
+    required: true
+  base-path:
+    description: Site base path for htmlproofer URL swapping (for example, /repo).
+    required: false
+    default: ""
+  ignore-urls:
+    description: Optional newline-delimited URLs or regexes to ignore.
+    required: false
+    default: ""
+  artifact-name:
+    description: Artifact name containing built site content.
+    required: false
+    default: "github-pages"
+runs:
+  using: composite
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ./artifact
+
+    - name: Extract site
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p _site
+        if [ -f ./artifact/artifact.tar ]; then
+          tar --directory _site -xvf ./artifact/artifact.tar
+        else
+          TAR_FILE="$(find ./artifact -maxdepth 2 -type f -name '*.tar' | head -n1)"
+          if [ -n "$TAR_FILE" ]; then
+            tar --directory _site -xvf "$TAR_FILE"
+          else
+            cp -R ./artifact/. _site/
+          fi
+        fi
+
+    - name: Debug artifact contents
+      shell: bash
+      run: |
+        echo "Working directory contents:"
+        tree
+        echo "Index contents:"
+        cat _site/index.html
+
+    - name: Build ignore URLs for htmlproofer
+      id: ignore-urls
+      shell: bash
+      run: |
+        {
+          echo "ignore_urls<<EOF"
+          echo '/^https?://(www\.)?twitter\.com(/.*)?/'
+          echo '/^https?://x\.com(/.*)?/'
+          echo '/^https?://platform\.twitter\.com(/.*)?/'
+          echo '/^https?://fonts\.googleapis\.com(/.*)?/'
+          echo '/^https?://fonts\.gstatic\.com(/.*)?/'
+          echo '${{ inputs.ignore-urls }}'
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Test with htmlproofer
+      uses: athackst/htmlproofer-action@main
+      with:
+        host: ${{ inputs.host }}
+        base_path: ${{ inputs.base-path }}
+        ignore_urls: ${{ steps.ignore-urls.outputs.ignore_urls }}

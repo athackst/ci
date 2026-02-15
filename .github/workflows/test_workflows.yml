@@ -14,17 +14,17 @@ jobs:
     uses: ./.github/workflows/pr_labeler.yml
     secrets: inherit
 
-  workflow-mkdocs-site:
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/mkdocs_site.yml
-    secrets: inherit
-    with:
-      pages: false
-      htmlproofer-ignore-urls: |
-        /^https://github.com/athackst/ci$/
+  # workflow-mkdocs-site:
+  #   permissions:
+  #     contents: write
+  #     pages: write
+  #     id-token: write
+  #   uses: ./.github/workflows/mkdocs_site.yml
+  #   secrets: inherit
+  #   with:
+  #     pages: false
+  #     htmlproofer-ignore-urls: |
+  #       /^https://github.com/athackst/ci$/
 
   workflow-release-draft:
     permissions:

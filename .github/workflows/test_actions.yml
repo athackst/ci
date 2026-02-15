@@ -265,6 +265,61 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
+  actions-htmlproofer:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Upload artifact
+        # Automatically uploads an artifact from the './_site' directory by default
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./tests/fixtures/htmlproofer_site
+
+      - name: Run htmlproofer action
+        uses: ./actions/htmlproofer
+        with:
+          ignore-urls: |
+            /^https:\/\/example\.com$/
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify htmlproofer action outputs
+        shell: bash
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats tests/bats/htmlproofer_action.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+          TEST_SUMMARY="HTMLProofer action test"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
+          else
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
+          fi
+          echo "$TEST_SUMMARY"
+
+          {
+            echo "### htmlproofer action test"
+            echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
+
   actions-version-resolver:
     permissions:
       contents: read
@@ -515,6 +570,7 @@ jobs:
       - actions-unit-tests
       - actions-pr-labeler
       - actions-mkdocs-config
+      - actions-htmlproofer
       - actions-version-resolver
       - actions-changelog
       - actions-release-draft
