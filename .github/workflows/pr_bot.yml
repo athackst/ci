@@ -1,0 +1,82 @@
+name: PR Bot
+
+on:
+  workflow_call:
+    inputs:
+      token:
+        description: Optional token override for labeling, version resolution, and automerge.
+        type: string
+        required: false
+        default: ""
+      bump-script:
+        description: Optional script path to run after version resolution.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  pr-bot:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Run PR labeler
+        uses: athackst/ci/actions/pr-labeler@main
+        with:
+          github_token: ${{ inputs.token || github.token }}
+
+      - name: Resolve version metadata
+        id: version
+        if: ${{ inputs.bump-script != '' && github.actor != 'dependabot[bot]' }}
+        uses: athackst/ci/actions/version-resolver@main
+        with:
+          gh-token: ${{ inputs.token || github.token }}
+
+      - name: Run bump script
+        if: ${{ inputs.bump-script != '' && github.actor != 'dependabot[bot]' }}
+        shell: bash
+        env:
+          FROM_REF: ${{ steps.version.outputs.from-ref }}
+          RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version }}
+          MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
+          MINOR_VERSION: ${{ steps.version.outputs.minor-version }}
+          PATCH_VERSION: ${{ steps.version.outputs.patch-version }}
+          PR_INFO_PATH: ${{ steps.version.outputs.pr-info-path }}
+        run: |
+          set -euo pipefail
+
+          SCRIPT_PATH="${{ inputs.bump-script }}"
+          if [ ! -f "$SCRIPT_PATH" ]; then
+            echo "Bump script not found: $SCRIPT_PATH"
+            exit 1
+          fi
+
+          bash "$SCRIPT_PATH"
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Bump script produced no changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: apply automated version bump"
+          git push origin "HEAD:${{ github.head_ref }}"
+
+      - name: Enable auto-merge for Dependabot PR
+        if: ${{ github.actor == 'dependabot[bot]' && github.event.pull_request.draft == false }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ inputs.token || github.token }}
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" --auto --squash
