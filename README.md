@@ -20,8 +20,7 @@ jobs:
 jobs:
   draft-release:
     uses: athackst/ci/.github/workflows/release_draft.yml@main
-    secrets: inherit
-    with:
+    secrets:
       token: ${{ secrets.RELEASE_TOKEN }}
 ```
 
@@ -31,11 +30,31 @@ jobs:
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
 ```
 
+```yaml
+jobs:
+  jekyll-docs:
+    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
+    with:
+      path: docs
+```
+
+```yaml
+jobs:
+  pr-bot:
+    uses: athackst/ci/.github/workflows/pr_bot.yml@main
+    with:
+      bump-script: scripts/bump_version.sh
+    secrets:
+      token: ${{ secrets.BOT_TOKEN }}
+```
+
 Available workflows:
 
 - `pr_labeler.yml` - Apply labels to PRs based on branch naming.
+- `pr_bot.yml` - Opinionated PR automation: label PRs, optionally run version resolver + bump script, and enable Dependabot auto-merge.
 - `release_draft.yml` - Resolve version metadata, generate changelog, and create/update a draft release.
 - `mkdocs_site.yml` - Build, test, and deploy MkDocs to GitHub Pages.
+- `jekyll_site.yml` - Build, test, and deploy Jekyll to GitHub Pages.
 
 ## Composite actions
 

@@ -3,16 +3,15 @@ name: PR Bot
 on:
   workflow_call:
     inputs:
-      token:
-        description: Optional token override for labeling, version resolution, and automerge.
-        type: string
-        required: false
-        default: ""
       bump-script:
         description: Optional script path to run after version resolution.
         type: string
         required: false
         default: ""
+    secrets:
+      token:
+        description: Optional token override for labeling, version resolution, and automerge.
+        required: false
 
 permissions:
   contents: write
@@ -32,14 +31,14 @@ jobs:
       - name: Run PR labeler
         uses: athackst/ci/actions/pr-labeler@main
         with:
-          github_token: ${{ inputs.token || github.token }}
+          github_token: ${{ secrets.token || github.token }}
 
       - name: Resolve version metadata
         id: version
         if: ${{ inputs.bump-script != '' && github.actor != 'dependabot[bot]' }}
         uses: athackst/ci/actions/version-resolver@main
         with:
-          gh-token: ${{ inputs.token || github.token }}
+          gh-token: ${{ secrets.token || github.token }}
 
       - name: Run bump script
         if: ${{ inputs.bump-script != '' && github.actor != 'dependabot[bot]' }}
@@ -77,6 +76,6 @@ jobs:
         if: ${{ github.actor == 'dependabot[bot]' && github.event.pull_request.draft == false }}
         shell: bash
         env:
-          GH_TOKEN: ${{ inputs.token || github.token }}
+          GH_TOKEN: ${{ secrets.token || github.token }}
         run: |
           gh pr merge "${{ github.event.pull_request.number }}" --auto --squash
