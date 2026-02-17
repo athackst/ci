@@ -1,0 +1,39 @@
+name: Site
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  site-pr:
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+[% if site_generator == "mkdocs" %]
+    uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
+    with:
+      pages: false
+[% else %]
+    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
+    with:
+      pages: false
+[% endif %]
+    secrets: inherit
+
+  site-main:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+[% if site_generator == "mkdocs" %]
+    uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
+    with:
+      pages: true
+[% else %]
+    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
+    with:
+      pages: true
+[% endif %]
+    secrets: inherit
