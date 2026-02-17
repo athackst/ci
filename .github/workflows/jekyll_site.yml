@@ -3,11 +3,6 @@ name: Jekyll site CI/CD
 on:
   workflow_call:
     inputs:
-      token:
-        description: "GitHub token required to enable Pages if not already enabled. Defaults to the provided GITHUB_TOKEN secret, but that token does not have sufficient permissions to enable Pages if it is not already enabled."
-        default: ${{ github.token }}
-        type: string
-        required: false
       pages:
         description: "Whether to deploy to GitHub Pages. If false, the workflow will build the site and run htmlproofer tests, but not deploy. Default: true."
         type: boolean
@@ -33,12 +28,10 @@ on:
         type: string
         required: false
         default: "github-pages"
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+    secrets:
+      token:
+        description: Optional token override used by configure-pages.
+        required: false
 
 # Allow one concurrent deployment
 concurrency:
@@ -72,7 +65,7 @@ jobs:
         if: ${{ inputs.pages }}
         uses: actions/configure-pages@v5
         with:
-          token: ${{ inputs.token }}
+          token: ${{ secrets.token || github.token }}
           enablement: ${{ inputs.enablement }}
 
       - name: Build with Jekyll
@@ -81,7 +74,7 @@ jobs:
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path || steps.defaults.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
-          JEKYLL_GITHUB_TOKEN: ${{ inputs.token }}
+          JEKYLL_GITHUB_TOKEN: ${{ secrets.token || github.token }}
 
       - name: Debug output
         run: |

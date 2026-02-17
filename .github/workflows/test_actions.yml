@@ -123,6 +123,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
+          sleep 5  # Wait a moment for labels to be applied
           ACTUAL_LABELS_JSON="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels | map(.name)')"
           echo "actual-labels-json=$ACTUAL_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
 

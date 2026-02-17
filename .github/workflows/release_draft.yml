@@ -2,11 +2,6 @@ name: Release draft
 on:
   workflow_call:
     inputs:
-      token:
-        description: GitHub token used to create or update draft release.
-        type: string
-        required: false
-        default: ""
       name:
         description: Optional explicit release name override.
         type: string
@@ -17,16 +12,11 @@ on:
         type: string
         required: false
         default: ""
-      version-configuration-path:
-        description: Optional path to version-resolver configuration.
-        type: string
+    secrets:
+      token:
+        description: Optional token override used to create or update draft release.
         required: false
-        default: ""
-      changelog-configuration-path:
-        description: Optional path to changelog configuration.
-        type: string
-        required: false
-        default: ""
+
     outputs:
       id:
         description: Draft release id.
@@ -46,9 +36,6 @@ on:
       resolved-version:
         description: Resolved semantic version used for defaults.
         value: ${{ jobs.release-draft.outputs.resolved-version }}
-      pr-info-path:
-        description: Path to pr_info JSON generated during workflow run.
-        value: ${{ jobs.release-draft.outputs.pr-info-path }}
       changelog:
         description: Generated changelog markdown body.
         value: ${{ jobs.release-draft.outputs.changelog }}
@@ -66,7 +53,6 @@ jobs:
       html-url: ${{ steps.release.outputs.html-url }}
       upload-url: ${{ steps.release.outputs.upload-url }}
       resolved-version: ${{ steps.version.outputs.resolved-version }}
-      pr-info-path: ${{ steps.version.outputs.pr-info-path }}
       changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
       - uses: actions/checkout@v6
@@ -78,14 +64,12 @@ jobs:
         id: version
         uses: athackst/ci/actions/version-resolver@main
         with:
-          gh-token: ${{ inputs.token != '' && inputs.token || github.token }}
-          configuration-path: ${{ inputs.version-configuration-path }}
+          gh-token: ${{ secrets.token || github.token }}
 
       - name: Build changelog
         id: changelog
         uses: athackst/ci/actions/changelog@main
         with:
-          configuration-path: ${{ inputs.changelog-configuration-path }}
           pr-info-path: ${{ steps.version.outputs.pr-info-path }}
 
       - name: Resolve release name and tag
@@ -113,7 +97,7 @@ jobs:
         id: release
         uses: athackst/ci/actions/release-draft@main
         with:
-          token: ${{ inputs.token != '' && inputs.token || github.token }}
+          token: ${{ secrets.token || github.token }}
           name: ${{ steps.meta.outputs.name }}
           tag-name: ${{ steps.meta.outputs.tag-name }}
           changelog: ${{ steps.changelog.outputs.changelog }}
