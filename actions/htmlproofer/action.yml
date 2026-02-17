@@ -3,15 +3,13 @@ description: Download built site artifact and run htmlproofer checks.
 inputs:
   host:
     description: Site host for htmlproofer URL swapping (for example, user.github.io).
-    required: true
+    required: false
   base-path:
     description: Site base path for htmlproofer URL swapping (for example, /repo).
     required: false
-    default: ""
   ignore-urls:
     description: Optional newline-delimited URLs or regexes to ignore.
     required: false
-    default: ""
   artifact-name:
     description: Artifact name containing built site content.
     required: false

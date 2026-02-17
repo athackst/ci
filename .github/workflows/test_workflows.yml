@@ -166,7 +166,7 @@ jobs:
 
           gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
 
-  actions-success:
+  workflows-success:
     needs:
       - workflow-lint
       - workflow-pr-bot

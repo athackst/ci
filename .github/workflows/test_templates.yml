@@ -20,15 +20,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bats
-          (
-            cd .github/tools/actionlint
-            go install github.com/rhysd/actionlint/cmd/actionlint
-          )
-          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+
+      - name: Install copier
+        shell: bash
+        run: |
           python3 -m pip install --quiet copier
 
-      - name: Verify Copier template outputs (bats)
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
         shell: bash
+
+      - name: Verify Copier template outputs
+        shell: bash
+        env:
+            ACTIONLINT: ${{ steps.get_actionlint.outputs.executable }}
         run: |
           set +e
           BATS_OUTPUT="$(bats tests/bats/copier_template_outputs.bats 2>&1)"

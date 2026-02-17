@@ -2,6 +2,8 @@
 
 setup() {
   out_dir="$(mktemp -d)"
+  [ -n "${ACTIONLINT:-}" ]
+  [ -x "${ACTIONLINT}" ]
 }
 
 teardown() {
@@ -19,11 +21,6 @@ render_variant() {
     ./template "${out_dir}"
 }
 
-validate_rendered_yaml() {
-  local wf_dir="$1"
-  actionlint "${wf_dir}"/*.yml
-}
-
 @test "copier renders mkdocs variant" {
   render_variant mkdocs
   wf_dir="${out_dir}/.github/workflows"
@@ -35,7 +32,7 @@ validate_rendered_yaml() {
   run grep -q "mkdocs_site.yml@main" "${wf_dir}/site.yml"
   [ "$status" -eq 0 ]
 
-  run validate_rendered_yaml "${wf_dir}"
+  run "$ACTIONLINT" "${wf_dir}"/*.yml
   [ "$status" -eq 0 ]
 }
 
@@ -50,6 +47,6 @@ validate_rendered_yaml() {
   run grep -q "jekyll_site.yml@main" "${wf_dir}/site.yml"
   [ "$status" -eq 0 ]
 
-  run validate_rendered_yaml "${wf_dir}"
+  run "$ACTIONLINT" "${wf_dir}"/*.yml
   [ "$status" -eq 0 ]
 }

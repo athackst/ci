@@ -57,8 +57,8 @@ jobs:
       - name: Default outputs
         id: defaults
         run: |
-          echo "host=${{ github.repository_owner }}.github.io" >> $GITHUB_OUTPUT
-          echo "base_path=/${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
+          echo "host=${{ github.repository_owner }}.github.io" >> "$GITHUB_OUTPUT"
+          echo "base_path=/${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Pages
         id: pages
@@ -129,13 +129,13 @@ jobs:
       - name: Setup environment (release)
         if: ${{ inputs.release-tag != '' }}
         run: |
-          echo "VERSION=${{ inputs.release-tag }} ${{ inputs.version }}" >> $GITHUB_ENV
-          echo "DEFAULT_VERSION=${{ inputs.release-tag }}" >> $GITHUB_ENV
+          echo "VERSION=${{ inputs.release-tag }} ${{ inputs.version }}" >> "$GITHUB_ENV"
+          echo "DEFAULT_VERSION=${{ inputs.release-tag }}" >> "$GITHUB_ENV"
       - name: Setup environment (dev)
         if: ${{ inputs.release-tag == '' }}
         run: |
-          echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-          echo "DEFAULT_VERSION=" >> $GITHUB_ENV
+          echo "VERSION=${{ inputs.version }}" >> "$GITHUB_ENV"
+          echo "DEFAULT_VERSION=" >> "$GITHUB_ENV"
       - name: Publish Release docs
         uses: athackst/mkdocs-simple-plugin@main
         with:
