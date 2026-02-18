@@ -18,7 +18,7 @@ render_variant() {
   copier copy --trust --defaults \
     --data "site_generator=${variant}" \
     --data "bump_script_path=" \
-    ./template "${out_dir}"
+    . "${out_dir}"
 }
 
 @test "copier renders mkdocs variant" {

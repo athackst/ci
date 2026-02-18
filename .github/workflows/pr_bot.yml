@@ -13,6 +13,10 @@ on:
         description: Optional token override for labeling, version resolution, and automerge.
         required: false
 
+concurrency:
+  group: "pr-labeler-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
