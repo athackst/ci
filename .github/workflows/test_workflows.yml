@@ -4,6 +4,18 @@ on:
   pull_request:
 
 jobs:
+  workflow-lint:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: actionlint
+        uses: raven-actions/actionlint@v2
+        with:
+          files: ".github/workflows/*.yml"
+
   workflow-pr-bot:
     permissions:
       contents: write
@@ -154,8 +166,10 @@ jobs:
 
           gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
 
-  actions-success:
+  workflows-success:
     needs:
+      - workflow-lint
+      - workflow-pr-bot
       - workflow-pr-labeler
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify

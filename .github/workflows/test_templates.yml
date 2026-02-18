@@ -1,0 +1,77 @@
+name: Test templates
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-copier:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install template test dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Install copier
+        shell: bash
+        run: |
+          python3 -m pip install --quiet copier
+
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        shell: bash
+
+      - name: Verify Copier template outputs
+        shell: bash
+        env:
+            ACTIONLINT: ${{ steps.get_actionlint.outputs.executable }}
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats tests/bats/copier_template_outputs.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+          TEST_SUMMARY="Copier template output test"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
+          else
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
+          fi
+          echo "$TEST_SUMMARY"
+
+          echo "$BATS_OUTPUT"
+
+          {
+            echo "### Copier template outputs"
+            echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
+
+    
+  templates-success:
+    needs:
+      - test-copier
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate upstream job results
+        shell: bash
+        run: |
+          echo "All template tests passed."

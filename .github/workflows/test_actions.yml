@@ -143,7 +143,7 @@ jobs:
           else
             TEST_SUMMARY=":x: $TEST_SUMMARY failed."
           fi
-          echo $TEST_SUMMARY
+          echo "$TEST_SUMMARY"
 
           EXPECTED_COUNT="$(jq 'length' <<< "$EXPECTED_LABELS_JSON")"
           ACTUAL_COUNT="$(jq 'length' <<< "$ACTUAL_LABELS_JSON")"
@@ -382,7 +382,7 @@ jobs:
             echo ""
             echo '```json'
             echo ""
-            echo "$(cat "$PR_INFO_PATH")"
+            cat "$PR_INFO_PATH"
             echo ""
             echo '```'
             echo ""

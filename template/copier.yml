@@ -1,0 +1,23 @@
+_min_copier_version: "9.0.0"
+
+# Keep GitHub Actions expressions like ${{ ... }} untouched.
+_envops:
+  variable_start_string: "[["
+  variable_end_string: "]]"
+  block_start_string: "[%"
+  block_end_string: "%]"
+
+_answers_file: .copier-answers.ci.yml
+
+bump_script_path:
+  type: str
+  default: ""
+  help: Optional bump script path in the target repository (leave empty to disable).
+
+site_generator:
+  type: str
+  default: mkdocs
+  choices:
+    - mkdocs
+    - jekyll
+  help: Site workflow backend to use for docs publishing.

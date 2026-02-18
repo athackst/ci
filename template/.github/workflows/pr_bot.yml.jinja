@@ -1,0 +1,28 @@
+name: PR Bot
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  label-forks:
+    if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: athackst/ci/.github/workflows/pr_labeler.yml@main
+    secrets: inherit
+
+  pr-bot:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: athackst/ci/.github/workflows/pr_bot.yml@main
+[% if bump_script_path %]
+    with:
+      bump-script: [[ bump_script_path ]]
+[% endif %]
+    secrets: inherit
