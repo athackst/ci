@@ -127,18 +127,8 @@ Use it from another repository:
 
 ```bash
 # Initial apply from this repo's template subdirectory
-copier copy gh:athackst/ci --subdirectory template --trust .
+copier copy --trust gh:athackst/ci .
 
 # Update later
 copier update --trust
 ```
-
-Template entrypoint:
-
-- `template/copier.yml`
-
-Managed workflow templates currently include:
-
-- `template/.github/workflows/pr_bot.yml.jinja`
-- `template/.github/workflows/release_draft.yml.jinja`
-- `template/.github/workflows/site.yml.jinja` (`mkdocs` or `jekyll` selected via Copier prompt)
