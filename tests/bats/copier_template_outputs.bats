@@ -28,6 +28,7 @@ render_variant() {
   [ -f "${wf_dir}/pr_bot.yml" ]
   [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/site.yml" ]
+  [ -f "${wf_dir}/ci_update.yml" ]
 
   run grep -q "mkdocs_site.yml@main" "${wf_dir}/site.yml"
   [ "$status" -eq 0 ]
@@ -43,6 +44,7 @@ render_variant() {
   [ -f "${wf_dir}/pr_bot.yml" ]
   [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/site.yml" ]
+  [ -f "${wf_dir}/ci_update.yml" ]
 
   run grep -q "jekyll_site.yml@main" "${wf_dir}/site.yml"
   [ "$status" -eq 0 ]

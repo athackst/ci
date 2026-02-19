@@ -19,7 +19,7 @@ jobs:
 ```yaml
 jobs:
   draft-release:
-    uses: athackst/ci/.github/workflows/release_draft.yml@main
+    uses: athackst/ci/.github/workflows/release_drafter.yml@main
     secrets:
       token: ${{ secrets.RELEASE_TOKEN }}
 ```
@@ -41,9 +41,20 @@ jobs:
 ```yaml
 jobs:
   pr-bot:
-    uses: athackst/ci/.github/workflows/pr_bot.yml@main
+    uses: athackst/ci/.github/workflows/pr_automation.yml@main
     with:
       bump-script: scripts/bump_version.sh
+    secrets:
+      token: ${{ secrets.BOT_TOKEN }}
+```
+
+```yaml
+jobs:
+  ci-update:
+    uses: athackst/ci/.github/workflows/ci_updater.yml@main
+    with:
+      template-ref: main
+      create-pr: true
     secrets:
       token: ${{ secrets.BOT_TOKEN }}
 ```
@@ -51,8 +62,9 @@ jobs:
 Available workflows:
 
 - `pr_labeler.yml` - Apply labels to PRs based on branch naming.
-- `pr_bot.yml` - Opinionated PR automation: label PRs, optionally run version resolver + bump script, and enable Dependabot auto-merge.
-- `release_draft.yml` - Resolve version metadata, generate changelog, and create/update a draft release.
+- `pr_automation.yml` - Opinionated PR automation: label PRs, optionally run version resolver + bump script, and enable Dependabot auto-merge.
+- `ci_updater.yml` - Run Copier updates and open/update a PR with template changes.
+- `release_drafter.yml` - Resolve version metadata, generate changelog, and create/update a draft release.
 - `mkdocs_site.yml` - Build, test, and deploy MkDocs to GitHub Pages.
 - `jekyll_site.yml` - Build, test, and deploy Jekyll to GitHub Pages.
 
@@ -126,9 +138,16 @@ uvx copier --help
 Use it from another repository:
 
 ```bash
-# Initial apply from this repo's template subdirectory
+# Initial apply from this repo
 copier copy --trust gh:athackst/ci .
 
 # Update later
 copier update --trust
 ```
+
+Template files:
+
+- `template/.github/workflows/pr_bot.yml.jinja`
+- `template/.github/workflows/release_draft.yml.jinja`
+- `template/.github/workflows/site.yml.jinja` (`mkdocs` or `jekyll`)
+- `template/.github/workflows/ci_update.yml.jinja` (daily scheduled CI template updates)

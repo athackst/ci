@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: ./.github/workflows/pr_bot.yml
+    uses: ./.github/workflows/pr_automation.yml
     secrets: inherit
 
   workflow-pr-labeler:
@@ -127,7 +127,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
-    uses: ./.github/workflows/release_draft.yml
+    uses: ./.github/workflows/release_drafter.yml
     secrets: inherit
     with:
       name: test-release-${{ github.run_id }}-${{ github.run_attempt }}
@@ -166,6 +166,58 @@ jobs:
 
           gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
 
+  workflow-ci-updater:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/ci_updater.yml
+    secrets: inherit
+    with:
+      create-pr: false
+      push-changes: false
+
+  workflow-ci-updater-verify:
+    permissions:
+      contents: read
+    needs: [workflow-ci-updater]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify ci_updater outputs
+        shell: bash
+        env:
+          CHANGED: ${{ needs.workflow-ci-updater.outputs.changed }}
+          BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
+          PR_URL: ${{ needs.workflow-ci-updater.outputs.pr-url }}
+        run: |
+          set -euo pipefail
+
+          [ "$CHANGED" = "true" ] || [ "$CHANGED" = "false" ] || {
+            echo "Invalid changed output: $CHANGED"
+            exit 1
+          }
+          [ -n "$BRANCH" ] || {
+            echo "Missing branch output"
+            exit 1
+          }
+          [ "$BRANCH" != "HEAD" ] || {
+            echo "Invalid branch output: HEAD"
+            exit 1
+          }
+
+          if [ -n "$PR_URL" ]; then
+            echo "pr-url should be empty when create-pr=false"
+            exit 1
+          fi
+
+          {
+            echo "### CI updater outputs"
+            echo ""
+            echo "- changed: \`$CHANGED\`"
+            echo "- branch: \`$BRANCH\`"
+            echo "- pr-url: \`$PR_URL\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
   workflows-success:
     needs:
       - workflow-lint
@@ -174,6 +226,7 @@ jobs:
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify
       - workflow-release-draft-verify-and-cleanup
+      - workflow-ci-updater-verify
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results

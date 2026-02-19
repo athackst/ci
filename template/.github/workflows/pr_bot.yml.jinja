@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: athackst/ci/.github/workflows/pr_bot.yml@main
+    uses: athackst/ci/.github/workflows/pr_automation.yml@main
 [% if bump_script_path %]
     with:
       bump-script: [[ bump_script_path ]]
