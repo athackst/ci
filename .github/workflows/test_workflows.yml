@@ -170,6 +170,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     uses: ./.github/workflows/ci_updater.yml
     secrets: inherit
     with:
