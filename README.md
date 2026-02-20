@@ -53,7 +53,6 @@ jobs:
   ci-update:
     uses: athackst/ci/.github/workflows/ci_updater.yml@main
     with:
-      template-ref: main
       create-pr: true
     secrets:
       token: ${{ secrets.BOT_TOKEN }}
