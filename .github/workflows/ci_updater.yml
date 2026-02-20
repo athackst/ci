@@ -90,7 +90,7 @@ jobs:
           fi
 
           echo "ran=true" >> "$GITHUB_OUTPUT"
-          copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref "$TEMPLATE_REF"
+          copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref "$TEMPLATE_REF" --defaults
 
       - name: Detect changes
         id: detect
