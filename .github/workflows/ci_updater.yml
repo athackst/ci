@@ -3,11 +3,6 @@ name: CI updater
 on:
   workflow_call:
     inputs:
-      template-ref:
-        description: Template ref to apply (branch, tag, or SHA).
-        type: string
-        required: false
-        default: main
       create-pr:
         description: Create or update a PR with template changes.
         type: boolean
@@ -80,7 +75,6 @@ jobs:
         id: apply
         shell: bash
         env:
-          TEMPLATE_REF: ${{ inputs.template-ref }}
           ANSWERS_FILE: .copier-answers.ci.yml
         run: |
           set -euo pipefail
@@ -91,7 +85,7 @@ jobs:
           fi
 
           echo "ran=true" >> "$GITHUB_OUTPUT"
-          copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref "$TEMPLATE_REF" --defaults
+          copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref HEAD --defaults
 
       - name: Detect changes
         id: detect
