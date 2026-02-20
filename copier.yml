@@ -23,3 +23,9 @@ site_generator:
     - mkdocs
     - jekyll
   help: Site workflow backend to use for docs publishing.
+
+site_version:
+  type: str
+  default: ""
+  help: MkDocs version alias used for branch publishes (for example, latest).
+  when: "{{ site_generator == 'mkdocs' }}"
