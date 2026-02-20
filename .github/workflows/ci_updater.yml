@@ -80,16 +80,17 @@ jobs:
         shell: bash
         env:
           TEMPLATE_REF: ${{ inputs.template-ref }}
+          ANSWERS_FILE: .copier-answers.ci.yml
         run: |
           set -euo pipefail
-          if [ ! -f ".copier-answers.ci.yml" ]; then
-            echo "No .copier-answers.ci.yml found; skipping Copier update."
+          if [ ! -f "$ANSWERS_FILE" ]; then
+            echo "No $ANSWERS_FILE found; skipping Copier update."
             echo "ran=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo "ran=true" >> "$GITHUB_OUTPUT"
-          copier update --trust --vcs-ref "$TEMPLATE_REF"
+          copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref "$TEMPLATE_REF"
 
       - name: Detect changes
         id: detect
