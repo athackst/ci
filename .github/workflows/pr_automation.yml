@@ -30,6 +30,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.token || github.token }}
 
       - name: Run PR labeler
         uses: athackst/ci/actions/pr-labeler@main
