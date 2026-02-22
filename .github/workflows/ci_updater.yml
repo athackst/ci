@@ -13,6 +13,11 @@ on:
         type: boolean
         required: false
         default: true
+      automerge:
+        description: Enable auto-merge (squash) on the updater PR.
+        type: boolean
+        required: false
+        default: false
       pr-branch:
         description: Branch name used for template updates.
         type: string
@@ -166,3 +171,13 @@ jobs:
           fi
 
           echo "pr-url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        if: ${{ steps.detect.outputs.changed == 'true' && inputs.push-changes && inputs.create-pr && inputs.automerge }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.token || github.token }}
+          PR_URL: ${{ steps.pr.outputs.pr-url }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR_URL" --auto --squash

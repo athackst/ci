@@ -31,3 +31,7 @@ devops:
     - any-glob-to-any-file: [".github/**", ".vscode/**"]
   - description: "Change to development workflows"
   - color: "9B3864"
+
+automerge:
+  - description: "PRs that should be automerged when all checks pass"
+  - color: "0366d6"
