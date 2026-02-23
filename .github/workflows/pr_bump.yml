@@ -39,13 +39,14 @@ jobs:
 
       - name: Resolve version metadata
         id: version
-        if: ${{ inputs.bump-script != '' && github.actor != 'dependabot[bot]' }}
+        if: ${{ inputs.bump-script != ''}}
         uses: athackst/ci/actions/version-resolver@main
         with:
           gh-token: ${{ secrets.token || github.token }}
 
       - name: Run bump script
-        if: ${{ inputs.bump-script != '' && github.actor != 'dependabot[bot]' }}
+        id: bump
+        if: ${{ inputs.bump-script != '' }}
         shell: bash
         env:
           HEAD_REF: ${{ github.head_ref }}
@@ -69,6 +70,7 @@ jobs:
 
           if [ -z "$(git status --porcelain)" ]; then
             echo "Bump script produced no changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -81,8 +83,51 @@ jobs:
             exit 1
           fi
 
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "target-branch=$TARGET_BRANCH" >> "$GITHUB_OUTPUT"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "chore: apply automated version bump"
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          ACTOR: ${{ github.actor }}
+          BUMP_SCRIPT: ${{ inputs.bump-script }}
+          CHANGED: ${{ steps.bump.outputs.changed || 'false' }}
+          TARGET_BRANCH: ${{ steps.bump.outputs.target-branch || '' }}
+          FROM_REF: ${{ steps.version.outputs.from-ref }}
+          RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version }}
+          MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
+          MINOR_VERSION: ${{ steps.version.outputs.minor-version }}
+          PATCH_VERSION: ${{ steps.version.outputs.patch-version }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "### PR Bump"
+            echo ""
+
+            if [ -z "${BUMP_SCRIPT}" ]; then
+              echo ":information_source: No bump script configured; workflow performed no bump."
+            elif [ "${ACTOR}" = "dependabot[bot]" ]; then
+              echo ":information_source: Bump skipped for Dependabot PR."
+            elif [ -n "${RESOLVED_VERSION}" ]; then
+              if [ "${CHANGED}" = "true" ]; then
+                echo ":white_check_mark: Bump commit was created and pushed."
+              else
+                echo ":information_source: Bump script ran but produced no changes."
+              fi
+              echo ""
+              echo "from-ref: \`${FROM_REF}\`"
+              echo "target-branch: \`${TARGET_BRANCH}\`"
+              echo "resolved-version: \`${RESOLVED_VERSION}\`"
+              echo "version-parts: \`${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}\`"
+            fi
+
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
