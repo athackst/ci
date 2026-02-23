@@ -1,7 +1,6 @@
 name: PR labeler
 on:
   workflow_call:
-
 concurrency:
   group: "pr-labeler-${{ github.event.pull_request.number || github.ref }}"
   cancel-in-progress: false
