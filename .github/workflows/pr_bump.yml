@@ -1,4 +1,4 @@
-name: PR Bot
+name: PR Bump
 
 on:
   workflow_call:
@@ -8,13 +8,18 @@ on:
         type: string
         required: false
         default: ""
+      push-branch:
+        description: Optional branch override for pushing bump commits (defaults to PR head branch).
+        type: string
+        required: false
+        default: ""
     secrets:
       token:
         description: Optional token override for labeling, version resolution, and automerge.
         required: false
 
 concurrency:
-  group: "pr-labeler-${{ github.event.pull_request.number || github.ref }}"
+  group: "bump-${{ github.event.pull_request.number || github.ref }}"
   cancel-in-progress: false
 
 permissions:
@@ -22,7 +27,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  pr-bot:
+  pr-bump:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,11 +36,6 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           token: ${{ secrets.token || github.token }}
-
-      - name: Run PR labeler
-        uses: athackst/ci/actions/pr-labeler@main
-        with:
-          github_token: ${{ secrets.token || github.token }}
 
       - name: Resolve version metadata
         id: version
@@ -49,6 +49,7 @@ jobs:
         shell: bash
         env:
           HEAD_REF: ${{ github.head_ref }}
+          PUSH_BRANCH: ${{ inputs.push-branch }}
           FROM_REF: ${{ steps.version.outputs.from-ref }}
           RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version }}
           MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
@@ -71,16 +72,17 @@ jobs:
             exit 0
           fi
 
+          TARGET_BRANCH="$PUSH_BRANCH"
+          if [ -z "$TARGET_BRANCH" ]; then
+            TARGET_BRANCH="$HEAD_REF"
+          fi
+          if [ -z "$TARGET_BRANCH" ] || [ "$TARGET_BRANCH" = "HEAD" ]; then
+            echo "Unable to resolve a valid target branch for bump commit push."
+            exit 1
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "chore: apply automated version bump"
-          git push origin "HEAD:${HEAD_REF}"
-
-      - name: Enable auto-merge for Dependabot PR
-        if: ${{ github.actor == 'dependabot[bot]' && github.event.pull_request.draft == false }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
-        run: |
-          gh pr merge "${{ github.event.pull_request.number }}" --auto --squash
+          git push origin "HEAD:refs/heads/${TARGET_BRANCH}"

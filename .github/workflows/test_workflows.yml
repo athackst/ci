@@ -16,11 +16,98 @@ jobs:
         with:
           files: ".github/workflows/*.yml"
 
-  workflow-pr-bot:
+  workflow-pr-bump:
     permissions:
       contents: write
       pull-requests: write
-    uses: ./.github/workflows/pr_automation.yml
+    uses: ./.github/workflows/pr_bump.yml
+    with:
+      bump-script: tests/fixtures/pr_bump.sh
+      push-branch: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
+    secrets: inherit
+
+  workflow-pr-bump-verify-and-cleanup:
+    permissions:
+      contents: write
+      pull-requests: read
+    needs: [workflow-pr-bump]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify pr_bump workflow result
+        shell: bash
+        env:
+          RESULT: ${{ needs.workflow-pr-bump.result }}
+        run: |
+          set -euo pipefail
+          [ "$RESULT" = "success" ] || {
+            echo "workflow-pr-bump result was: $RESULT"
+            exit 1
+          }
+
+      - name: Checkout PR head branch
+        uses: actions/checkout@v6
+        with:
+          ref: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
+          fetch-depth: 1
+
+      - name: Verify pr_bump fixture output
+        shell: bash
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+
+          OUT_FILE="tests/fixtures/pr_bump_output.txt"
+          [ -f "$OUT_FILE" ] || {
+            echo "Missing pr_bump fixture output: $OUT_FILE"
+            exit 1
+          }
+
+          grep -q "^run_id=${RUN_ID}$" "$OUT_FILE"
+          grep -q "^run_attempt=${RUN_ATTEMPT}$" "$OUT_FILE"
+          grep -q '^from_ref=' "$OUT_FILE"
+          grep -q '^resolved_version=' "$OUT_FILE"
+          grep -q '^major_version=' "$OUT_FILE"
+          grep -q '^minor_version=' "$OUT_FILE"
+          grep -q '^patch_version=' "$OUT_FILE"
+
+          RESOLVED_VERSION="$(sed -n 's/^resolved_version=//p' "$OUT_FILE")"
+          VERSION_PARTS="$(sed -n 's/^version_parts=//p' "$OUT_FILE")"
+          [ -n "$RESOLVED_VERSION" ] || {
+            echo "resolved_version was empty"
+            cat "$OUT_FILE"
+            exit 1
+          }
+          [ "$RESOLVED_VERSION" = "$VERSION_PARTS" ] || {
+            echo "version_parts did not match resolved_version"
+            cat "$OUT_FILE"
+            exit 1
+          }
+
+          {
+            echo "### PR bump fixture output"
+            echo ""
+            cat "$OUT_FILE"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete pr_bump test branch
+        if: ${{ always() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_BRANCH: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${TEST_BRANCH}" || true
+
+  workflow-automerge:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/automerge.yml
     secrets: inherit
 
   workflow-pr-labeler:
@@ -173,9 +260,6 @@ jobs:
       actions: write
     uses: ./.github/workflows/ci_updater.yml
     secrets: inherit
-    with:
-      create-pr: false
-      push-changes: false
 
   workflow-ci-updater-verify:
     permissions:
@@ -222,7 +306,8 @@ jobs:
   workflows-success:
     needs:
       - workflow-lint
-      - workflow-pr-bot
+      - workflow-pr-bump-verify-and-cleanup
+      - workflow-automerge
       - workflow-pr-labeler
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify

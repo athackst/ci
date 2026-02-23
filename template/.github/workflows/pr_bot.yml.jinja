@@ -15,15 +15,34 @@ jobs:
     uses: athackst/ci/.github/workflows/pr_labeler.yml@main
     secrets: inherit
 
-  pr-bot:
+  label-prs:
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: athackst/ci/.github/workflows/pr_labeler.yml@main
+    secrets: inherit
+
+  pr-bump:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: label-prs
     permissions:
       contents: write
       pull-requests: write
-    uses: athackst/ci/.github/workflows/pr_automation.yml@main
+    uses: athackst/ci/.github/workflows/pr_bump.yml@main
 [% if bump_script_path %]
     with:
       bump-script: [[ bump_script_path ]]
 [% endif %]
+    secrets:
+      token: ${{ secrets.CI_BOT_TOKEN }}
+
+  pr-automerge:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: label-prs
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: athackst/ci/.github/workflows/automerge.yml@main
     secrets:
       token: ${{ secrets.CI_BOT_TOKEN }}

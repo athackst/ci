@@ -8,11 +8,6 @@ on:
         type: boolean
         required: false
         default: true
-      push-changes:
-        description: Push update commit to the remote branch.
-        type: boolean
-        required: false
-        default: true
       automerge:
         description: Enable auto-merge (squash) on the updater PR.
         type: boolean
@@ -61,9 +56,9 @@ jobs:
   update:
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.detect.outputs.changed }}
-      branch: ${{ steps.meta.outputs.branch }}
-      pr-url: ${{ steps.pr.outputs.pr-url }}
+      changed: ${{ steps.pr.outputs.pull-request-number != '' }}
+      branch: ${{ steps.pr.outputs.pull-request-branch }}
+      pr-url: ${{ steps.pr.outputs.pull-request-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -92,92 +87,15 @@ jobs:
           echo "ran=true" >> "$GITHUB_OUTPUT"
           copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref HEAD --defaults
 
-      - name: Detect changes
-        id: detect
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Resolve metadata
-        id: meta
-        shell: bash
-        env:
-          PR_BRANCH: ${{ inputs.pr-branch }}
-          CREATE_PR: ${{ inputs.create-pr }}
-          HEAD_REF: ${{ github.head_ref }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          BRANCH="$PR_BRANCH"
-          if [ "$CREATE_PR" != "true" ]; then
-            if [ -n "${HEAD_REF}" ]; then
-              BRANCH="${HEAD_REF}"
-            else
-              BRANCH="${REF_NAME}"
-            fi
-          fi
-
-          if [ -z "$BRANCH" ] || [ "$BRANCH" = "HEAD" ]; then
-            echo "Unable to resolve a valid branch name for push."
-            exit 1
-          fi
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-
-      - name: Commit and push changes
-        if: ${{ steps.detect.outputs.changed == 'true' && inputs.push-changes }}
-        shell: bash
-        env:
-          BRANCH: ${{ steps.meta.outputs.branch }}
-          CREATE_PR: ${{ inputs.create-pr }}
-          COMMIT_MESSAGE: ${{ inputs.commit-message }}
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          if [ "$CREATE_PR" = "true" ]; then
-            git checkout -B "$BRANCH"
-          fi
-
-          git add -A
-          git commit -m "$COMMIT_MESSAGE"
-          if [ "$CREATE_PR" = "true" ]; then
-            git push --force-with-lease origin "HEAD:$BRANCH"
-          else
-            git push origin "HEAD:$BRANCH"
-          fi
-
-      - name: Create or find PR
+      - name: Create or update PR
         id: pr
-        if: ${{ steps.detect.outputs.changed == 'true' && inputs.push-changes && inputs.create-pr }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
-          BRANCH: ${{ steps.meta.outputs.branch }}
-          PR_TITLE: ${{ inputs.pr-title }}
-          COMMIT_MESSAGE: ${{ inputs.commit-message }}
-        run: |
-          set -euo pipefail
-
-          PR_URL="$(gh pr list --state open --head "$BRANCH" --json url --jq '.[0].url // empty')"
-          if [ -z "$PR_URL" ]; then
-            PR_URL="$(gh pr create --head "$BRANCH" --title "$PR_TITLE" --body "$COMMIT_MESSAGE")"
-          fi
-
-          echo "pr-url=$PR_URL" >> "$GITHUB_OUTPUT"
-
-      - name: Enable auto-merge
-        if: ${{ steps.detect.outputs.changed == 'true' && inputs.push-changes && inputs.create-pr && inputs.automerge }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
-          PR_URL: ${{ steps.pr.outputs.pr-url }}
-        run: |
-          set -euo pipefail
-          gh pr merge "$PR_URL" --auto --squash
+        if: ${{ inputs.create-pr && github.event.pull_request.head.repo.full_name == github.repository}}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.token || github.token }}
+          base: ${{ github.event.repository.default_branch }}
+          branch: ${{ inputs.pr-branch }}
+          commit-message: ${{ inputs.commit-message }}
+          title: ${{ inputs.pr-title }}
+          body: ${{ inputs.commit-message }}
+          labels: ${{ inputs.automerge == 'true' && 'automerge' || '' }}

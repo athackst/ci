@@ -26,6 +26,11 @@ dependencies:
   - description: "Pull requests that update a dependency file"
   - color: "0366d6"
 
+automerge:
+  - head-branch: ['^dependabot/', '^chore/update-ci-template$']
+  - description: "PRs eligible for automatic merge"
+  - color: "1d76db"
+
 devops:
   - changed-files:
     - any-glob-to-any-file: [".github/**", ".vscode/**"]

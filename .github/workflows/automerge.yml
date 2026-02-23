@@ -1,0 +1,37 @@
+name: Automerge
+on:
+  workflow_call:
+    secrets:
+      token:
+        description: Optional token override for labeling, version resolution, and automerge.
+        required: false
+
+concurrency:
+  group: "automerge-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  automerge:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check automerge label
+        id: automerge-label
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.token || github.token }}
+        run: |
+          set -euo pipefail
+          HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
+          echo "has-automerge=$HAS_AUTOMERGE" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge for labeled PR
+        if: ${{ steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.token || github.token }}
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
