@@ -99,3 +99,47 @@ jobs:
           title: ${{ inputs.pr-title }}
           body: ${{ inputs.commit-message }}
           labels: ${{ inputs.automerge == 'true' && 'automerge' || '' }}
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          APPLY_RAN: ${{ steps.apply.outputs.ran || 'false' }}
+          CREATE_PR_REQUESTED: ${{ inputs.create-pr }}
+          AUTOMERGE_REQUESTED: ${{ inputs.automerge }}
+          PR_BRANCH_INPUT: ${{ inputs.pr-branch }}
+          PR_OPERATION: ${{ steps.pr.outputs.pull-request-operation }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          PR_BRANCH: ${{ steps.pr.outputs.pull-request-branch }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "### CI Updater"
+            echo ""
+            echo "- copier-ran: \`${APPLY_RAN}\`"
+            echo "- create-pr-requested: \`${CREATE_PR_REQUESTED}\`"
+            echo "- automerge-requested: \`${AUTOMERGE_REQUESTED}\`"
+            echo "- requested-branch: \`${PR_BRANCH_INPUT}\`"
+            echo ""
+
+            if [ "${APPLY_RAN}" != "true" ]; then
+              echo ":warning: No update attempted (missing \`.copier-answers.ci.yml\`)."
+            elif [ -n "${PR_URL}" ]; then
+              echo ":white_check_mark: PR created or updated successfully."
+              echo ""
+              echo "- pr-operation: \`${PR_OPERATION:-unknown}\`"
+              echo "- pr-number: \`${PR_NUMBER}\`"
+              echo "- pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
+              echo "- pr-url: ${PR_URL}"
+            elif [ "${CREATE_PR_REQUESTED}" = "true" ]; then
+              echo ":x: No PR created or updated."
+              echo ""
+              echo "- pr-operation: \`${PR_OPERATION:-none}\`"
+            else
+              echo "PR creation disabled by input."
+            fi
+
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
