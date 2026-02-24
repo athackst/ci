@@ -108,7 +108,8 @@ jobs:
       contents: read
       pull-requests: write
     uses: ./.github/workflows/automerge.yml
-    secrets: inherit
+    secrets:
+      token: ${{ secrets.CI_BOT_TOKEN }}
 
   workflow-pr-labeler:
     permissions:
@@ -260,6 +261,8 @@ jobs:
       actions: write
     uses: ./.github/workflows/ci_updater.yml
     secrets: inherit
+    with:
+      create-pr: true
 
   workflow-ci-updater-verify:
     permissions:
@@ -280,18 +283,19 @@ jobs:
             echo "Invalid changed output: $CHANGED"
             exit 1
           }
-          [ -n "$BRANCH" ] || {
-            echo "Missing branch output"
-            exit 1
-          }
-          [ "$BRANCH" != "HEAD" ] || {
-            echo "Invalid branch output: HEAD"
-            exit 1
-          }
-
-          if [ -n "$PR_URL" ]; then
-            echo "pr-url should be empty when create-pr=false"
-            exit 1
+          if [ "$CHANGED" = "true" ]; then
+            [ -n "$BRANCH" ] || {
+              echo "Missing branch output when changed=true"
+              exit 1
+            }
+            [ "$BRANCH" != "HEAD" ] || {
+              echo "Invalid branch output: HEAD"
+              exit 1
+            }
+            [ -n "$PR_URL" ] || {
+              echo "Missing pr-url output when changed=true"
+              exit 1
+            }
           fi
 
           {
@@ -301,6 +305,10 @@ jobs:
             echo "- branch: \`$BRANCH\`"
             echo "- pr-url: \`$PR_URL\`"
             echo ""
+            if [ "$CHANGED" != "true" ]; then
+              echo "_No PR created/updated (likely no template changes)._"
+              echo ""
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
   workflows-success:

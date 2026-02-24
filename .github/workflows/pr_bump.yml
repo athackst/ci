@@ -114,8 +114,6 @@ jobs:
 
             if [ -z "${BUMP_SCRIPT}" ]; then
               echo ":information_source: No bump script configured; workflow performed no bump."
-            elif [ "${ACTOR}" = "dependabot[bot]" ]; then
-              echo ":information_source: Bump skipped for Dependabot PR."
             elif [ -n "${RESOLVED_VERSION}" ]; then
               if [ "${CHANGED}" = "true" ]; then
                 echo ":white_check_mark: Bump commit was created and pushed."
@@ -127,6 +125,8 @@ jobs:
               echo "target-branch: \`${TARGET_BRANCH}\`"
               echo "resolved-version: \`${RESOLVED_VERSION}\`"
               echo "version-parts: \`${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}\`"
+            else
+              echo ":grey_question: Version metadata was not resolved."
             fi
 
             echo ""
