@@ -40,10 +40,18 @@ jobs:
 
 ```yaml
 jobs:
-  pr-bot:
-    uses: athackst/ci/.github/workflows/pr_automation.yml@main
+  pr-bump:
+    uses: athackst/ci/.github/workflows/pr_bump.yml@main
     with:
       bump-script: scripts/bump_version.sh
+    secrets:
+      token: ${{ secrets.BOT_TOKEN }}
+```
+
+```yaml
+jobs:
+  pr-automerge:
+    uses: athackst/ci/.github/workflows/automerge.yml@main
     secrets:
       token: ${{ secrets.BOT_TOKEN }}
 ```
@@ -61,8 +69,9 @@ jobs:
 Available workflows:
 
 - `pr_labeler.yml` - Apply labels to PRs based on branch naming.
-- `pr_automation.yml` - Opinionated PR automation: label PRs, optionally run version resolver + bump script, and enable Dependabot auto-merge.
-- `ci_updater.yml` - Run Copier updates and open/update a PR with template changes.
+- `pr_bump.yml` - Resolve version metadata and run an optional bump script, committing changes to a target branch when a bump is needed.
+- `automerge.yml` - Enable GitHub auto-merge for labeled PRs.
+- `ci_updater.yml` - Run Copier updates and open/update a PR with template changes (outputs are derived from `create-pull-request` results).
 - `release_drafter.yml` - Resolve version metadata, generate changelog, and create/update a draft release.
 - `mkdocs_site.yml` - Build, test, and deploy MkDocs to GitHub Pages.
 - `jekyll_site.yml` - Build, test, and deploy Jekyll to GitHub Pages.

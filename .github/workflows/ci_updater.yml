@@ -34,13 +34,13 @@ on:
         required: false
     outputs:
       changed:
-        description: Whether Copier produced changes.
+        description: Whether create-pull-request created or updated a PR (typically indicates template changes were applied).
         value: ${{ jobs.update.outputs.changed }}
       branch:
-        description: Branch name used for the update commit.
+        description: Branch name returned by create-pull-request, if a PR was created or updated.
         value: ${{ jobs.update.outputs.branch }}
       pr-url:
-        description: URL for the update PR, if created.
+        description: URL for the update PR, if created or updated.
         value: ${{ jobs.update.outputs.pr-url }}
 
 permissions:
@@ -89,7 +89,7 @@ jobs:
 
       - name: Create or update PR
         id: pr
-        if: ${{ inputs.create-pr && github.event.pull_request.head.repo.full_name == github.repository}}
+        if: ${{ inputs.create-pr }}
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.token || github.token }}
@@ -98,7 +98,7 @@ jobs:
           commit-message: ${{ inputs.commit-message }}
           title: ${{ inputs.pr-title }}
           body: ${{ inputs.commit-message }}
-          labels: ${{ inputs.automerge == 'true' && 'automerge' || '' }}
+          labels: ${{ inputs.automerge && 'automerge' || '' }}
 
       - name: Workflow summary
         if: ${{ always() }}

@@ -14,7 +14,6 @@ jobs:
     uses: athackst/ci/.github/workflows/ci_updater.yml@main
     with:
       create-pr: true
-      push-changes: true
       automerge: true
     secrets:
       token: ${{ secrets.CI_BOT_TOKEN }}
