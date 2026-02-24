@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Set a GitHub Actions secret (default: CI_BOT_TOKEN) on a repository.
+
+Usage:
+  tools/set_ci_bot_token.sh [options]
+
+Options:
+  --repo <owner/repo>     Repository slug. Auto-detected if omitted.
+  --secret-name <name>    Secret name to set (default: CI_BOT_TOKEN).
+  --token-file <path>     Read token value from file.
+  --help                  Show this help.
+
+Token input precedence:
+1) --token-file
+2) CI_BOT_TOKEN env var
+3) interactive prompt
+
+Examples:
+  tools/set_ci_bot_token.sh --repo athackst/my-repo --token-file ~/.config/ci/ci_bot.token
+  CI_BOT_TOKEN=ghp_xxx tools/set_ci_bot_token.sh --repo athackst/my-repo
+EOF
+}
+
+require_cmd() {
+  local cmd="$1"
+  command -v "$cmd" >/dev/null 2>&1 || {
+    echo "Missing required command: $cmd" >&2
+    exit 1
+  }
+}
+
+REPO=""
+SECRET_NAME="CI_BOT_TOKEN"
+TOKEN_FILE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo)
+      REPO="${2:-}"
+      shift 2
+      ;;
+    --secret-name)
+      SECRET_NAME="${2:-}"
+      shift 2
+      ;;
+    --token-file)
+      TOKEN_FILE="${2:-}"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+require_cmd gh
+
+if [[ -z "$REPO" ]]; then
+  if gh repo view --json nameWithOwner --jq .nameWithOwner >/dev/null 2>&1; then
+    REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+  else
+    echo "--repo was not provided and repo auto-detect failed." >&2
+    exit 1
+  fi
+fi
+
+TOKEN_VALUE="${CI_BOT_TOKEN:-}"
+if [[ -n "$TOKEN_FILE" ]]; then
+  [[ -f "$TOKEN_FILE" ]] || {
+    echo "Token file not found: $TOKEN_FILE" >&2
+    exit 1
+  }
+  TOKEN_VALUE="$(<"$TOKEN_FILE")"
+fi
+
+if [[ -z "$TOKEN_VALUE" ]]; then
+  read -r -s -p "Enter value for $SECRET_NAME: " TOKEN_VALUE
+  echo
+fi
+
+# Normalize common file/input artifacts:
+# - trim trailing newlines / carriage returns
+# - trim leading/trailing spaces and tabs
+TOKEN_VALUE="$(printf '%s' "$TOKEN_VALUE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+if [[ -z "$TOKEN_VALUE" ]]; then
+  echo "Token value is empty; refusing to set secret." >&2
+  exit 1
+fi
+
+echo "Setting secret '$SECRET_NAME' on $REPO..."
+gh secret set "$SECRET_NAME" --repo "$REPO" --body "$TOKEN_VALUE"
+echo "Done."
+
