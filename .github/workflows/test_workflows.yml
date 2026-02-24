@@ -108,7 +108,8 @@ jobs:
       contents: read
       pull-requests: write
     uses: ./.github/workflows/automerge.yml
-    secrets: inherit
+    secrets:
+      token: ${{ secrets.CI_BOT_TOKEN }}
 
   workflow-pr-labeler:
     permissions:

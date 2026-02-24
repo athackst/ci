@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 usage() {
   cat <<'EOF'
 Initialize a repository to use athackst/ci workflows.
@@ -114,30 +116,9 @@ if [[ "$SKIP_SECRET" == "true" ]]; then
   exit 0
 fi
 
-TOKEN_VALUE="${CI_BOT_TOKEN:-}"
+SECRET_CMD=("$SCRIPT_DIR/set_ci_bot_token.sh" "--repo" "$REPO" "--secret-name" "$SECRET_NAME")
 if [[ -n "$TOKEN_FILE" ]]; then
-  [[ -f "$TOKEN_FILE" ]] || {
-    echo "Token file not found: $TOKEN_FILE" >&2
-    exit 1
-  }
-  TOKEN_VALUE="$(<"$TOKEN_FILE")"
+  SECRET_CMD+=("--token-file" "$TOKEN_FILE")
 fi
 
-if [[ -z "$TOKEN_VALUE" ]]; then
-  read -r -s -p "Enter value for $SECRET_NAME: " TOKEN_VALUE
-  echo
-fi
-
-# Normalize common file/input artifacts:
-# - trim trailing newlines / carriage returns
-# - trim leading/trailing spaces and tabs
-TOKEN_VALUE="$(printf '%s' "$TOKEN_VALUE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-
-if [[ -z "$TOKEN_VALUE" ]]; then
-  echo "Token value is empty; refusing to set secret." >&2
-  exit 1
-fi
-
-echo "Setting secret '$SECRET_NAME' on $REPO..."
-gh secret set "$SECRET_NAME" --repo "$REPO" --body "$TOKEN_VALUE"
-echo "Done."
+"${SECRET_CMD[@]}"

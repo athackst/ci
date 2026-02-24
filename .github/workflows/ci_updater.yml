@@ -118,25 +118,20 @@ jobs:
           {
             echo "### CI Updater"
             echo ""
-            echo "- copier-ran: \`${APPLY_RAN}\`"
-            echo "- create-pr-requested: \`${CREATE_PR_REQUESTED}\`"
-            echo "- automerge-requested: \`${AUTOMERGE_REQUESTED}\`"
-            echo "- requested-branch: \`${PR_BRANCH_INPUT}\`"
-            echo ""
 
             if [ "${APPLY_RAN}" != "true" ]; then
-              echo ":warning: No update attempted (missing \`.copier-answers.ci.yml\`)."
+              echo ":grey_exclamation: No update attempted (missing \`.copier-answers.ci.yml\`)."
             elif [ -n "${PR_URL}" ]; then
               echo ":white_check_mark: PR created or updated successfully."
               echo ""
-              echo "- pr-operation: \`${PR_OPERATION:-unknown}\`"
-              echo "- pr-number: \`${PR_NUMBER}\`"
-              echo "- pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
-              echo "- pr-url: ${PR_URL}"
+              echo "pr-operation: \`${PR_OPERATION:-unknown}\`"
+              echo "pr-number: \`${PR_NUMBER}\`"
+              echo "pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
+              echo "pr-url: ${PR_URL}"
             elif [ "${CREATE_PR_REQUESTED}" = "true" ]; then
               echo ":x: No PR created or updated."
               echo ""
-              echo "- pr-operation: \`${PR_OPERATION:-none}\`"
+              echo "pr-operation: \`${PR_OPERATION:-none}\`"
             else
               echo "PR creation disabled by input."
             fi
