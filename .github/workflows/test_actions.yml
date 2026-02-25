@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: "test-actions-${{ github.event.pull_request.number || github.ref }}"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   actions-unit-tests:
