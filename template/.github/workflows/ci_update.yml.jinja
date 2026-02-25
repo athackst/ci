@@ -6,6 +6,11 @@ on:
       - ci-update
   workflow_dispatch:
 
+concurrency:
+  group: "ci-update-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: false
+
+
 jobs:
   ci-update:
     permissions:
