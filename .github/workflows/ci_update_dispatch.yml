@@ -1,0 +1,153 @@
+name: CI Update Dispatch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "copier.yml"
+      - "template/**"
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: "Optional newline-delimited owner/repo list override."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-template-dispatch
+  cancel-in-progress: false
+
+jobs:
+  get-repos:
+    runs-on: ubuntu-latest
+    outputs:
+      count: ${{ steps.targets.outputs.count }}
+      repos-json: ${{ steps.targets.outputs.repos-json }}
+      repos-text: ${{ steps.targets.outputs.repos-text }}
+      changes: ${{ steps.changes.outputs.paths }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: List repositories
+        id: list
+        if: ${{ (github.event.inputs.repos || '') == '' }}
+        uses: ./actions/list-repos
+        env:
+          GH_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+        with:
+          user: ${{ github.repository_owner }}
+          private: "false"
+          fork: "false"
+          archived: "false"
+
+      - name: Resolve dispatch targets
+        id: targets
+        shell: bash
+        env:
+          REPOS_INPUT: ${{ github.event.inputs.repos || '' }}
+          REPOS_JSON: ${{ steps.list.outputs.repository || '[]' }}
+        run: |
+          set -euo pipefail
+          if [ -n "$REPOS_INPUT" ]; then
+            mapfile -t REPOS < <(printf '%s\n' "$REPOS_INPUT" | sed 's/\r$//' | sed 's/[[:space:]]*$//' | sed 's/^[[:space:]]*//' | grep -vE '^(#|$)' || true)
+          else
+            mapfile -t REPOS < <(jq -r '.[]' <<< "$REPOS_JSON")
+          fi
+          COUNT="${#REPOS[@]}"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No repositories to dispatch."
+            echo "repos-json=[]" >> "$GITHUB_OUTPUT"
+            echo "repos-text=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          {
+            echo "repos-json=$(printf '%s\n' "${REPOS[@]}" | jq -R . | jq -cs .)"
+            echo "repos-text<<EOF"
+            printf '%s\n' "${REPOS[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Compute changed paths
+        id: changes
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHANGED="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" || true)"
+          {
+            echo "paths<<EOF"
+            printf '%s\n' "$CHANGED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+  repository-dispatch:
+    needs: get-repos
+    if: ${{ needs.get-repos.outputs.count != '0' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repository: ${{ fromJson(needs.get-repos.outputs.repos-json) }}
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          repository: ${{ matrix.repository }}
+          token: ${{ secrets.CI_BOT_TOKEN }}
+          event-type: ci-update
+
+  repository-dispatch-summary:
+    needs: [get-repos, repository-dispatch]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Workflow summary
+        shell: bash
+        env:
+          GET_REPOS_RESULT: ${{ needs.get-repos.result }}
+          DISPATCH_RESULT: ${{ needs.repository-dispatch.result }}
+          REPO_COUNT: ${{ needs.get-repos.outputs.count || '0' }}
+          REPOS_TEXT: ${{ needs.get-repos.outputs.repos-text || '' }}
+          CHANGED_PATHS: ${{ needs.get-repos.outputs.changes || '' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### CI Template Dispatch"
+            echo ""
+            echo "- get-repos-result: \`${GET_REPOS_RESULT}\`"
+            echo "- dispatch-result: \`${DISPATCH_RESULT}\`"
+            echo "- repo-count: \`${REPO_COUNT}\`"
+            echo ""
+            if [ "$REPO_COUNT" = "0" ]; then
+              echo "No repositories to dispatch."
+              echo ""
+            fi
+            if [ -n "${CHANGED_PATHS}" ]; then
+              echo "<details><summary>Changed paths</summary>"
+              echo ""
+              echo '```text'
+              printf '%s\n' "$CHANGED_PATHS"
+              echo '```'
+              echo ""
+              echo "</details>"
+              echo ""
+            fi
+            if [ -n "${REPOS_TEXT}" ]; then
+              echo "<details><summary>Dispatched repositories</summary>"
+              echo ""
+              echo '```text'
+              printf '%s\n' "${REPOS_TEXT}" | sort
+              echo '```'
+              echo ""
+              echo "</details>"
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
