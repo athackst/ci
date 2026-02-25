@@ -1,4 +1,4 @@
-name: PR labeler
+name: PR Labeler
 on:
   workflow_call:
 concurrency:

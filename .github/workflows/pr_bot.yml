@@ -22,16 +22,4 @@ jobs:
     secrets:
       token: ${{ secrets.CI_BOT_TOKEN }}
 
-[% if bump_script_path %]
-  pr-bump:
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' }}
-    needs: pr-label
-    permissions:
-      contents: write
-      pull-requests: write
-    uses: athackst/ci/.github/workflows/pr_bump.yml@main
-    with:
-      bump-script: [[ bump_script_path ]]
-    secrets:
-      token: ${{ secrets.CI_BOT_TOKEN }}
-[% endif %]
+

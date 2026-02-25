@@ -1,7 +1,6 @@
 name: Site
 
 on:
-  pull_request:
   push:
     branches: [main]
   release:
@@ -12,18 +11,9 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     permissions:
       contents: read
-[%- if site_generator == "mkdocs" %]
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
     with:
       pages: false
-[%- if site_version %]
-      version: [[ site_version ]]
-[%- endif %]
-[%- else %]
-    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
-    with:
-      pages: false
-[%- endif %]
     secrets: inherit
 
   site-main:
@@ -32,21 +22,10 @@ jobs:
       contents: write
       pages: write
       id-token: write
-[%- if site_generator == "mkdocs" %]
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
     with:
       pages: true
-[%- if site_version %]
-      version: [[ site_version ]]
-[%- endif %]
-[%- else %]
-    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
-    with:
-      pages: true
-[%- endif %]
     secrets: inherit
-
-[%- if site_generator == "mkdocs" %]
 
   site-release:
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
@@ -57,9 +36,4 @@ jobs:
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
     with:
       pages: true
-[%- if site_version %]
-      version: [[ site_version ]]
-      release-tag: ${{ github.event.release.tag_name }}
-[%- endif %]
     secrets: inherit
-[%- endif %]

@@ -103,23 +103,6 @@ jobs:
           set -euo pipefail
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${TEST_BRANCH}" || true
 
-  workflow-automerge:
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/automerge.yml
-    secrets:
-      token: ${{ secrets.CI_BOT_TOKEN }}
-
-  workflow-pr-labeler:
-    permissions:
-      contents: read
-      pull-requests: write
-    # This is intentionally pointed at ./workflows/ to validate whether
-    # GitHub accepts reusable workflows outside .github/workflows.
-    uses: ./.github/workflows/pr_labeler.yml
-    secrets: inherit
-
   workflow-mkdocs-site:
     permissions:
       contents: write
@@ -315,8 +298,6 @@ jobs:
     needs:
       - workflow-lint
       - workflow-pr-bump-verify-and-cleanup
-      - workflow-automerge
-      - workflow-pr-labeler
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify
       - workflow-release-draft-verify-and-cleanup
