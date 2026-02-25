@@ -1,4 +1,4 @@
-name: Jekyll site CI/CD
+name: Jekyll Site
 
 on:
   workflow_call:

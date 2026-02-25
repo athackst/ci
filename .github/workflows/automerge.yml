@@ -19,7 +19,6 @@ jobs:
     steps:
       - name: Check automerge label
         id: automerge-label
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token || github.token }}
@@ -29,7 +28,6 @@ jobs:
           echo "has-automerge=$HAS_AUTOMERGE" >> "$GITHUB_OUTPUT"
 
       - name: Debug gh auth identity
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token || github.token }}
