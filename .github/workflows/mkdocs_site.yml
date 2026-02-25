@@ -37,13 +37,7 @@ on:
         description: Optional token override used by configure-pages.
         required: false
 
-# Allow one concurrent deployment
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-
   build-docs:
     runs-on: ubuntu-latest
     outputs:

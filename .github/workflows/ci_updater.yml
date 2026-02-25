@@ -48,10 +48,6 @@ permissions:
   pull-requests: write
   actions: write
 
-concurrency:
-  group: ci-updater-${{ github.repository }}
-  cancel-in-progress: false
-
 jobs:
   update:
     runs-on: ubuntu-latest
