@@ -3,6 +3,10 @@ name: Test workflows
 on:
   pull_request:
 
+concurrency:
+  group: "test-workflows-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: false
+
 jobs:
   workflow-lint:
     permissions:

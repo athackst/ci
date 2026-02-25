@@ -7,6 +7,10 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: "site-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: false
+
 jobs:
   site-pr:
     if: ${{ github.event_name == 'pull_request' }}
