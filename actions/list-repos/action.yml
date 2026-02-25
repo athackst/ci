@@ -1,0 +1,38 @@
+name: List Repos
+description: List repositories for a user and return a filtered JSON array of full repo names.
+inputs:
+  user:
+    description: GitHub username whose repositories should be listed.
+    required: false
+    default: ""
+  private:
+    description: Include only private repositories.
+    required: false
+    default: "false"
+  fork:
+    description: Include only fork repositories.
+    required: false
+    default: "false"
+  archived:
+    description: Include only archived repositories.
+    required: false
+    default: "false"
+outputs:
+  repository:
+    description: JSON array of matching repository full names.
+    value: ${{ steps.list.outputs.repository }}
+runs:
+  using: composite
+  steps:
+    - name: List repositories
+      id: list
+      shell: bash
+      env:
+        USER: ${{ inputs.user || github.repository_owner }}
+        PRIVATE: ${{ inputs.private }}
+        FORK: ${{ inputs.fork }}
+        ARCHIVED: ${{ inputs.archived }}
+      run: |
+        set -euo pipefail
+        REPOSITORIES="$("${{ github.action_path }}/get_repos.sh")"
+        echo "repository=${REPOSITORIES}" >> "$GITHUB_OUTPUT"

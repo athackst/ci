@@ -1,0 +1,6 @@
+[
+  { "full_name": "athackst/repo-public-1", "private": false, "fork": false, "archived": false },
+  { "full_name": "athackst/repo-fork-1", "private": false, "fork": true, "archived": false },
+  { "full_name": "athackst/repo-archived-1", "private": false, "fork": false, "archived": true }
+]
+
