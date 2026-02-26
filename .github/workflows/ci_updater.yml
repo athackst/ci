@@ -1,4 +1,4 @@
-name: CI updater
+name: CI Updater
 
 on:
   workflow_call:
