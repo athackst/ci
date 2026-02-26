@@ -13,6 +13,13 @@ on:
         type: string
         required: false
         default: ""
+    outputs:
+      changed:
+        description: Whether the bump script produced changes that were committed and pushed.
+        value: ${{ jobs.pr-bump.outputs.changed }}
+      version:
+        description: Resolved version from the version resolver action, if any.
+        value: ${{ jobs.pr-bump.outputs.resolved-version }}
     secrets:
       token:
         description: Optional token override for labeling, version resolution, and automerge.
@@ -25,6 +32,9 @@ permissions:
 jobs:
   pr-bump:
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.bump.outputs.changed || 'false' }}
+      resolved-version: ${{ steps.version.outputs.resolved-version || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -66,9 +76,19 @@ jobs:
 
           if [ -z "$(git status --porcelain)" ]; then
             echo "Bump script produced no changes."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "changed=false" | tee -a "$GITHUB_OUTPUT"
+            {
+              echo "changed-files<<EOF"
+              echo ""
+              echo "EOF"
+            } | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          git add -A
+
+          git add -A
+          CHANGED_FILES="$(git diff --cached --name-only)"
 
           TARGET_BRANCH="$PUSH_BRANCH"
           if [ -z "$TARGET_BRANCH" ]; then
@@ -79,14 +99,69 @@ jobs:
             exit 1
           fi
 
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "target-branch=$TARGET_BRANCH" >> "$GITHUB_OUTPUT"
+          {
+            echo "changed=true"
+            echo "target-branch=$TARGET_BRANCH"
+            echo "changed-files<<EOF"
+            printf '%s\n' "$CHANGED_FILES"
+            echo "EOF"
+          } | tee -a "$GITHUB_OUTPUT"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
           git commit -m "chore: apply automated version bump"
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
+
+      - name: Build PR bump comment body
+        id: bump-comment
+        if: ${{ github.event_name == 'pull_request' && steps.bump.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ steps.bump.outputs.target-branch || '' }}
+          RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version || '' }}
+          CHANGED_FILES: ${{ steps.bump.outputs.changed-files || '' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "marker=<!-- ci:pr-bump -->"
+            echo "body<<EOF"
+            echo "<!-- ci:pr-bump -->"
+            printf '%s' "Applied automated version bump commit"
+            if [ -n "${RESOLVED_VERSION}" ]; then
+              printf " for \`%s\`" "${RESOLVED_VERSION}"
+            fi
+            if [ -n "${TARGET_BRANCH}" ]; then
+              printf " on branch \`%s\`" "${TARGET_BRANCH}"
+            fi
+            echo "."
+            if [ -n "${CHANGED_FILES}" ]; then
+              echo
+              echo "Changed files:"
+              echo '```text'
+              printf '%s\n' "${CHANGED_FILES}"
+              echo '```'
+            fi
+            echo "EOF"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - name: Find existing PR bump comment
+        id: find-bump-comment
+        if: ${{ github.event_name == 'pull_request' && steps.bump.outputs.changed == 'true' }}
+        uses: peter-evans/find-comment@v3
+        with:
+          token: ${{ secrets.token || github.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ steps.bump-comment.outputs.marker }}
+
+      - name: Create or update PR bump comment
+        if: ${{ github.event_name == 'pull_request' && steps.bump.outputs.changed == 'true' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.token || github.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-bump-comment.outputs.comment-id }}
+          body: ${{ steps.bump-comment.outputs.body }}
+          edit-mode: replace
 
       - name: Workflow summary
         if: ${{ always() }}
@@ -96,6 +171,7 @@ jobs:
           BUMP_SCRIPT: ${{ inputs.bump-script }}
           CHANGED: ${{ steps.bump.outputs.changed || 'false' }}
           TARGET_BRANCH: ${{ steps.bump.outputs.target-branch || '' }}
+          CHANGED_FILES: ${{ steps.bump.outputs.changed-files || '' }}
           FROM_REF: ${{ steps.version.outputs.from-ref }}
           RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version }}
           MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
@@ -121,6 +197,13 @@ jobs:
               echo "target-branch: \`${TARGET_BRANCH}\`"
               echo "resolved-version: \`${RESOLVED_VERSION}\`"
               echo "version-parts: \`${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}\`"
+              if [ -n "${CHANGED_FILES}" ]; then
+                echo ""
+                echo "changed-files:"
+                echo '```text'
+                printf '%s\n' "${CHANGED_FILES}"
+                echo '```'
+              fi
             else
               echo ":grey_question: Version metadata was not resolved."
             fi

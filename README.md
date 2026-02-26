@@ -69,9 +69,9 @@ jobs:
 Available workflows:
 
 - `pr_labeler.yml` - Apply labels to PRs based on branch naming.
-- `pr_bump.yml` - Resolve version metadata and run an optional bump script, committing changes to a target branch when a bump is needed.
+- `pr_bump.yml` - Resolve version metadata and run an optional bump script, committing changes when a bump is needed.
 - `automerge.yml` - Enable GitHub auto-merge for labeled PRs.
-- `ci_updater.yml` - Run Copier updates and open/update a PR with template changes (outputs are derived from `create-pull-request` results).
+- `ci_updater.yml` - Run Copier updates and open/update an update PR.
 - `release_drafter.yml` - Resolve version metadata, generate changelog, and create/update a draft release.
 - `mkdocs_site.yml` - Build, test, and deploy MkDocs to GitHub Pages.
 - `jekyll_site.yml` - Build, test, and deploy Jekyll to GitHub Pages.
