@@ -2,13 +2,14 @@ name: Copier Update
 
 on:
   pull_request:
-    # paths:
-    #   - "copier.yml"
-    #   - "template/**"
+    paths:
+      - "copier.yml"
+      - "template/**"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: copier-update-${{ github.event.pull_request.number || github.ref }}
@@ -90,6 +91,37 @@ jobs:
           git push origin "HEAD:refs/heads/${HEAD_REF}"
 
           echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build Copier update comment body
+        id: copier-comment
+        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          UPDATED_FILES: ${{ steps.commit.outputs.updated-files || '' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "marker=<!-- ci:copier-update -->"
+            echo "body<<EOF"
+            echo "<!-- ci:copier-update -->"
+            echo "Applied Copier-generated workflow updates."
+            if [ -n "${UPDATED_FILES}" ]; then
+              echo
+              echo "Updated files:"
+              echo '```text'
+              printf '%s\n' "${UPDATED_FILES}"
+              echo '```'
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create Copier update comment
+        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.CI_BOT_TOKEN || github.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.copier-comment.outputs.body }}
 
       - name: Workflow summary
         if: ${{ always() }}
