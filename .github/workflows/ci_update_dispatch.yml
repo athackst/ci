@@ -82,10 +82,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CHANGED="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" || true)"
+          CHANGED="$(
+            git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" || true
+          )"
+          FILTERED="$(
+            printf '%s\n' "$CHANGED" \
+              | grep -E '^template/' \
+              || true
+          )"
           {
             echo "paths<<EOF"
-            printf '%s\n' "$CHANGED"
+            printf '%s\n' "$FILTERED"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
