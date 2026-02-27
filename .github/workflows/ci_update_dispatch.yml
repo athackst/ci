@@ -60,12 +60,12 @@ jobs:
             mapfile -t REPOS < <(jq -r '.[]' <<< "$REPOS_JSON")
           fi
           COUNT="${#REPOS[@]}"
-          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "count=$COUNT" | tee -a "$GITHUB_OUTPUT"
 
           if [ "$COUNT" -eq 0 ]; then
             echo "No repositories to dispatch."
-            echo "repos-json=[]" >> "$GITHUB_OUTPUT"
-            echo "repos-text=" >> "$GITHUB_OUTPUT"
+            echo "repos-json=[]" | tee -a "$GITHUB_OUTPUT"
+            echo "repos-text=" | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -74,7 +74,7 @@ jobs:
             echo "repos-text<<EOF"
             printf '%s\n' "${REPOS[@]}"
             echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          } | tee -a "$GITHUB_OUTPUT"
 
       - name: Compute changed paths
         id: changes
@@ -94,7 +94,7 @@ jobs:
             echo "paths<<EOF"
             printf '%s\n' "$FILTERED"
             echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          } | tee -a "$GITHUB_OUTPUT"
 
   repository-dispatch:
     needs: get-repos

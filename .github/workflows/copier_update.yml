@@ -56,12 +56,12 @@ jobs:
 
           if [ "${#GENERATED_FILES[@]}" -eq 0 ]; then
             echo "No template workflow files found under template/.github/workflows."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "changed=false" | tee -a "$GITHUB_OUTPUT"
             {
               echo "updated-files<<EOF"
               echo ""
               echo "EOF"
-            } >> "$GITHUB_OUTPUT"
+            } | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -70,12 +70,12 @@ jobs:
           STAGED_FILES="$(git diff --cached --name-only)"
 
           if git diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "changed=false" | tee -a "$GITHUB_OUTPUT"
             {
               echo "updated-files<<EOF"
               echo ""
               echo "EOF"
-            } >> "$GITHUB_OUTPUT"
+            } | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -83,14 +83,14 @@ jobs:
             echo "updated-files<<EOF"
             printf '%s\n' "$STAGED_FILES"
             echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          } | tee -a "$GITHUB_OUTPUT"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: update generated workflows from Copier template"
           git push origin "HEAD:refs/heads/${HEAD_REF}"
 
-          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "changed=true" | tee -a "$GITHUB_OUTPUT"
 
       - name: Build Copier update comment body
         id: copier-comment
@@ -113,7 +113,7 @@ jobs:
               echo '```'
             fi
             echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          } | tee -a "$GITHUB_OUTPUT"
 
       - name: Create Copier update comment
         if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}

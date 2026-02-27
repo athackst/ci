@@ -43,8 +43,8 @@ runs:
       run: |
         set -euo pipefail
         RELEASE_JSON="$(bash "${{ github.action_path }}/upsert_draft_release.sh")"
-        echo "id=$(jq -r '.id' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
-        echo "name=$(jq -r '.name' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
-        echo "tag-name=$(jq -r '.tag_name' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
-        echo "html-url=$(jq -r '.html_url' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
-        echo "upload-url=$(jq -r '.upload_url' <<< "$RELEASE_JSON")" >> "$GITHUB_OUTPUT"
+        echo "id=$(jq -r '.id' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "name=$(jq -r '.name' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "tag-name=$(jq -r '.tag_name' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "html-url=$(jq -r '.html_url' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "upload-url=$(jq -r '.upload_url' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"

@@ -60,7 +60,7 @@ runs:
           echo '/^https?://fonts\.gstatic\.com(/.*)?/'
           echo '${{ inputs.ignore-urls }}'
           echo "EOF"
-        } >> "$GITHUB_OUTPUT"
+        } | tee -a "$GITHUB_OUTPUT"
 
     - name: Test with htmlproofer
       uses: athackst/htmlproofer-action@main

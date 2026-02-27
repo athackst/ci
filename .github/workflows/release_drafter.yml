@@ -90,8 +90,8 @@ jobs:
             RELEASE_NAME="Release v${RESOLVED_VERSION}"
           fi
 
-          echo "tag-name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
+          echo "tag-name=$TAG_NAME" | tee -a "$GITHUB_OUTPUT"
+          echo "name=$RELEASE_NAME" | tee -a "$GITHUB_OUTPUT"
 
       - name: Create or update draft release
         id: release
