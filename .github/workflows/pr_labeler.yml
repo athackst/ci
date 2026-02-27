@@ -9,6 +9,27 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: athackst/ci/actions/pr-labeler@main
+      - name: Run PR labeler
+        id: labeler
+        uses: athackst/ci/actions/pr-labeler@main
         with:
           github_token: ${{ github.token }}
+
+      - name: Summarize added labels
+        if: ${{ (steps.labeler.outputs.new-labels || '') != '' }}
+        shell: bash
+        env:
+          NEW_LABELS: ${{ steps.labeler.outputs.new-labels }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "### PR Labeler"
+            echo ""
+            echo "Added labels:"
+            echo ""
+            echo '```text'
+            printf '%s\n' "$NEW_LABELS"
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
