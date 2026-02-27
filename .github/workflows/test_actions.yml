@@ -89,7 +89,7 @@ jobs:
         id: config
         shell: bash
         run: |
-          echo "path=./tests/fixtures/test-labeler.yml" >> "$GITHUB_OUTPUT"
+          echo "path=./tests/fixtures/test-labeler.yml" | tee -a "$GITHUB_OUTPUT"
 
       - name: Read expected labels from config
         id: expected
@@ -111,6 +111,7 @@ jobs:
           done
 
       - uses: ./actions/pr-labeler
+        id: labeler
         with:
           configuration-path: ${{ steps.config.outputs.path }}
 
@@ -135,6 +136,7 @@ jobs:
         id: check_labels
         shell: bash
         env:
+          NEW_LABELS: ${{ steps.labeler.outputs.new-labels }}
           ACTUAL_LABELS_JSON: ${{ steps.actual.outputs.actual-labels-json }}
           EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
@@ -155,6 +157,12 @@ jobs:
           set -e
           {
             echo "### Action labeler results"
+            echo ""
+            echo "New labels added by action:"
+            echo ""
+            echo '```text'
+            echo "${NEW_LABELS:-<none>}"
+            echo '```'
             echo ""
             echo "<details><summary>Expected labels ($EXPECTED_COUNT)</summary>"
             echo ""
@@ -534,8 +542,8 @@ jobs:
         run: |
           TAG_NAME="ci-draft-${{ github.run_id }}-${{ github.run_attempt }}"
           RELEASE_NAME="test-release-${{ github.run_id }}-${{ github.run_attempt }}"
-          echo "tag-name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "release-name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
+          echo "tag-name=$TAG_NAME" | tee -a "$GITHUB_OUTPUT"
+          echo "release-name=$RELEASE_NAME" | tee -a "$GITHUB_OUTPUT"
 
       - name: Run release-draft action
         id: release-draft

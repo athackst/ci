@@ -9,6 +9,10 @@ inputs:
     description: "Path to the labeler configuration file. Defaults to 'labeler.yml' in the action's root directory."
     required: false
     default: ""
+outputs:
+  new-labels:
+    description: "New labels added by the labeler action."
+    value: ${{ steps.labeler.outputs.new-labels }}
 runs:
   using: composite
   steps:
@@ -31,7 +35,9 @@ runs:
         echo "config-path=$CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
         cat "$CONFIG_PATH"
 
-    - uses: athackst/labeler@feature/label-color
+    - name: Label PR
+      id: labeler
+      uses: athackst/labeler@feature/label-color
       with:
         configuration-path: ${{ steps.config.outputs.config-path }}
         repo-token: ${{ inputs.github_token }}
