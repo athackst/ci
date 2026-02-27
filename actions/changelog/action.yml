@@ -41,7 +41,7 @@ runs:
         [ -f "$CONFIG_PATH" ] || { echo "Config not found: $CONFIG_PATH"; exit 1; }
         [ -f "${{ inputs.pr-info-path }}" ] || { echo "pr_info not found: ${{ inputs.pr-info-path }}"; exit 1; }
 
-        echo "config-path=$CONFIG_PATH" >> "$GITHUB_OUTPUT"
+        echo "config-path=$CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
 
     - name: Build changelog
       id: build
@@ -52,4 +52,4 @@ runs:
         python3 "${{ github.action_path }}/build_changelog.py" \
           --config-path "${{ steps.config.outputs.config-path }}" \
           --pr-info-path "${{ inputs.pr-info-path }}" \
-          --output-format line >> "$GITHUB_OUTPUT"
+          --output-format line | tee -a "$GITHUB_OUTPUT"

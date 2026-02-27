@@ -21,7 +21,7 @@ jobs:
         run: |
           set -euo pipefail
           HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
-          echo "has-automerge=$HAS_AUTOMERGE" >> "$GITHUB_OUTPUT"
+          echo "has-automerge=$HAS_AUTOMERGE" | tee -a "$GITHUB_OUTPUT"
 
       - name: Debug gh auth identity
         shell: bash

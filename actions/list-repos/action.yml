@@ -35,4 +35,4 @@ runs:
       run: |
         set -euo pipefail
         REPOSITORIES="$("${{ github.action_path }}/get_repos.sh")"
-        echo "repository=${REPOSITORIES}" >> "$GITHUB_OUTPUT"
+        echo "repository=${REPOSITORIES}" | tee -a "$GITHUB_OUTPUT"
