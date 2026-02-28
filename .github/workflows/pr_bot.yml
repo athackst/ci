@@ -21,5 +21,3 @@ jobs:
     uses: athackst/ci/.github/workflows/automerge.yml@main
     secrets:
       token: ${{ secrets.CI_BOT_TOKEN }}
-
-

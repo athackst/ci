@@ -10,7 +10,6 @@ concurrency:
   group: "ci-update-${{ github.ref }}"
   cancel-in-progress: false
 
-
 jobs:
   ci-update:
     permissions:

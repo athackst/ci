@@ -103,11 +103,6 @@ echo "Repo: $REPO"
 echo "Copier source: $SOURCE"
 echo "Copier ref: $TEMPLATE_REF"
 
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "Working tree is dirty. Commit/stash changes before running init." >&2
-  exit 1
-fi
-
 echo "Applying template with Copier..."
 copier copy --trust --defaults --vcs-ref "$TEMPLATE_REF" "$SOURCE" .
 
