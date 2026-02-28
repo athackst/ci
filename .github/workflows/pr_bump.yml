@@ -86,8 +86,6 @@ jobs:
           fi
 
           git add -A
-
-          git add -A
           CHANGED_FILES="$(git diff --cached --name-only)"
 
           TARGET_BRANCH="$PUSH_BRANCH"
