@@ -24,6 +24,7 @@ jobs:
           echo "has-automerge=$HAS_AUTOMERGE" | tee -a "$GITHUB_OUTPUT"
 
       - name: Debug gh auth identity
+        id: auth
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token || github.token }}
@@ -34,9 +35,34 @@ jobs:
           echo "gh-viewer-login=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')"
 
       - name: Enable auto-merge for labeled PR
+        id: merge
         if: ${{ steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token || github.token }}
         run: |
           gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          HAS_AUTOMERGE: ${{ steps.automerge-label.outputs.has-automerge || 'false' }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          MERGE_OUTCOME: ${{ steps.merge.outcome || 'skipped' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### Automerge"
+            echo ""
+            if [ "${HAS_AUTOMERGE}" != "true" ]; then
+              echo "Skipped: missing \`automerge\` label."
+            elif [ "${IS_DRAFT}" = "true" ]; then
+              echo "Skipped: PR is draft."
+            elif [ "${MERGE_OUTCOME}" = "success" ]; then
+              echo "Enabled auto-merge (\`--auto --squash\`)."
+            else
+              echo "Automerge command did not complete successfully."
+            fi
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
