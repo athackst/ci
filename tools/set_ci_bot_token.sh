@@ -17,7 +17,8 @@ Options:
 Token input precedence:
 1) --token-file
 2) CI_BOT_TOKEN env var
-3) interactive prompt
+3) ci_bot.token in this script directory
+4) interactive prompt
 
 Examples:
   tools/set_ci_bot_token.sh --repo athackst/my-repo --token-file ~/.config/ci/ci_bot.token
@@ -32,6 +33,9 @@ require_cmd() {
     exit 1
   }
 }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_TOKEN_FILE="${SCRIPT_DIR}/ci_bot.token"
 
 REPO=""
 SECRET_NAME="CI_BOT_TOKEN"
@@ -84,6 +88,13 @@ if [[ -n "$TOKEN_FILE" ]]; then
 fi
 
 if [[ -z "$TOKEN_VALUE" ]]; then
+  if [[ -f "$DEFAULT_TOKEN_FILE" ]]; then
+    TOKEN_VALUE="$(<"$DEFAULT_TOKEN_FILE")"
+    echo "Using default token file: $DEFAULT_TOKEN_FILE"
+  fi
+fi
+
+if [[ -z "$TOKEN_VALUE" ]]; then
   read -r -s -p "Enter value for $SECRET_NAME: " TOKEN_VALUE
   echo
 fi
@@ -101,4 +112,3 @@ fi
 echo "Setting secret '$SECRET_NAME' on $REPO..."
 gh secret set "$SECRET_NAME" --repo "$REPO" --body "$TOKEN_VALUE"
 echo "Done."
-
