@@ -1,4 +1,4 @@
-name: Test templates
+name: Test Templates
 
 on:
   workflow_dispatch:
