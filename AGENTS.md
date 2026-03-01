@@ -18,6 +18,13 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Shell env vars: `UPPER_SNAKE_CASE`
 - JSON keys: `snake_case`
 
+## Workflow Naming Policy
+
+- Workflow display names (`name:`) should use `Title Case`.
+- Workflow file names should use `snake_case.yml`.
+- Test workflows should start with `Test ` in display names.
+- Acronyms should use stable capitalization (`CI`, `PR`, `MkDocs`).
+
 ## Workflow Design Rules
 
 - Reusable workflows should be opinionated; minimize optional knobs.

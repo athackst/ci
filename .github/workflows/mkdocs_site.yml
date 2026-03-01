@@ -1,4 +1,4 @@
-name: Mkdocs Site
+name: MkDocs Site
 on:
   workflow_call:
     inputs:
