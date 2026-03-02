@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ALL_RELEASES_JSON="$(
+  gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100"
+)"
+
 EXISTING_RELEASE_JSON="$(
-  gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" |
-    jq -c --arg tag "$TAG_NAME" 'map(select(.tag_name == $tag)) | first // empty'
+  jq -c 'map(select(.draft == true)) | first // empty' <<< "$ALL_RELEASES_JSON"
 )"
 
 PAYLOAD_FILE="$(mktemp)"
@@ -18,9 +21,10 @@ if [ -n "$EXISTING_RELEASE_JSON" ]; then
   fi
 
   jq -n \
+    --arg tag_name "$TAG_NAME" \
     --arg name "$RELEASE_NAME" \
     --arg body "$CHANGELOG" \
-    '{name: $name, body: $body, draft: true}' > "$PAYLOAD_FILE"
+    '{tag_name: $tag_name, name: $name, body: $body, draft: true, prerelease: false}' > "$PAYLOAD_FILE"
   gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --input "$PAYLOAD_FILE"
 else
   jq -n \
