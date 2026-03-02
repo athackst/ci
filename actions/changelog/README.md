@@ -54,6 +54,9 @@ categories:
     label: 'feature'
   - title: ':bug: Bug Fixes'
     labels: ['bug', 'fix']
+  - title: 'Dependency Updates'
+    label: 'dependencies'
+    collapse-after: 3
 exclude-labels:
   - 'skip-changelog'
 ```
@@ -61,6 +64,8 @@ exclude-labels:
 Notes:
 
 - `label` and `labels` are both supported.
+- `collapse-after` is optional per category.
+  - If set, and matched PR count is greater than this value, that category is wrapped in a `<details>` block.
 - Category matching is ordered and first-match-wins.
   - A PR appears at most once.
 - PRs with no category match go to `### Miscellaneous`.

@@ -34,6 +34,20 @@ def _apply_template(template, changes):
     return template.replace("$CHANGES", changes).replace("{{CHANGELOG}}", changes)
 
 
+def _render_category_section(title, lines, collapse_after=None):
+    section = [f"{title}\n"]
+    if collapse_after is not None and len(lines) > collapse_after:
+        section.append("<details>")
+        section.append(f"<summary>{len(lines)} changes</summary>")
+        section.append("")
+        section.extend(lines)
+        section.append("</details>")
+    else:
+        section.extend(lines)
+    section.append("")
+    return section
+
+
 def load_prs(pr_info_path):
     with open(pr_info_path, "r", encoding="utf-8") as fh:
         payload = json.load(fh)
@@ -78,9 +92,13 @@ def build_changelog(prs, config):
         lines = grouped[idx]
         if not lines:
             continue
-        sections.append(f"{category['title']}\n")
-        sections.extend(lines)
-        sections.append("")
+        sections.extend(
+            _render_category_section(
+                category["title"],
+                lines,
+                category.get("collapse_after"),
+            )
+        )
 
     if misc:
         sections.append("### Miscellaneous\n")
