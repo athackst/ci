@@ -20,6 +20,9 @@ template: |
 categories:
   - title: ':bug: Bug Fixes'
     label: 'bug'
+  - title: 'Dependency Updates'
+    label: 'dependencies'
+    collapse-after: 3
 exclude-labels:
   - 'skip-changelog'
 """
@@ -30,14 +33,20 @@ exclude-labels:
         parsed = cfg.load_changelog_config(path)
         self.assertEqual(parsed["template"].splitlines()[0], "# What’s Changed")
         self.assertEqual(parsed["categories"][0]["labels"], ["bug"])
+        self.assertIsNone(parsed["categories"][0]["collapse_after"])
+        self.assertEqual(parsed["categories"][1]["collapse_after"], 3)
         self.assertEqual(parsed["exclude_labels"], {"skip-changelog"})
 
     def test_category_precedence_exclude_misc(self):
         config = {
             "template": "# What’s Changed\n\n$CHANGES",
             "categories": [
-                {"title": ":bug: Bug Fixes", "labels": ["bug", "feature"]},
-                {"title": ":rocket: New", "labels": ["feature"]},
+                {
+                    "title": ":bug: Bug Fixes",
+                    "labels": ["bug", "feature"],
+                    "collapse_after": None,
+                },
+                {"title": ":rocket: New", "labels": ["feature"], "collapse_after": None},
             ],
             "exclude_labels": {"skip-changelog"},
         }
@@ -55,6 +64,29 @@ exclude-labels:
         self.assertIn("### Miscellaneous", out["changes"])
         self.assertIn("[#4]", out["changes"])
         self.assertEqual(out["pull_requests"], "1,2,4")
+
+    def test_collapse_after_renders_details_when_threshold_exceeded(self):
+        config = {
+            "template": "# What’s Changed\n\n$CHANGES",
+            "categories": [
+                {
+                    "title": "Dependency Updates",
+                    "labels": ["dependencies"],
+                    "collapse_after": 2,
+                }
+            ],
+            "exclude_labels": set(),
+        }
+        prs = [
+            {"number": 1, "title": "A", "html_url": "https://example/1", "labels": ["dependencies"]},
+            {"number": 2, "title": "B", "html_url": "https://example/2", "labels": ["dependencies"]},
+            {"number": 3, "title": "C", "html_url": "https://example/3", "labels": ["dependencies"]},
+        ]
+
+        out = builder.build_changelog(prs, config)
+        self.assertIn("<details>", out["changes"])
+        self.assertIn("</details>", out["changes"])
+        self.assertIn("<summary>3 changes</summary>", out["changes"])
 
     def test_load_prs_from_pr_info_payload(self):
         import json

@@ -23,10 +23,23 @@ def load_changelog_config(path):
         if not isinstance(category, dict):
             continue
         title = str(category.get("title", ""))
+        collapse_after = category.get("collapse-after")
+        try:
+            collapse_after = int(collapse_after)
+            if collapse_after < 0:
+                collapse_after = None
+        except (TypeError, ValueError):
+            collapse_after = None
         labels = []
         labels.extend(_as_label_list(category.get("label")))
         labels.extend(_as_label_list(category.get("labels")))
-        categories.append({"title": title, "labels": labels})
+        categories.append(
+            {
+                "title": title,
+                "labels": labels,
+                "collapse_after": collapse_after,
+            }
+        )
 
     exclude_labels = set(_as_label_list(parsed.get("exclude-labels")))
 
