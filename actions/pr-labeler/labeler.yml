@@ -1,5 +1,5 @@
 # Add 'feature' label to any PR where the head branch name starts with `feature` or has a `feature` section in the name
-enhancement:
+feature:
   - head-branch: ["^feat", "^new", "^enhance"]
   - description: "New feature or request"
   - color: "a2eeef"
@@ -11,9 +11,9 @@ documentation:
   - description: "Change to documentation"
   - color: "0e8a16"
 
-bug: 
+fix: 
   - head-branch: ['^fix', '^bug']
-  - description: "Something went wrong"
+  - description: "Something isn't working"
   - color: "d73a4a"
 
 maintenance: 
