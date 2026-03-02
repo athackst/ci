@@ -35,7 +35,7 @@ def _apply_template(template, changes):
 
 
 def _render_category_section(title, lines, collapse_after=None):
-    section = [f"{title}\n"]
+    section = [f"## {title}\n"]
     if collapse_after is not None and len(lines) > collapse_after:
         section.append("<details>")
         section.append(f"<summary>{len(lines)} changes</summary>")
@@ -101,7 +101,7 @@ def build_changelog(prs, config):
         )
 
     if misc:
-        sections.append("### Miscellaneous\n")
+        sections.append("## Miscellaneous\n")
         sections.extend(misc)
         sections.append("")
 

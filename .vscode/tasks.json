@@ -9,5 +9,11 @@
             "command": "copier copy --trust --defaults --vcs-ref HEAD . .",
             "problemMatcher": []
         },
+        {
+            "label": "test actions",
+            "type": "shell",
+            "command": "pytest -v actions",
+            "problemMatcher": []
+        }
     ]
 }
