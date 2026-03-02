@@ -61,7 +61,7 @@ exclude-labels:
         self.assertEqual(out["changes"].count("[#1]"), 1)
         self.assertIn("[#2]", out["changes"])
         self.assertNotIn("[#3]", out["changes"])
-        self.assertIn("### Miscellaneous", out["changes"])
+        self.assertIn("## Miscellaneous", out["changes"])
         self.assertIn("[#4]", out["changes"])
         self.assertEqual(out["pull_requests"], "1,2,4")
 
