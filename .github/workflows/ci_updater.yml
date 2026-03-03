@@ -46,6 +46,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
   # Required in this environment to allow PRs that modify .github/workflows/*.
   actions: write
 
@@ -96,6 +97,34 @@ jobs:
           title: ${{ inputs.pr-title }}
           body: ${{ inputs.commit-message }}
           labels: ${{ inputs.automerge && 'automerge' || '' }}
+
+      - name: Create issue if failure
+        if: ${{ failure() }}
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const title = `CI Updater failed (${process.env.RUN_ID})`
+            const body = [
+              'A step failed in the CI Updater workflow.',
+              '',
+              `- Workflow: ${process.env.WORKFLOW}`,
+              `- Run: ${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
+              `- Target branch input: \`${process.env.PR_BRANCH}\``,
+              `- PR title input: \`${process.env.PR_TITLE}\``,
+            ].join('\n')
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+            })
+        env:
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          PR_BRANCH: ${{ inputs.pr-branch }}
+          PR_TITLE: ${{ inputs.pr-title }}
 
       - name: Workflow summary
         if: ${{ always() }}
