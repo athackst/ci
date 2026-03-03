@@ -120,16 +120,10 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup mkdocs config
         uses: athackst/ci/actions/mkdocs-config@main
-      - name: Setup environment (release)
-        if: ${{ inputs.release-tag != '' }}
+      - name: Setup environment
         run: |
           echo "VERSION=${{ inputs.release-tag }} ${{ inputs.version }}" >> "$GITHUB_ENV"
           echo "DEFAULT_VERSION=${{ inputs.release-tag }}" >> "$GITHUB_ENV"
-      - name: Setup environment (dev)
-        if: ${{ inputs.release-tag == '' }}
-        run: |
-          echo "VERSION=${{ inputs.version }}" >> "$GITHUB_ENV"
-          echo "DEFAULT_VERSION=" >> "$GITHUB_ENV"
       - name: Publish Release docs
         uses: athackst/mkdocs-simple-plugin@main
         with:

@@ -20,9 +20,6 @@ jobs:
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
     with:
       pages: false
-[%- if site_version %]
-      version: [[ site_version ]]
-[%- endif %]
 [%- else %]
     uses: athackst/ci/.github/workflows/jekyll_site.yml@main
     with:
@@ -41,7 +38,7 @@ jobs:
     with:
       pages: true
 [%- if site_version %]
-      version: [[ site_version ]]
+      version: dev
 [%- endif %]
 [%- else %]
     uses: athackst/ci/.github/workflows/jekyll_site.yml@main
@@ -62,7 +59,7 @@ jobs:
     with:
       pages: true
 [%- if site_version %]
-      version: [[ site_version ]]
+      version: ${{ github.event.release.tag_name }} latest
       release-tag: ${{ github.event.release.tag_name }}
 [%- endif %]
     secrets: inherit
