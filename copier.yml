@@ -25,7 +25,7 @@ site_generator:
   help: Site workflow backend to use for docs publishing.
 
 site_version:
-  type: str
-  default: ""
-  help: MkDocs version alias used for branch publishes (for example, latest).
+  type: bool
+  default: false
+  help: Use a MkDocs version alias used for branch publishes.
   when: "{{ site_generator == 'mkdocs' }}"
