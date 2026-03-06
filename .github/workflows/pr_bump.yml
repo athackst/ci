@@ -58,7 +58,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           PUSH_BRANCH: ${{ inputs.push-branch }}
           FROM_REF: ${{ steps.version.outputs.from-ref }}
-          RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version }}
+          VERSION: ${{ steps.version.outputs.resolved-version }}
           MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
           MINOR_VERSION: ${{ steps.version.outputs.minor-version }}
           PATCH_VERSION: ${{ steps.version.outputs.patch-version }}
@@ -116,7 +116,7 @@ jobs:
         shell: bash
         env:
           TARGET_BRANCH: ${{ steps.bump.outputs.target-branch || '' }}
-          RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version || '' }}
+          VERSION: ${{ steps.version.outputs.resolved-version || '' }}
           CHANGED_FILES: ${{ steps.bump.outputs.changed-files || '' }}
         run: |
           set -euo pipefail
@@ -125,8 +125,8 @@ jobs:
             echo "body<<EOF"
             echo "<!-- ci:pr-bump -->"
             printf '%s' "Applied automated version bump commit"
-            if [ -n "${RESOLVED_VERSION}" ]; then
-              printf " for \`%s\`" "${RESOLVED_VERSION}"
+            if [ -n "${VERSION}" ]; then
+              printf " for \`%s\`" "${VERSION}"
             fi
             if [ -n "${TARGET_BRANCH}" ]; then
               printf " on branch \`%s\`" "${TARGET_BRANCH}"
@@ -171,7 +171,7 @@ jobs:
           TARGET_BRANCH: ${{ steps.bump.outputs.target-branch || '' }}
           CHANGED_FILES: ${{ steps.bump.outputs.changed-files || '' }}
           FROM_REF: ${{ steps.version.outputs.from-ref }}
-          RESOLVED_VERSION: ${{ steps.version.outputs.resolved-version }}
+          VERSION: ${{ steps.version.outputs.resolved-version }}
           MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
           MINOR_VERSION: ${{ steps.version.outputs.minor-version }}
           PATCH_VERSION: ${{ steps.version.outputs.patch-version }}
@@ -184,7 +184,7 @@ jobs:
 
             if [ -z "${BUMP_SCRIPT}" ]; then
               echo ":information_source: No bump script configured; workflow performed no bump."
-            elif [ -n "${RESOLVED_VERSION}" ]; then
+            elif [ -n "${VERSION}" ]; then
               if [ "${CHANGED}" = "true" ]; then
                 echo ":white_check_mark: Bump commit was created and pushed."
               else
@@ -193,7 +193,7 @@ jobs:
               echo ""
               echo "from-ref: \`${FROM_REF}\`"
               echo "target-branch: \`${TARGET_BRANCH}\`"
-              echo "resolved-version: \`${RESOLVED_VERSION}\`"
+              echo "resolved-version: \`${VERSION}\`"
               echo "version-parts: \`${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}\`"
               if [ -n "${CHANGED_FILES}" ]; then
                 echo ""
