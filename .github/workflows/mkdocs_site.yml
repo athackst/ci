@@ -70,6 +70,7 @@ jobs:
         uses: athackst/mkdocs-simple-plugin@main
         with:
           push: false
+          site_url: ${{ steps.pages.outputs.base_url }}
 
       - name: Debug output
         run: |

@@ -198,6 +198,29 @@ jobs:
           test -f _site/index.html
           grep -q "Jekyll Fixture" _site/index.html
 
+  workflow-htmlproofer-site-fixture:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Upload HTMLProofer fixture artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          name: github-pages-htmlproofer-test
+          path: ./tests/fixtures/htmlproofer_site
+
+  workflow-htmlproofer-site:
+    permissions:
+      contents: read
+    needs: [workflow-htmlproofer-site-fixture]
+    uses: ./.github/workflows/htmlproofer_site.yml
+    with:
+      artifact-name: github-pages-htmlproofer-test
+      htmlproofer-ignore-urls: |
+        /^https:\/\/example\.com$/
+
   workflow-release-draft:
     permissions:
       contents: write
@@ -305,6 +328,7 @@ jobs:
       - workflow-pr-bump-verify-and-cleanup
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify
+      - workflow-htmlproofer-site
       - workflow-release-draft-verify-and-cleanup
       - workflow-ci-updater-verify
     runs-on: ubuntu-latest
