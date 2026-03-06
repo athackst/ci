@@ -87,16 +87,12 @@ jobs:
     if: ${{ always() }}
     permissions:
       contents: read
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test with htmlproofer
-        uses: athackst/ci/actions/htmlproofer@main
-        with:
-          host: ${{ needs.build-site.outputs.host }}
-          base-path: ${{ needs.build-site.outputs.base-path }}
-          artifact-name: ${{ inputs.artifact-name }}
-          ignore-urls: |
-            ${{ inputs.htmlproofer-ignore-urls }}
+    uses: athackst/ci/.github/workflows/htmlproofer_site.yml@main
+    with:
+      host: ${{ needs.build-site.outputs.host }}
+      base-path: ${{ needs.build-site.outputs.base-path }}
+      artifact-name: ${{ inputs.artifact-name }}
+      htmlproofer-ignore-urls: ${{ inputs.htmlproofer-ignore-urls }}
 
   # Deployment job
   deploy:

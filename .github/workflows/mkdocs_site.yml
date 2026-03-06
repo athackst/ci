@@ -87,16 +87,12 @@ jobs:
     needs: build-docs
     permissions:
       contents: read
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test with htmlproofer
-        uses: athackst/ci/actions/htmlproofer@main
-        with:
-          host: ${{ needs.build-docs.outputs.host }}
-          base-path: ${{ needs.build-docs.outputs.base-path }}
-          artifact-name: ${{ inputs.artifact-name }}
-          ignore-urls: |
-            ${{ inputs.htmlproofer-ignore-urls }}
+    uses: athackst/ci/.github/workflows/htmlproofer_site.yml@main
+    with:
+      host: ${{ needs.build-docs.outputs.host }}
+      base-path: ${{ needs.build-docs.outputs.base-path }}
+      artifact-name: ${{ inputs.artifact-name }}
+      htmlproofer-ignore-urls: ${{ inputs.htmlproofer-ignore-urls }}
 
   deploy-docs:
     # Use artifact deploy if no version is specified and we're on the main branch.
