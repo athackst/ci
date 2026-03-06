@@ -74,3 +74,8 @@ runs:
         host: ${{ inputs.host }}
         base_path: ${{ inputs.base-path }}
         ignore_urls: ${{ steps.ignore-urls.outputs.ignore_urls }}
+        swap_urls: |
+            ^${{ inputs.host }}\/${{ inputs.base-path }}:
+            ^\/${{ inputs.base-path }}:
+            ^\/dev:
+            ^\/v\d+\.\d+\.\d+:
