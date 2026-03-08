@@ -28,4 +28,4 @@ site_version:
   type: bool
   default: false
   help: Use a MkDocs version alias used for branch publishes.
-  when: "{{ site_generator == 'mkdocs' }}"
+  when: "[[ site_generator == 'mkdocs' ]]"
