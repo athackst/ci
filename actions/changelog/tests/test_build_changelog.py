@@ -13,10 +13,6 @@ import changelog_config as cfg  # noqa: E402
 class ChangelogTests(unittest.TestCase):
     def test_load_changelog_config(self):
         text = """\
-template: |
-  # What’s Changed
-
-  $CHANGES
 categories:
   - title: ':bug: Bug Fixes'
     label: 'bug'
@@ -31,7 +27,6 @@ exclude-labels:
             path = fh.name
 
         parsed = cfg.load_changelog_config(path)
-        self.assertEqual(parsed["template"].splitlines()[0], "# What’s Changed")
         self.assertEqual(parsed["categories"][0]["labels"], ["bug"])
         self.assertIsNone(parsed["categories"][0]["collapse_after"])
         self.assertEqual(parsed["categories"][1]["collapse_after"], 3)
@@ -39,7 +34,6 @@ exclude-labels:
 
     def test_category_precedence_exclude_misc(self):
         config = {
-            "template": "# What’s Changed\n\n$CHANGES",
             "categories": [
                 {
                     "title": ":bug: Bug Fixes",
@@ -58,16 +52,15 @@ exclude-labels:
         ]
 
         out = builder.build_changelog(prs, config)
-        self.assertEqual(out["changes"].count("[#1]"), 1)
-        self.assertIn("[#2]", out["changes"])
-        self.assertNotIn("[#3]", out["changes"])
-        self.assertIn("## Miscellaneous", out["changes"])
-        self.assertIn("[#4]", out["changes"])
+        self.assertEqual(out["changelog"].count("[#1]"), 1)
+        self.assertIn("[#2]", out["changelog"])
+        self.assertNotIn("[#3]", out["changelog"])
+        self.assertIn("## Miscellaneous", out["changelog"])
+        self.assertIn("[#4]", out["changelog"])
         self.assertEqual(out["pull_requests"], "1,2,4")
 
     def test_collapse_after_renders_details_when_threshold_exceeded(self):
         config = {
-            "template": "# What’s Changed\n\n$CHANGES",
             "categories": [
                 {
                     "title": "Dependency Updates",
@@ -84,9 +77,9 @@ exclude-labels:
         ]
 
         out = builder.build_changelog(prs, config)
-        self.assertIn("<details>", out["changes"])
-        self.assertIn("</details>", out["changes"])
-        self.assertIn("<summary>3 changes</summary>", out["changes"])
+        self.assertIn("<details>", out["changelog"])
+        self.assertIn("</details>", out["changelog"])
+        self.assertIn("<summary>3 changes</summary>", out["changelog"])
 
     def test_load_prs_from_pr_info_payload(self):
         import json

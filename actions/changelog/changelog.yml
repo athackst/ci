@@ -1,7 +1,3 @@
-template: |
-  # What’s Changed
-
-  $CHANGES
 categories:
   - title: ':zap: Breaking'
     labels: 

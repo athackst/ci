@@ -44,7 +44,6 @@ def load_changelog_config(path):
     exclude_labels = set(_as_label_list(parsed.get("exclude-labels")))
 
     return {
-        "template": str(parsed.get("template", "# What’s Changed\n\n$CHANGES")),
         "categories": categories,
         "exclude_labels": exclude_labels,
     }

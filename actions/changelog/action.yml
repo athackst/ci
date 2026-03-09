@@ -10,11 +10,8 @@ inputs:
     required: true
 outputs:
   changelog:
-    description: Rendered changelog markdown.
+    description: Category-grouped changes.
     value: ${{ steps.build.outputs.changelog }}
-  changes:
-    description: Category-grouped changes section before template wrapping.
-    value: ${{ steps.build.outputs.changes }}
   pull-requests:
     description: Comma-separated PR numbers included in changelog.
     value: ${{ steps.build.outputs.pull-requests }}
