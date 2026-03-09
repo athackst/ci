@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PR Labeler Config",
+  "type": "object",
+  "additionalProperties": {
+    "type": "array",
+    "items": {
+      "$ref": "#/$defs/condition"
+    }
+  },
+  "$defs": {
+    "string_or_string_array": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      ]
+    },
+    "glob_matcher": {
+      "type": "object",
+      "properties": {
+        "any-glob-to-any-file": {
+          "$ref": "#/$defs/string_or_string_array"
+        },
+        "all-globs-to-all-files": {
+          "$ref": "#/$defs/string_or_string_array"
+        },
+        "all-globs-to-any-file": {
+          "$ref": "#/$defs/string_or_string_array"
+        },
+        "any-glob-to-all-files": {
+          "$ref": "#/$defs/string_or_string_array"
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "changed_files_condition": {
+      "type": "object",
+      "properties": {
+        "changed-files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/glob_matcher"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "changed-files"
+      ],
+      "additionalProperties": false
+    },
+    "branch_condition": {
+      "type": "object",
+      "properties": {
+        "head-branch": {
+          "$ref": "#/$defs/string_or_string_array"
+        },
+        "base-branch": {
+          "$ref": "#/$defs/string_or_string_array"
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "meta_condition": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{6}$"
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "logical_condition": {
+      "type": "object",
+      "properties": {
+        "any": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 1
+        },
+        "all": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "condition": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/meta_condition"
+        },
+        {
+          "$ref": "#/$defs/branch_condition"
+        },
+        {
+          "$ref": "#/$defs/changed_files_condition"
+        },
+        {
+          "$ref": "#/$defs/logical_condition"
+        }
+      ]
+    }
+  }
+}

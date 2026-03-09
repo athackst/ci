@@ -8,10 +8,38 @@ import sys
 from fnmatch import fnmatch
 from pathlib import Path
 
+def load_label_config_lines(path: Path):
+    lines = path.read_text(encoding="utf-8").splitlines()
+
+    labels_index = None
+    for i, raw_line in enumerate(lines):
+        if raw_line.startswith((" ", "\t")):
+            continue
+        if raw_line.strip() == "labels:":
+            labels_index = i
+            break
+
+    if labels_index is None:
+        return lines
+
+    normalized = []
+    for raw_line in lines[labels_index + 1 :]:
+        stripped = raw_line.strip()
+        if not stripped:
+            normalized.append(raw_line)
+            continue
+        if raw_line.startswith("  "):
+            normalized.append(raw_line[2:])
+            continue
+        break
+
+    return normalized
+
+
 def load_config_labels(path: Path):
     labels = []
     seen = set()
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in load_label_config_lines(path):
         if raw_line.startswith((" ", "\t", "#")):
             continue
         match = re.match(r"^([^:#][^:]*)\s*:\s*$", raw_line)
@@ -25,7 +53,7 @@ def load_config_labels(path: Path):
 
 
 def uses_changed_files_rules(path: Path):
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in load_label_config_lines(path):
         line = raw_line.strip()
         if line.startswith(("changed-files:", "- changed-files:", "any-glob-to-any-file:")):
             return True
@@ -36,9 +64,7 @@ def load_label_patterns(path: Path):
     pattern_map = {}
     current_label = None
 
-    for line_no, raw_line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(), start=1
-    ):
+    for line_no, raw_line in enumerate(load_label_config_lines(path), start=1):
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
