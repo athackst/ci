@@ -125,6 +125,7 @@ steps:
     with:
       token: ${{ secrets.GITHUB_TOKEN }}
       resolved-version: ${{ steps.version.outputs.resolved-version }}
+      # optional: release-match-pattern: '^v.*$'
       changelog: ${{ steps.changelog.outputs.changelog }}
       # optional: configuration-path: .github/release-drafter.yml
   - run: echo "Draft release id: ${{ steps.draft.outputs.id }}"

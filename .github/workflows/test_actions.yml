@@ -493,7 +493,9 @@ jobs:
         uses: ./actions/release-draft
         with:
           token: ${{ github.token }}
+          configuration-path: ./tests/fixtures/test-release-drafter.yml
           resolved-version: ${{ steps.test-values.outputs.resolved-version }}
+          release-match-pattern: ^test-${{ steps.test-values.outputs.resolved-version }}$
           changelog: |
             # Test Changelog
 
@@ -513,8 +515,8 @@ jobs:
           RELEASE_TAG_NAME: ${{ steps.release-draft.outputs.tag-name }}
           RELEASE_HTML_URL: ${{ steps.release-draft.outputs.html-url }}
           RELEASE_UPLOAD_URL: ${{ steps.release-draft.outputs.upload-url }}
-          EXPECTED_RELEASE_NAME: Release v${{ steps.test-values.outputs.resolved-version }}
-          EXPECTED_RELEASE_TAG_NAME: v${{ steps.test-values.outputs.resolved-version }}
+          EXPECTED_RELEASE_NAME: Test Release ${{ steps.test-values.outputs.resolved-version }}
+          EXPECTED_RELEASE_TAG_NAME: test-${{ steps.test-values.outputs.resolved-version }}
         run: |
           set +e
           BATS_OUTPUT="$(bats tests/bats/release_draft_outputs.bats 2>&1)"
