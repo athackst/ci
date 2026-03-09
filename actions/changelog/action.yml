@@ -46,7 +46,12 @@ runs:
       run: |
         set -euo pipefail
 
-        python3 "${{ github.action_path }}/build_changelog.py" \
+        CHANGELOG_JSON="$(python3 "${{ github.action_path }}/build_changelog.py" \
           --config-path "${{ steps.config.outputs.config-path }}" \
           --pr-info-path "${{ inputs.pr-info-path }}" \
-          --output-format line | tee -a "$GITHUB_OUTPUT"
+          --output-format json)"
+
+        echo "pull-requests=$(jq -r '.pull_requests // \"\"' <<< "$CHANGELOG_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "changelog<<EOF_CHANGELOG_CHANGES" | tee -a "$GITHUB_OUTPUT"
+        jq -r '.changelog // ""' <<< "$CHANGELOG_JSON" | tee -a "$GITHUB_OUTPUT"
+        echo "EOF_CHANGELOG_CHANGES" | tee -a "$GITHUB_OUTPUT"
