@@ -1,38 +1,42 @@
-# Add 'feature' label to any PR where the head branch name starts with `feature` or has a `feature` section in the name
+major:
+  - head-branch: ["^major", "^breaking", "^break"]
+  - description: "Breaking or major-version change"
+  - color: "b91c1c"
+
+fix: 
+  - head-branch: ['^fix', '^bug']
+  - description: "Something isn't working"
+  - color: "ea580c"
+
 feature:
   - head-branch: ["^feat", "^new", "^enhance"]
   - description: "New feature or request"
-  - color: "a2eeef"
+  - color: "0f766e"
 
 documentation:
   - changed-files:
       - any-glob-to-any-file: "**/*.md"
   - head-branch: ["^doc"]
   - description: "Change to documentation"
-  - color: "0e8a16"
-
-fix: 
-  - head-branch: ['^fix', '^bug']
-  - description: "Something isn't working"
-  - color: "d73a4a"
+  - color: "65a30d"
 
 maintenance: 
   - head-branch: ['^chore', '^maint', '^noop', '^no-op', '^upkeep', '^dev']
   - description: "Non-behavior related change"
-  - color: "e99695"
+  - color: "7c3aed"
 
 dependencies: 
   - head-branch: ['^deps', '^dependencies']
   - description: "Pull requests that update a dependency file"
-  - color: "0366d6"
-
-automerge:
-  - head-branch: ['^dependabot/', '^chore/update-ci-template$']
-  - description: "PRs eligible for automatic merge"
-  - color: "1d76db"
+  - color: "2563eb"
 
 devops:
   - changed-files:
     - any-glob-to-any-file: [".github/**", ".vscode/**"]
   - description: "Change to development workflows"
-  - color: "9B3864"
+  - color: "0ea5e9"
+
+automerge:
+  - head-branch: ['^dependabot/', '^chore/update-ci-template$']
+  - description: "PRs eligible for automatic merge"
+  - color: "eab308"
