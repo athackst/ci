@@ -6,7 +6,7 @@ setup() {
 }
 
 @test "changelog output has expected heading text" {
-  [[ "$CHANGELOG" == *"What"* ]]
+  [[ "$CHANGELOG" == *"##"* ]]
 }
 
 @test "pull requests output is csv of integers when present" {

@@ -433,7 +433,6 @@ jobs:
         shell: bash
         env:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
-          CHANGES: ${{ steps.changelog.outputs.changes }}
           PULL_REQUESTS: ${{ steps.changelog.outputs.pull-requests }}
           PR_INFO_PATH: ${{ steps.resolver.outputs.pr-info-path }}
         run: |

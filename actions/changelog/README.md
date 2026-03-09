@@ -36,8 +36,7 @@ Builds release changelog markdown from:
 
 ## Outputs
 
-- `changelog`: Fully rendered changelog (template applied).
-- `changes`: Category-grouped body inserted into template.
+- `changelog`: Category-grouped changelog content.
 - `pull-requests`: Comma-separated PR numbers included in changelog.
 
 ## Config Format
@@ -45,10 +44,6 @@ Builds release changelog markdown from:
 Example (`changelog.yml`):
 
 ```yaml
-template: |
-  # What’s Changed
-
-  $CHANGES
 categories:
   - title: ':rocket: New'
     label: 'feature'

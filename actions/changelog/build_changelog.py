@@ -30,10 +30,6 @@ def _render_pr_line(pr):
     return f"- {title}"
 
 
-def _apply_template(template, changes):
-    return template.replace("$CHANGES", changes).replace("{{CHANGELOG}}", changes)
-
-
 def _render_category_section(title, lines, collapse_after=None):
     section = [f"## {title}\n"]
     if collapse_after is not None and len(lines) > collapse_after:
@@ -105,11 +101,9 @@ def build_changelog(prs, config):
         sections.extend(misc)
         sections.append("")
 
-    changes = "\n".join(sections).strip()
-    changelog = _apply_template(config["template"], changes)
+    changelog = "\n".join(sections).strip()
 
     return {
-        "changes": changes,
         "changelog": changelog,
         "pull_requests": ",".join(included_prs),
     }
@@ -121,13 +115,9 @@ def to_line(result):
         lines.append(f"pull-requests={result['pull_requests']}")
 
     # multiline outputs
-    lines.append("changes<<EOF_CHANGELOG_CHANGES")
-    lines.append(result.get("changes", ""))
-    lines.append("EOF_CHANGELOG_CHANGES")
-
-    lines.append("changelog<<EOF_CHANGELOG")
+    lines.append("changelog<<EOF_CHANGELOG_CHANGES")
     lines.append(result.get("changelog", ""))
-    lines.append("EOF_CHANGELOG")
+    lines.append("EOF_CHANGELOG_CHANGES")
 
     return "\n".join(lines)
 
