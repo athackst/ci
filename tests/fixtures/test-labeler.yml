@@ -2,4 +2,4 @@ test-label:
   - changed-files:
     - any-glob-to-any-file: ["**"]
   - description: "This is just a test"
-  - color: "7c24a2"
+  - color: "cfd3d7"

@@ -1,18 +1,31 @@
 name: Release draft
-description: Create or update a draft release from provided name/tag/changelog.
+description: Create or update a draft release from release-drafter config, version, and changelog.
 inputs:
   token:
     description: GitHub token used to draft the release.
     required: true
+  configuration-path:
+    description: Path to release-drafter style config file.
+    required: false
+    default: ""
+  changelog:
+    description: Changelog content used for release template interpolation.
+    required: true
+  resolved-version:
+    description: Version used for release template interpolation.
+    required: true
+  release-match-pattern:
+    description: Regex used to select the draft release to update by tag name.
+    required: false
+    default: "^v[0-9]+(\\.[0-9]+)*$"
   name:
     description: Release name.
-    required: true
+    required: false
+    deprecationMessage: The 'name' input is deprecated. Please specify a name template in the configuration file instead.
   tag-name:
     description: Release tag name.
-    required: true
-  changelog:
-    description: Changelog body used for release notes.
-    required: true
+    required: false
+    deprecationMessage: The 'tag-name' input is deprecated. Please specify a tag name template in the configuration file instead.
 outputs:
   id:
     description: The release ID.
@@ -32,14 +45,56 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python3 -m pip install --quiet pyyaml
+
+    - name: Resolve draft release config
+      id: meta
+      shell: bash
+      env:
+        INPUT_CONFIGURATION_PATH: ${{ inputs.configuration-path }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+
+        if [ -z "$INPUT_CONFIGURATION_PATH" ]; then
+          CONFIG_PATH="${ACTION_PATH}/release-drafter.yml"
+        else
+          CONFIG_PATH="$INPUT_CONFIGURATION_PATH"
+        fi
+
+        [ -f "$CONFIG_PATH" ] || { echo "Config not found: $CONFIG_PATH"; exit 1; }
+        echo "config-path=$CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
+
+    - name: Render draft release metadata
+      id: render
+      shell: bash
+      env:
+        CONFIG_PATH: ${{ steps.meta.outputs.config-path }}
+        RESOLVED_VERSION: ${{ inputs.resolved-version }}
+        CHANGELOG: ${{ inputs.changelog }}
+      run: |
+        set -euo pipefail
+
+        RELEASE_META_JSON="$(python3 "${{ github.action_path }}/render_release_meta.py")"
+
+        echo "name=$(jq -r '.name' <<< "$RELEASE_META_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "tag-name=$(jq -r '.tag_name' <<< "$RELEASE_META_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "changelog<<EOF_RELEASE_CHANGELOG" | tee -a "$GITHUB_OUTPUT"
+        jq -r '.body' <<< "$RELEASE_META_JSON" | tee -a "$GITHUB_OUTPUT"
+        echo "EOF_RELEASE_CHANGELOG" | tee -a "$GITHUB_OUTPUT"
+
     - name: Create or update draft release
       id: upsert
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
-        TAG_NAME: ${{ inputs.tag-name }}
-        RELEASE_NAME: ${{ inputs.name }}
-        CHANGELOG: ${{ inputs.changelog }}
+        TAG_NAME: ${{ steps.render.outputs.tag-name }}
+        RELEASE_NAME: ${{ steps.render.outputs.name }}
+        CHANGELOG: ${{ steps.render.outputs.changelog }}
+        RELEASE_MATCH_PATTERN: ${{ inputs.release-match-pattern }}
       run: |
         set -euo pipefail
         RELEASE_JSON="$(bash "${{ github.action_path }}/upsert_draft_release.sh")"

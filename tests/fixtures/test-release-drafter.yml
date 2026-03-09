@@ -1,0 +1,4 @@
+name-template: "Test Release $RESOLVED_VERSION"
+tag-template: "test-$RESOLVED_VERSION"
+template: |
+  $CHANGES

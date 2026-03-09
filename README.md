@@ -115,13 +115,19 @@ steps:
 
 ```yaml
 steps:
+  - uses: athackst/ci/actions/version-resolver@main
+    id: version
+    with:
+      gh-token: ${{ secrets.GITHUB_TOKEN }}
+
   - uses: athackst/ci/actions/release-draft@main
     id: draft
     with:
       token: ${{ secrets.GITHUB_TOKEN }}
-      name: Release v1.2.3
-      tag-name: v1.2.3
+      resolved-version: ${{ steps.version.outputs.resolved-version }}
+      # optional: release-match-pattern: '^v.*$'
       changelog: ${{ steps.changelog.outputs.changelog }}
+      # optional: configuration-path: .github/release-drafter.yml
   - run: echo "Draft release id: ${{ steps.draft.outputs.id }}"
 ```
 
