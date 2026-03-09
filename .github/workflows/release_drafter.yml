@@ -1,17 +1,6 @@
 name: Release Draft
 on:
   workflow_call:
-    inputs:
-      name:
-        description: Optional explicit release name override.
-        type: string
-        required: false
-        default: ""
-      tag-name:
-        description: Optional explicit release tag override.
-        type: string
-        required: false
-        default: ""
     secrets:
       token:
         description: Optional token override used to create or update draft release.
@@ -72,32 +61,10 @@ jobs:
         with:
           pr-info-path: ${{ steps.version.outputs.pr-info-path }}
 
-      - name: Resolve release name and tag
-        id: meta
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          RESOLVED_VERSION="${{ steps.version.outputs.resolved-version }}"
-
-          TAG_NAME="${{ inputs.tag-name }}"
-          if [ -z "$TAG_NAME" ]; then
-            TAG_NAME="v${RESOLVED_VERSION}"
-          fi
-
-          RELEASE_NAME="${{ inputs.name }}"
-          if [ -z "$RELEASE_NAME" ]; then
-            RELEASE_NAME="Release v${RESOLVED_VERSION}"
-          fi
-
-          echo "tag-name=$TAG_NAME" | tee -a "$GITHUB_OUTPUT"
-          echo "name=$RELEASE_NAME" | tee -a "$GITHUB_OUTPUT"
-
       - name: Create or update draft release
         id: release
         uses: athackst/ci/actions/release-draft@main
         with:
           token: ${{ secrets.token || github.token }}
-          name: ${{ steps.meta.outputs.name }}
-          tag-name: ${{ steps.meta.outputs.tag-name }}
+          resolved-version: ${{ steps.version.outputs.resolved-version }}
           changelog: ${{ steps.changelog.outputs.changelog }}

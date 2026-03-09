@@ -227,9 +227,6 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/release_drafter.yml
     secrets: inherit
-    with:
-      name: test-release-${{ github.run_id }}-${{ github.run_attempt }}
-      tag-name: ci-workflow-draft-${{ github.run_id }}-${{ github.run_attempt }}
 
   workflow-release-draft-verify-and-cleanup:
     permissions:
