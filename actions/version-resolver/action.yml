@@ -79,6 +79,7 @@ runs:
         if [ -z "$PR_INFO_PATH" ]; then
           PR_INFO_PATH="$RUNNER_TEMP/version-resolver-pr-info.json"
         fi
+        RESOLVER_JSON_PATH="$RUNNER_TEMP/version-resolver-output.json"
 
         python3 "${{ github.action_path }}/version_resolver.py" \
           --config-path "$CONFIG_PATH" \
@@ -86,5 +87,17 @@ runs:
           --gh-token "$INPUT_GH_TOKEN" \
           --to-ref "${{ github.sha }}" \
           --output-path "$PR_INFO_PATH" \
-          --output-format line | tee -a "$GITHUB_OUTPUT"
+          --output-format json > "$RESOLVER_JSON_PATH"
+
+        [ -s "$RESOLVER_JSON_PATH" ] || {
+          echo "Resolver JSON output is empty: $RESOLVER_JSON_PATH" >&2
+          exit 1
+        }
+        jq -e . "$RESOLVER_JSON_PATH" > /dev/null
+
+        echo "from-ref=$(jq -r '.from_ref // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
+        echo "resolved-version=$(jq -r '.resolved_version // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
+        echo "major-version=$(jq -r '.major_version // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
+        echo "minor-version=$(jq -r '.minor_version // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
+        echo "patch-version=$(jq -r '.patch_version // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
         echo "pr-info-path=$PR_INFO_PATH" | tee -a "$GITHUB_OUTPUT"

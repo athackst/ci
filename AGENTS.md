@@ -22,7 +22,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 - Workflow display names (`name:`) should use `Title Case`.
 - Workflow file names should use `snake_case.yml`.
-- Test workflows should start with `Test ` in display names.
+- Test workflows should start with `Test` in display names.
 - Acronyms should use stable capitalization (`CI`, `PR`, `MkDocs`).
 
 ## Workflow Design Rules
@@ -31,6 +31,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Prefer one final `Workflow summary` step (`if: always()`) in workflows triggered by workflow_call.
 - Prefer a test result step for every testing/validation job.
 - Composite actions should emit outputs; workflow owns summary rendering.
+- Prefer script output as JSON and set `GITHUB_OUTPUT` keys explicitly in `action.yml` (instead of script-managed line output), for clearer output wiring and reviewability.
 - `GITHUB_OUTPUT`: prefer `| tee -a "$GITHUB_OUTPUT"` for log visibility.
 - `GITHUB_STEP_SUMMARY`: prefer `>> "$GITHUB_STEP_SUMMARY"`.
 

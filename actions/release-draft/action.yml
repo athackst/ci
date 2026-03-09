@@ -19,13 +19,13 @@ inputs:
     required: false
     default: "^v[0-9]+(\\.[0-9]+)*$"
   name:
-    description: Release name.
+    description: Optional release name override.
     required: false
-    deprecationMessage: The 'name' input is deprecated. Please specify a name template in the configuration file instead.
+    default: ""
   tag-name:
-    description: Release tag name.
+    description: Optional release tag name override.
     required: false
-    deprecationMessage: The 'tag-name' input is deprecated. Please specify a tag name template in the configuration file instead.
+    default: ""
 outputs:
   id:
     description: The release ID.
@@ -91,8 +91,8 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
-        TAG_NAME: ${{ steps.render.outputs.tag-name }}
-        RELEASE_NAME: ${{ steps.render.outputs.name }}
+        TAG_NAME: ${{ inputs.tag-name || steps.render.outputs.tag-name }}
+        RELEASE_NAME: ${{ inputs.name || steps.render.outputs.name }}
         CHANGELOG: ${{ steps.render.outputs.changelog }}
         RELEASE_MATCH_PATTERN: ${{ inputs.release-match-pattern }}
       run: |
