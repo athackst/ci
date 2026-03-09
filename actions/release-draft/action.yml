@@ -58,6 +58,7 @@ runs:
         ACTION_PATH: ${{ github.action_path }}
       run: |
         set -euo pipefail
+        echo "Resolving release drafter config path.."
 
         if [ -z "$INPUT_CONFIGURATION_PATH" ]; then
           CONFIG_PATH="${ACTION_PATH}/release-drafter.yml"
@@ -77,6 +78,7 @@ runs:
         CHANGELOG: ${{ inputs.changelog }}
       run: |
         set -euo pipefail
+        echo "Resolving release metadata from repo.."
 
         RELEASE_META_JSON="$(python3 "${{ github.action_path }}/render_release_meta.py")"
 
@@ -97,6 +99,7 @@ runs:
         RELEASE_MATCH_PATTERN: ${{ inputs.release-match-pattern }}
       run: |
         set -euo pipefail
+        echo "Creating or updating draft release in repo.."
         RELEASE_JSON="$(bash "${{ github.action_path }}/upsert_draft_release.sh")"
         echo "id=$(jq -r '.id' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "name=$(jq -r '.name' <<< "$RELEASE_JSON")" | tee -a "$GITHUB_OUTPUT"
