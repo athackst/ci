@@ -16,24 +16,28 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python3 -m pip install --quiet pyyaml jsonschema
+
     - name: PR Labeler configuration
       id: config
       shell: bash
       run: |
+        set -euo pipefail
+
+        FLAT_CONFIG_PATH="$RUNNER_TEMP/pr-labeler-config.yml"
+        python3 "${{ github.action_path }}/resolve_labeler_config.py" \
+          --configuration-path "${{ inputs.configuration-path }}" \
+          --default-configuration-path "${{ github.action_path }}/labeler.yml" \
+          --output-path "$FLAT_CONFIG_PATH" \
+          --repo "${{ github.repository }}" \
+          --ref "${{ github.sha }}" \
+          --github-token "${{ inputs.github_token }}" | tee -a "$GITHUB_OUTPUT"
+
         echo "Using the following PR Labeler configuration:"
-
-        if [ -z "${{ inputs.configuration-path }}" ]; then
-          CONFIG_PATH="${{ github.action_path }}/labeler.yml"
-          echo "No configuration path provided, using default '$CONFIG_PATH'."
-        else
-          CONFIG_PATH="${{ inputs.configuration-path }}"
-          echo "Using configuration from '$CONFIG_PATH':"
-        fi
-
-        [ -f "$CONFIG_PATH" ] || { echo "Config not found: $CONFIG_PATH"; exit 1; }
-
-        echo "config-path=$CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
-        cat "$CONFIG_PATH"
+        cat "$FLAT_CONFIG_PATH"
 
     - name: Label PR
       id: labeler

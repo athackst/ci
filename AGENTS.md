@@ -32,6 +32,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Prefer a test result step for every testing/validation job.
 - Composite actions should emit outputs; workflow owns summary rendering.
 - Prefer script output as JSON and set `GITHUB_OUTPUT` keys explicitly in `action.yml` (instead of script-managed line output), for clearer output wiring and reviewability.
+- Prefer Python logic in dedicated `.py` files under the action directory; avoid inline/heredoc Python in `action.yml` shell steps except for trivial one-liners.
 - `GITHUB_OUTPUT`: prefer `| tee -a "$GITHUB_OUTPUT"` for log visibility.
 - `GITHUB_STEP_SUMMARY`: prefer `>> "$GITHUB_STEP_SUMMARY"`.
 
