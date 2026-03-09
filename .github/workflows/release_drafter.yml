@@ -1,6 +1,27 @@
 name: Release Draft
 on:
   workflow_call:
+    inputs:
+      configuration-path:
+        description: Optional path to release-drafter config file.
+        type: string
+        required: false
+        default: ""
+      name:
+        description: Optional explicit release name override.
+        type: string
+        required: false
+        default: ""
+      tag-name:
+        description: Optional explicit release tag name override.
+        type: string
+        required: false
+        default: ""
+      release-match-pattern:
+        description: Regex used to select the draft release to update by tag name.
+        type: string
+        required: false
+        default: "^v[0-9.]+$"
     secrets:
       token:
         description: Optional token override used to create or update draft release.
@@ -66,5 +87,9 @@ jobs:
         uses: athackst/ci/actions/release-draft@main
         with:
           token: ${{ secrets.token || github.token }}
+          configuration-path: ${{ inputs.configuration-path }}
           resolved-version: ${{ steps.version.outputs.resolved-version }}
+          name: ${{ inputs.name }}
+          tag-name: ${{ inputs.tag-name }}
+          release-match-pattern: ${{ inputs.release-match-pattern }}
           changelog: ${{ steps.changelog.outputs.changelog }}
