@@ -22,6 +22,12 @@ def main() -> int:
     name_template = str(cfg.get("name-template", "Release v$RESOLVED_VERSION"))
     tag_template = str(cfg.get("tag-template", "v$RESOLVED_VERSION"))
     body_template = str(cfg.get("template", "# What’s Changed\n\n$CHANGES"))
+    if cfg.get("template-file"):
+        template_file_path = Path(cfg["template-file"])
+        if not template_file_path.exists():
+            raise SystemExit(f"Template file specified but not found: {template_file_path}")
+        body_template = template_file_path.read_text(encoding="utf-8")
+
 
     ctx = {
         "VERSION": version or resolved_version,
