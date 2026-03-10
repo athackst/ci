@@ -104,7 +104,8 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Keep `Usage` to the minimal working example first.
 - Omit `Permissions` when no token scope guidance is needed.
 - Omit `Examples` when `Usage` already covers the practical case.
-- Keep `Advanced` concise and limited to behavior that affects correct usage.
+- Keep `Advanced` concise and limited to non-obvious behavior that affects correct usage.
+- `Advanced` should describe user-facing behavior and constraints, not internal implementation details.
 
 ## Security / Safety
 
