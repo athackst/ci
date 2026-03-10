@@ -1,9 +1,6 @@
 # Changelog Action
 
-Builds release changelog markdown from:
-
-- a `pr_info` JSON file (typically from `actions/version-resolver`)
-- a changelog config YAML file
+Build release changelog markdown from PR metadata and changelog configuration.
 
 ## Usage
 
@@ -30,18 +27,34 @@ Builds release changelog markdown from:
 
 ## Inputs
 
-- `pr-info-path` (required): Path to PR metadata JSON.
-- `configuration-path` (optional): Path to changelog config YAML.
-  - default: `actions/changelog/changelog.yml` from this action.
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `pr-info-path` | `string` | Path to PR metadata JSON. | None |
+| `configuration-path` | `string` | (optional) Path to changelog config YAML. | Bundled `changelog.yml` |
 
 ## Outputs
 
-- `changelog`: Category-grouped changelog content.
-- `pull-requests`: Comma-separated PR numbers included in changelog.
+| Name | Description |
+| --- | --- |
+| `changelog` | Category-grouped changelog markdown. |
+| `pull-requests` | Comma-separated PR numbers included in the changelog output. |
 
-## Config Format
+## Advanced
 
-Example (`changelog.yml`):
+- The action reads PRs from either `pr_info.pull_requests` or top-level `pull_requests`.
+- Category matching is ordered and first-match-wins. A PR is included at most once.
+- PRs with no matching category are rendered under `## Miscellaneous`.
+- PRs with any label listed in `exclude-labels` are skipped.
+- `label` and `labels` are both supported in `changelog.yml`. `label` may be a string or list.
+- If `collapse-after` is set and the matched PR count exceeds it, that category is wrapped in a `<details>` block.
+- If `number` and `html_url` are present, a PR entry is rendered as a markdown link.
+- If only `number` is present, a PR entry is rendered as plain `#123` text.
+- If `title` is missing, the action still renders a list item.
+- Only non-excluded PRs with a `number` are included in the `pull-requests` output.
+
+## Examples
+
+Custom `changelog.yml`:
 
 ```yaml
 categories:
@@ -56,31 +69,7 @@ exclude-labels:
   - 'skip-changelog'
 ```
 
-Notes:
-
-- `label` and `labels` are both supported.
-- `collapse-after` is optional per category.
-  - If set, and matched PR count is greater than this value, that category is wrapped in a `<details>` block.
-- Category matching is ordered and first-match-wins.
-  - A PR appears at most once.
-- PRs with no category match go to `### Miscellaneous`.
-- PRs with any `exclude-labels` label are skipped.
-
-## Expected `pr_info` JSON
-
-The action expects a top-level object with either:
-
-- `pr_info.pull_requests`
-- or `pull_requests`
-
-Each pull request item should include:
-
-- `number` (int, optional but recommended)
-- `title` (string)
-- `html_url` (string, optional)
-- `labels` (list of strings or list of `{name: ...}` objects)
-
-Minimal example:
+Minimal `pr_info` payload:
 
 ```json
 {
