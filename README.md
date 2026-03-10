@@ -125,9 +125,7 @@ steps:
     with:
       token: ${{ secrets.GITHUB_TOKEN }}
       resolved-version: ${{ steps.version.outputs.resolved-version }}
-      # optional: release-match-pattern: '^v.*$'
       changelog: ${{ steps.changelog.outputs.changelog }}
-      # optional: configuration-path: .github/release-drafter.yml
   - run: echo "Draft release id: ${{ steps.draft.outputs.id }}"
 ```
 
@@ -158,10 +156,3 @@ copier copy --trust gh:athackst/ci .
 # Update later
 copier update --trust
 ```
-
-Template files:
-
-- `template/.github/workflows/pr_bot.yml.jinja`
-- `template/.github/workflows/release_draft.yml.jinja`
-- `template/.github/workflows/site.yml.jinja` (`mkdocs` or `jekyll`)
-- `template/.github/workflows/ci_update.yml.jinja` (daily scheduled CI template updates)
