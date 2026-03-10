@@ -29,3 +29,11 @@ site_version:
   default: false
   help: Use a MkDocs version alias used for branch publishes.
   when: "[[ site_generator == 'mkdocs' ]]"
+
+release_template:
+  type: str
+  default: |
+    ## What's changed
+
+    $CHANGES
+  help: Template for release description body, using $CHANGES for the changelog and $VERSION for the resolved version.

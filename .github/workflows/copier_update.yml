@@ -47,15 +47,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          mapfile -t TEMPLATE_FILES < <(find template/.github/workflows -maxdepth 1 -type f -name '*.jinja' | sort)
+          mapfile -t TEMPLATE_FILES < <(find template/.github -type f | sort)
           GENERATED_FILES=()
           for template_file in "${TEMPLATE_FILES[@]}"; do
-            generated_name="$(basename "$template_file" .jinja)"
-            GENERATED_FILES+=(".github/workflows/${generated_name}")
+            generated_path="${template_file#template/}"
+            generated_path="${generated_path%.jinja}"
+            GENERATED_FILES+=("${generated_path}")
           done
 
           if [ "${#GENERATED_FILES[@]}" -eq 0 ]; then
-            echo "No template workflow files found under template/.github/workflows."
+            echo "No template files found under template/.github."
             echo "changed=false" | tee -a "$GITHUB_OUTPUT"
             {
               echo "updated-files<<EOF"
