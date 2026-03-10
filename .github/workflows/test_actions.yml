@@ -115,6 +115,92 @@ jobs:
             echo ":white_check_mark: Resolved config matches fixture content."
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
+
+  actions-setup-labels:
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Create setup-labels test config
+        id: test-config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          LABEL_ONE="ci-setup-labels-${{ github.run_id }}-one"
+          LABEL_TWO="ci-setup-labels-${{ github.run_id }}-two"
+          CONFIG_PATH="$RUNNER_TEMP/setup-labels-test.yml"
+
+          {
+            echo "labels:"
+            echo "  $LABEL_ONE:"
+            echo "    - description: \"CI setup-labels integration test label one\""
+            echo "    - color: \"1d4ed8\""
+            echo "  $LABEL_TWO:"
+            echo "    - description: \"CI setup-labels integration test label two\""
+            echo "    - color: \"047857\""
+          } > "$CONFIG_PATH"
+
+          {
+            echo "config-path=$CONFIG_PATH"
+            echo "label-one=$LABEL_ONE"
+            echo "label-two=$LABEL_TWO"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - name: Run setup-labels action
+        id: setup-labels
+        uses: ./actions/setup-labels
+        with:
+          github-token: ${{ github.token }}
+          configuration-path: ${{ steps.test-config.outputs.config-path }}
+
+      - name: Verify setup-labels result
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LABEL_ONE: ${{ steps.test-config.outputs.label-one }}
+          LABEL_TWO: ${{ steps.test-config.outputs.label-two }}
+          CREATED_LABELS: ${{ steps.setup-labels.outputs.created-labels }}
+          UPDATED_LABELS: ${{ steps.setup-labels.outputs.updated-labels }}
+          UNCHANGED_LABELS: ${{ steps.setup-labels.outputs.unchanged-labels }}
+          SKIPPED_LABELS: ${{ steps.setup-labels.outputs.skipped-labels }}
+        run: |
+          set -euo pipefail
+
+          LABEL_ONE_JSON="$(gh api "repos/${{ github.repository }}/labels/${LABEL_ONE}")"
+          LABEL_TWO_JSON="$(gh api "repos/${{ github.repository }}/labels/${LABEL_TWO}")"
+
+          [ "$(jq -r '.color' <<< "$LABEL_ONE_JSON")" = "1d4ed8" ] || { echo "Unexpected color for $LABEL_ONE"; exit 1; }
+          [ "$(jq -r '.description' <<< "$LABEL_ONE_JSON")" = "CI setup-labels integration test label one" ] || { echo "Unexpected description for $LABEL_ONE"; exit 1; }
+          [ "$(jq -r '.color' <<< "$LABEL_TWO_JSON")" = "047857" ] || { echo "Unexpected color for $LABEL_TWO"; exit 1; }
+          [ "$(jq -r '.description' <<< "$LABEL_TWO_JSON")" = "CI setup-labels integration test label two" ] || { echo "Unexpected description for $LABEL_TWO"; exit 1; }
+
+          {
+            echo "### Setup-labels outputs"
+            echo ""
+            echo "- created-labels: \`$CREATED_LABELS\` "
+            echo "- updated-labels: \`$UPDATED_LABELS\` "
+            echo "- unchanged-labels: \`$UNCHANGED_LABELS\` "
+            echo "- skipped-labels: \`$SKIPPED_LABELS\` "
+            echo ""
+            echo ":white_check_mark: Verified label metadata for \`$LABEL_ONE\` and \`$LABEL_TWO\`."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cleanup setup-labels test labels
+        if: ${{ always() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LABEL_ONE: ${{ steps.test-config.outputs.label-one }}
+          LABEL_TWO: ${{ steps.test-config.outputs.label-two }}
+        run: |
+          set -euo pipefail
+          gh api -X DELETE "repos/${{ github.repository }}/labels/${LABEL_ONE}" || true
+          gh api -X DELETE "repos/${{ github.repository }}/labels/${LABEL_TWO}" || true
           
   actions-pr-labeler:
     permissions:
@@ -614,6 +700,7 @@ jobs:
       - actions-changelog
       - actions-release-draft
       - actions-resolve-config
+      - actions-setup-labels
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
