@@ -38,9 +38,8 @@ jobs:
         id: list
         if: ${{ (github.event.inputs.repos || '') == '' }}
         uses: ./actions/list-repos
-        env:
-          GH_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
         with:
+          github-token: ${{ secrets.CI_BOT_TOKEN }}
           user: ${{ github.repository_owner }}
           private: "false"
           fork: "false"
