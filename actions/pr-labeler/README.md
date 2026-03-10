@@ -10,15 +10,14 @@ Apply pull request labels using a centralized labeler configuration.
   uses: athackst/ci/actions/pr-labeler@main
   with:
     github_token: ${{ github.token }}
-    configuration-path: .github/ci-config.yml
 ```
 
 ## Inputs
 
-| Name | Type | Description | Default |
-| --- | --- | --- | --- |
-| `github_token` | `string` | (optional) GitHub token used to read pull requests and add labels. | `${{ github.token }}` |
-| `configuration-path` | `string` | (optional) Path to the labeler configuration file. | Bundled `labeler.yml` |
+| Name | Description | Default |
+| --- | --- | --- |
+| `github_token` | (optional) GitHub token used to read pull requests and add labels. | `${{ github.token }}` |
+| `configuration-path` | (optional) Path to the labeler configuration file. | Bundled `labeler.yml` |
 
 ## Outputs
 
@@ -28,30 +27,24 @@ Apply pull request labels using a centralized labeler configuration.
 
 ## Permissions
 
-- Requires a token with permission to write pull request labels.
+- Requires a token that can read the pull request and add labels to it.
 
 ## Advanced
 
-- Uses the bundled labeler config by default.
-- Use `configuration-path` to override the bundled labeling rules.
-- Intended for pull request contexts where labels can be added.
+- Uses the bundled labeler config when `configuration-path` is not set.
+- If a custom `configuration-path` is missing, the action falls back to the bundled config.
+- Config is schema-validated and flattened before calling `actions/labeler`.
+- Intended for pull request contexts where labels can be applied.
 
 ## Examples
 
-Use the bundled labeler config:
+Use a repository-specific labeler config:
 
 ```yaml
 - name: Label pull request
   uses: athackst/ci/actions/pr-labeler@main
+  with:
+    github_token: ${{ secrets.CI_BOT_TOKEN }}
+    configuration-path: .github/ci-config.yml
 ```
 
-Minimal custom config:
-
-```yaml
-labels:
-  documentation:
-    - changed-files:
-        - any-glob-to-any-file: "**/*.md"
-    - color: "65a30d"
-    - description: "Change to documentation"
-```
