@@ -1,0 +1,75 @@
+name: Setup labels
+description: Create or update label metadata (color/description) from label configuration.
+inputs:
+  github-token:
+    description: GitHub token with permissions to manage repository labels.
+    required: false
+    default: ${{ github.token }}
+  repo:
+    description: Repository in owner/repo format where labels should be managed.
+    required: false
+    default: ${{ github.repository }}
+  configuration-path:
+    description: Path to label configuration file.
+    required: false
+    default: ""
+outputs:
+  created-labels:
+    description: Comma-separated labels created.
+    value: ${{ steps.setup.outputs.created-labels }}
+  updated-labels:
+    description: Comma-separated labels updated.
+    value: ${{ steps.setup.outputs.updated-labels }}
+  unchanged-labels:
+    description: Comma-separated labels already matching desired metadata.
+    value: ${{ steps.setup.outputs.unchanged-labels }}
+  skipped-labels:
+    description: Comma-separated labels skipped because required metadata was missing.
+    value: ${{ steps.setup.outputs.skipped-labels }}
+runs:
+  using: composite
+  steps:
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python3 -m pip install --quiet pyyaml jsonschema
+
+    - name: Resolve label configuration
+      id: config
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        DEFAULT_CONFIG_PATH="${{ github.action_path }}/../pr-labeler/labeler.yml"
+        RESOLVED_CONFIG_PATH="${{ inputs.configuration-path }}"
+
+        if [ -z "$RESOLVED_CONFIG_PATH" ]; then
+          RESOLVED_CONFIG_PATH="$DEFAULT_CONFIG_PATH"
+        elif [ ! -f "$RESOLVED_CONFIG_PATH" ]; then
+          echo "Configuration path not found: $RESOLVED_CONFIG_PATH"
+          echo "Falling back to bundled config: $DEFAULT_CONFIG_PATH"
+          RESOLVED_CONFIG_PATH="$DEFAULT_CONFIG_PATH"
+        fi
+
+        [ -f "$RESOLVED_CONFIG_PATH" ] || { echo "Config not found: $RESOLVED_CONFIG_PATH"; exit 1; }
+
+        FLAT_CONFIG_PATH="$RUNNER_TEMP/setup-labels-config.yml"
+        python3 "${{ github.action_path }}/../pr-labeler/resolve_labeler_config.py" \
+          --config-path "$RESOLVED_CONFIG_PATH" \
+          --output-path "$FLAT_CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
+
+    - name: Setup labels
+      id: setup
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        RESULT_JSON="$(python3 "${{ github.action_path }}/setup_labels.py" \
+          --config-path "${{ steps.config.outputs.config-path }}" \
+          --repo "${{ inputs.repo }}" \
+          --github-token "${{ inputs.github-token }}")"
+
+        echo "created-labels=$(jq -r '.created_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "updated-labels=$(jq -r '.updated_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "unchanged-labels=$(jq -r '.unchanged_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "skipped-labels=$(jq -r '.skipped_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
