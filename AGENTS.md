@@ -88,6 +88,24 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - `test_templates.yml`: Copier template rendering/lint checks.
 - Prefer Bats for integration assertions; Python `unittest` for script logic.
 
+## Action README Format
+
+- Action READMEs should use this section order:
+- `# <Action Name>`
+- Short description of the action
+- `## Usage`
+- `## Inputs`
+- `## Outputs`
+- `## Permissions` when token scopes matter
+- `## Advanced` for non-obvious behavior or constraints users must know
+- `## Examples`
+- `Inputs` must use a table with columns: `Name`, `Type`, `Description`, `Default`.  `Description` should include (optional) if it is optional
+- `Outputs` must use a table with columns: `Name`, `Description`.
+- Keep `Usage` to the minimal working example first.
+- Omit `Permissions` when no token scope guidance is needed.
+- Omit `Examples` when `Usage` already covers the practical case.
+- Keep `Advanced` concise and limited to behavior that affects correct usage.
+
 ## Security / Safety
 
 - Never run untrusted PR code in `pull_request_target` mutation jobs.
