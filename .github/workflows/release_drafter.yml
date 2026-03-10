@@ -6,7 +6,7 @@ on:
         description: Optional path to release-drafter config file.
         type: string
         required: false
-        default: ""
+        default: ".github/ci-config.yml"
       name:
         description: Optional explicit release name override.
         type: string
@@ -70,16 +70,26 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Get configuration
+        id: config
+        continue-on-error: true
+        uses: athackst/ci/actions/resolve-config@main
+        with:
+          configuration-path: ${{ inputs.configuration-path }}
+          github-token: ${{ secrets.token || github.token }}
+
       - name: Resolve version metadata
         id: version
         uses: athackst/ci/actions/version-resolver@main
         with:
+          configuration-path: ${{ steps.config.outputs.config-path }}
           gh-token: ${{ secrets.token || github.token }}
 
       - name: Build changelog
         id: changelog
         uses: athackst/ci/actions/changelog@main
         with:
+          configuration-path: ${{ steps.config.outputs.config-path }}
           pr-info-path: ${{ steps.version.outputs.pr-info-path }}
 
       - name: Create or update draft release
@@ -87,7 +97,7 @@ jobs:
         uses: athackst/ci/actions/release-draft@main
         with:
           token: ${{ secrets.token || github.token }}
-          configuration-path: ${{ inputs.configuration-path }}
+          configuration-path: ${{ steps.config.outputs.config-path }}
           resolved-version: ${{ steps.version.outputs.resolved-version }}
           name: ${{ inputs.name }}
           tag-name: ${{ inputs.tag-name }}

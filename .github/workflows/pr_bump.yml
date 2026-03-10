@@ -3,6 +3,11 @@ name: PR Bump
 on:
   workflow_call:
     inputs:
+      configuration-path:
+        description: Path to unified CI config file.
+        type: string
+        required: false
+        default: ".github/ci-config.yml"
       bump-script:
         description: Optional script path to run after version resolution.
         type: string
@@ -43,11 +48,20 @@ jobs:
           fetch-tags: true
           token: ${{ secrets.token || github.token }}
 
+      - name: Get configuration
+        id: config
+        continue-on-error: true
+        uses: athackst/ci/actions/resolve-config@main
+        with:
+          configuration-path: ${{ inputs.configuration-path }}
+          github-token: ${{ secrets.token || github.token }}
+
       - name: Resolve version metadata
         id: version
         if: ${{ inputs.bump-script != ''}}
         uses: athackst/ci/actions/version-resolver@main
         with:
+          configuration-path: ${{ steps.config.outputs.config-path }}
           gh-token: ${{ secrets.token || github.token }}
 
       - name: Run bump script
