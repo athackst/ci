@@ -6,7 +6,7 @@ inputs:
     required: false
     default: "${{ github.token }}"
   configuration-path:
-    description: "Path to the labeler configuration file. Defaults to 'labeler.yml' in the action's root directory."
+    description: "Path to the labeler configuration file."
     required: false
     default: ""
 outputs:
@@ -21,20 +21,29 @@ runs:
       run: |
         python3 -m pip install --quiet pyyaml jsonschema
 
-    - name: PR Labeler configuration
+    - name: Setup configuration
       id: config
       shell: bash
       run: |
         set -euo pipefail
 
+        DEFAULT_CONFIG_PATH="${{ github.action_path }}/labeler.yml"
+        RESOLVED_CONFIG_PATH="${{ inputs.configuration-path }}"
+
+        if [ -z "$RESOLVED_CONFIG_PATH" ]; then
+          RESOLVED_CONFIG_PATH="$DEFAULT_CONFIG_PATH"
+        elif [ ! -f "$RESOLVED_CONFIG_PATH" ]; then
+          echo "Configuration path not found: $RESOLVED_CONFIG_PATH"
+          echo "Falling back to bundled config: $DEFAULT_CONFIG_PATH"
+          RESOLVED_CONFIG_PATH="$DEFAULT_CONFIG_PATH"
+        fi
+
+        [ -f "$RESOLVED_CONFIG_PATH" ] || { echo "Config not found: $RESOLVED_CONFIG_PATH"; exit 1; }
+
         FLAT_CONFIG_PATH="$RUNNER_TEMP/pr-labeler-config.yml"
         python3 "${{ github.action_path }}/resolve_labeler_config.py" \
-          --configuration-path "${{ inputs.configuration-path }}" \
-          --default-configuration-path "${{ github.action_path }}/labeler.yml" \
-          --output-path "$FLAT_CONFIG_PATH" \
-          --repo "${{ github.repository }}" \
-          --ref "${{ github.sha }}" \
-          --github-token "${{ inputs.github_token }}" | tee -a "$GITHUB_OUTPUT"
+          --config-path "$RESOLVED_CONFIG_PATH" \
+          --output-path "$FLAT_CONFIG_PATH" | tee -a "$GITHUB_OUTPUT"
 
         echo "Using the following PR Labeler configuration:"
         cat "$FLAT_CONFIG_PATH"
