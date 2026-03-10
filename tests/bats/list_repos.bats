@@ -12,6 +12,12 @@ setup() {
 set -euo pipefail
 printf '%s\n' "$*" >> "$CALL_COUNT_FILE"
 case "$*" in
+  *"/users/athackst --jq .type"*)
+    echo "User"
+    ;;
+  *"/user/repos?visibility=all&affiliation=owner&page=1&per_page=100"*)
+    cat tests/fixtures/list_repos/page2.json
+    ;;
   *"page=1&per_page=100"*)
     jq -c '
       . + (

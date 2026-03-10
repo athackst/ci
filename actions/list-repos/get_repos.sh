@@ -8,15 +8,31 @@ ARCHIVED="${ARCHIVED:-false}"
 
 page=1
 repositories='[]'
+owner_type="$(gh api "/users/${USER}" --jq '.type')"
+
+if [[ "$owner_type" != "User" ]]; then
+  echo "Expected GitHub user, got: ${owner_type}" >&2
+  exit 1
+fi
 
 while :; do
-  response="$(gh api "/users/${USER}/repos?page=${page}&per_page=100")"
+  if [[ "$PRIVATE" == "true" ]]; then
+    response="$(gh api "/user/repos?visibility=all&affiliation=owner&page=${page}&per_page=100")"
+  else
+    response="$(gh api "/users/${USER}/repos?page=${page}&per_page=100")"
+  fi
+
   page_repositories="$(
     jq -c \
+      --arg owner "$USER" \
       --argjson private "$PRIVATE" \
       --argjson fork "$FORK" \
       --argjson archived "$ARCHIVED" \
-      '[.[] | select(.private == $private and .fork == $fork and .archived == $archived) | .full_name]' \
+      '[.[]
+        | select((.owner.login // (.full_name | split("/")[0]) // "") == $owner)
+        | select(.private == $private and .fork == $fork and .archived == $archived)
+        | .full_name
+      ]' \
       <<< "$response"
   )"
   repositories="$(

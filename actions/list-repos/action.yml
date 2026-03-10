@@ -1,6 +1,10 @@
 name: List Repos
 description: List repositories for a user and return a filtered JSON array of full repo names.
 inputs:
+  github-token:
+    description: GitHub token used for GitHub API access.
+    required: false
+    default: ${{ github.token }}
   user:
     description: GitHub username whose repositories should be listed.
     required: false
@@ -28,6 +32,7 @@ runs:
       id: list
       shell: bash
       env:
+        GH_TOKEN: ${{ inputs.github-token }}
         USER: ${{ inputs.user || github.repository_owner }}
         PRIVATE: ${{ inputs.private }}
         FORK: ${{ inputs.fork }}
