@@ -98,6 +98,12 @@ jobs:
           body: ${{ inputs.commit-message }}
           labels: ${{ inputs.automerge && 'automerge' || '' }}
 
+      - name: Setup labels
+        uses: athackst/ci/actions/setup-labels@main
+        with:
+          github-token: ${{ secrets.token || github.token }}
+          configuration-path: .github/ci-config.yml
+
       - name: Create issue if failure
         if: ${{ failure() }}
         uses: actions/github-script@v8
