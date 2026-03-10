@@ -1,0 +1,49 @@
+name: Resolve config
+description: Resolve a config file path from local workspace or GitHub Contents API.
+inputs:
+  configuration-path:
+    description: Path to config file in workspace or repository.
+    required: true
+  output-path:
+    description: Optional output file path for resolved config contents.
+    required: false
+    default: ""
+  repo:
+    description: Repository in owner/repo format for API fetch.
+    required: false
+    default: ${{ github.repository }}
+  ref:
+    description: Git ref or SHA for API fetch.
+    required: false
+    default: ${{ github.sha }}
+  github-token:
+    description: GitHub token for API fetch.
+    required: false
+    default: ${{ github.token }}
+outputs:
+  source-config-path:
+    description: Source location used to resolve the config.
+    value: ${{ steps.resolve.outputs.source-config-path }}
+  config-path:
+    description: Runner-local file path to resolved config.
+    value: ${{ steps.resolve.outputs.config-path }}
+runs:
+  using: composite
+  steps:
+    - name: Resolve config file
+      id: resolve
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        OUTPUT_PATH="${{ inputs.output-path }}"
+        if [ -z "$OUTPUT_PATH" ]; then
+          OUTPUT_PATH="$RUNNER_TEMP/resolved-config.yml"
+        fi
+
+        python3 "${{ github.action_path }}/resolve_config_file.py" \
+          --configuration-path "${{ inputs.configuration-path }}" \
+          --output-path "$OUTPUT_PATH" \
+          --repo "${{ inputs.repo }}" \
+          --ref "${{ inputs.ref }}" \
+          --github-token "${{ inputs.github-token }}" | tee -a "$GITHUB_OUTPUT"
