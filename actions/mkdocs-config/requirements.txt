@@ -7,6 +7,4 @@ mkdocs-get-deps
 mkdocs-macros-plugin
 mkdocs-material
 mkdocs-material-extensions
-mkdocstrings
-mkdocstrings-python-legacy
 markdown_gfm_admonition

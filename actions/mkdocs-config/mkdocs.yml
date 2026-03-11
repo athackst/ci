@@ -1,8 +1,6 @@
 plugins:
   - simple
   - search
-  - mkdocstrings:
-      default_handler: python
   - awesome-pages:
       collapse_single_pages: true
 theme:
