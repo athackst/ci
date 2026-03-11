@@ -134,13 +134,13 @@ and [actions/labeler](https://github.com/actions/labeler) config formats.
 
 Colors are set according to the following label palette:
 
-| Label | Color | Swatch |
+| Label | Color | Preview |
 | --- | --- | --- |
-| `major` | `#b91c1c` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#b91c1c;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
-| `fix` | `#ea580c` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#ea580c;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
-| `feature` | `#0f766e` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#0f766e;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
-| `documentation` | `#65a30d` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#65a30d;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
-| `maintenance` | `#7c3aed` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#7c3aed;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
-| `dependencies` | `#2563eb` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#2563eb;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
-| `devops` | `#0ea5e9` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#0ea5e9;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
-| `automerge` | `#eab308` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#eab308;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `major` | `#b91c1c` | ![major](https://img.shields.io/badge/major-b91c1c?style=flat-square) |
+| `fix` | `#ea580c` | ![fix](https://img.shields.io/badge/fix-ea580c?style=flat-square) |
+| `feature` | `#0f766e` | ![feature](https://img.shields.io/badge/feature-0f766e?style=flat-square) |
+| `documentation` | `#65a30d` | ![documentation](https://img.shields.io/badge/documentation-65a30d?style=flat-square) |
+| `maintenance` | `#7c3aed` | ![maintenance](https://img.shields.io/badge/maintenance-7c3aed?style=flat-square) |
+| `dependencies` | `#2563eb` | ![dependencies](https://img.shields.io/badge/dependencies-2563eb?style=flat-square) |
+| `devops` | `#0ea5e9` | ![devops](https://img.shields.io/badge/devops-0ea5e9?style=flat-square) |
+| `automerge` | `#eab308` | ![automerge](https://img.shields.io/badge/automerge-eab308?style=flat-square) |
