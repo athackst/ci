@@ -72,6 +72,7 @@ jobs:
             echo '/^https?://fonts\.googleapis\.com(/.*)?/'
             echo '/^https?://fonts\.gstatic\.com(/.*)?/'
             echo '/^https?://www\.flaticon\.com(/.*)?/'
+            echo '/^https?://docs\.docker\.com(/.*)?/'
             echo '${{ inputs.htmlproofer-ignore-urls }}'
             echo "EOF"
           } | tee -a "$GITHUB_OUTPUT"
