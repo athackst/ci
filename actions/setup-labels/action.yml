@@ -64,12 +64,18 @@ runs:
       run: |
         set -euo pipefail
 
+        RESULT_PATH="$RUNNER_TEMP/setup-labels-result.json"
         RESULT_JSON="$(python3 "${{ github.action_path }}/setup_labels.py" \
           --config-path "${{ steps.config.outputs.config-path }}" \
           --repo "${{ inputs.repo }}" \
-          --github-token "${{ inputs.github-token }}")"
+          --github-token "${{ inputs.github-token }}" \
+          --output-path "$RESULT_PATH")"
 
         echo "created-labels=$(jq -r '.created_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "updated-labels=$(jq -r '.updated_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "unchanged-labels=$(jq -r '.unchanged_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "skipped-labels=$(jq -r '.skipped_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
+        if [ "$(jq '.errors | length' <<< "$RESULT_JSON")" -gt 0 ]; then
+          jq -r '.errors[]' <<< "$RESULT_JSON" >&2
+          exit 1
+        fi
