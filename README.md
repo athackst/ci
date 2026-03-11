@@ -2,137 +2,19 @@
 
 Central home for my reusable GitHub Actions workflows and composite actions.
 
-This repo is meant to be referenced directly from other repos via `workflow_call`
-or by using the composite actions under `actions/`.
+The main assumption of this repo is that consumer repositories adopt it via the
+Copier template first. After that, the primary entrypoints in the consumer repo
+should be the generated workflows:
 
-## Reusable workflows
+- `ci_update.yml`
+- `pr_bot.yml`
+- `release_draft.yml`
+- `site.yml`
 
-Reusable workflows live in `.github/workflows/` and are called from another repo like this:
+Those workflows keep the consumer repo aligned with this central CI repo,
+handle common PR automation, create release drafts, and set up site builds.
 
-```yaml
-jobs:
-  pr-labels:
-    uses: athackst/ci/.github/workflows/pr_labeler.yml@main
-    secrets: inherit
-```
-
-```yaml
-jobs:
-  draft-release:
-    uses: athackst/ci/.github/workflows/release_drafter.yml@main
-    secrets:
-      token: ${{ secrets.RELEASE_TOKEN }}
-```
-
-```yaml
-jobs:
-  docs:
-    uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
-```
-
-```yaml
-jobs:
-  jekyll-docs:
-    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
-    with:
-      path: docs
-```
-
-```yaml
-jobs:
-  pr-bump:
-    uses: athackst/ci/.github/workflows/pr_bump.yml@main
-    with:
-      bump-script: scripts/bump_version.sh
-    secrets:
-      token: ${{ secrets.BOT_TOKEN }}
-```
-
-```yaml
-jobs:
-  pr-automerge:
-    uses: athackst/ci/.github/workflows/automerge.yml@main
-    secrets:
-      token: ${{ secrets.BOT_TOKEN }}
-```
-
-```yaml
-jobs:
-  ci-update:
-    uses: athackst/ci/.github/workflows/ci_updater.yml@main
-    with:
-      create-pr: true
-    secrets:
-      token: ${{ secrets.BOT_TOKEN }}
-```
-
-Available workflows:
-
-- `pr_labeler.yml` - Apply labels to PRs based on branch naming.
-- `pr_bump.yml` - Resolve version metadata and run an optional bump script, committing changes when a bump is needed.
-- `automerge.yml` - Enable GitHub auto-merge for labeled PRs.
-- `ci_updater.yml` - Run Copier updates and open/update an update PR.
-- `release_drafter.yml` - Resolve version metadata, generate changelog, and create/update a draft release.
-- `mkdocs_site.yml` - Build, test, and deploy MkDocs to GitHub Pages.
-- `jekyll_site.yml` - Build, test, and deploy Jekyll to GitHub Pages.
-
-## Composite actions
-
-Composite actions live in `actions/` and can be used directly:
-
-### PR labeler
-
-```yaml
-steps:
-  - uses: athackst/ci/actions/pr-labeler@main
-    with:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-### Version resolver
-
-```yaml
-steps:
-  - uses: athackst/ci/actions/version-resolver@main
-    id: version
-    with:
-      gh-token: ${{ secrets.GITHUB_TOKEN }}
-  - run: echo "Resolved version: ${{ steps.version.outputs.resolved-version }}"
-```
-
-### Changelog
-
-```yaml
-steps:
-  - uses: athackst/ci/actions/changelog@main
-    id: changelog
-    with:
-      pr-info-path: ${{ steps.version.outputs.pr-info-path }}
-  - run: echo "${{ steps.changelog.outputs.changelog }}"
-```
-
-### Release draft
-
-```yaml
-steps:
-  - uses: athackst/ci/actions/version-resolver@main
-    id: version
-    with:
-      gh-token: ${{ secrets.GITHUB_TOKEN }}
-
-  - uses: athackst/ci/actions/release-draft@main
-    id: draft
-    with:
-      token: ${{ secrets.GITHUB_TOKEN }}
-      resolved-version: ${{ steps.version.outputs.resolved-version }}
-      changelog: ${{ steps.changelog.outputs.changelog }}
-  - run: echo "Draft release id: ${{ steps.draft.outputs.id }}"
-```
-
-## Copier template
-
-This repo includes a Copier template in `template/` so other repos can sync
-workflow defaults from this repository.
+## Usage
 
 Install Copier (pick one):
 
@@ -147,12 +29,118 @@ python3 -m pip install --user copier
 uvx copier --help
 ```
 
-Use it from another repository:
+Bootstrap a repository with my defaults:
 
 ```bash
-# Initial apply from this repo
 copier copy --trust gh:athackst/ci .
-
-# Update later
-copier update --trust
 ```
+
+Or use the helper script in this repo to apply the template and set the secret:
+
+```bash
+tools/init_ci_repo.sh --repo owner/repo
+```
+
+Add the `CI_BOT_TOKEN` token to the repository with the following permissions:
+
+- `contents: write`
+- `pull requests: write`
+- `issues: write`
+- `actions: write`
+
+Why:
+
+- `ci_update.yml` needs to push template-sync branches and open or update PRs.
+- `pr_bot.yml` uses the token for automerge and optional `pr_bump.yml` pushes.
+- `ci_updater.yml` may need `actions: write` when template updates modify `.github/workflows/*`.
+
+## Mental model
+
+This repo is opinionated around one shared CI config file, `.github/ci-config.yml`,
+which drives:
+
+- PR labels
+- release notes categories
+- semantic version resolution
+- repository label metadata
+
+The workflows are meant to compose around that config instead of each repository
+re-declaring the same rules in multiple places.
+
+## Configuration
+
+Copier asks a small number of questions and uses the answers to generate the
+entrypoint workflows plus a shared CI config.
+
+### Copier questions
+
+`bump_script_path`
+
+- Optional path to a script in the target repository.
+- If set, `pr_bot.yml` will also run `pr_bump.yml` for trusted same-repo PRs.
+- Leave it empty if the repo does not maintain a version file, changelog file, or other bumpable artifact in PRs.
+
+`site_generator`
+
+- Chooses whether `site.yml` uses MkDocs or Jekyll.
+- `mkdocs` is the default and matches the rest of this repo most closely.
+- `jekyll` is there for repositories that already have an established Jekyll site.
+
+`site_version`
+
+- Only shown for MkDocs sites.
+- When enabled, `site.yml` publishes versioned docs:
+  `main` publishes `dev`, and release events publish the release tag plus `latest`.
+- Leave it off for a simpler single-version docs site.
+
+`release_template`
+
+- Contents for `.github/release_template.md`.
+- Used by `release_draft.yml` when rendering the draft release body.
+- Supports `$CHANGES` for generated changelog content and `$VERSION` / `$RESOLVED_VERSION` for the resolved version.
+
+### Generated files
+
+The template writes these main files into the target repository:
+
+- `.github/workflows/ci_update.yml`
+- `.github/workflows/pr_bot.yml`
+- `.github/workflows/release_draft.yml`
+- `.github/workflows/site.yml`
+- `.github/ci-config.yml`
+- `.github/release_template.md`
+
+### Shared CI config
+
+`.github/ci-config.yml` is the center of the convention. It combines concepts
+that would normally live in separate files:
+
+- release-drafter categories and templates
+- version-resolver label rules
+- PR labeler rules
+- repository label metadata such as label descriptions and colors
+
+This is intentionally a modified combination of the upstream
+[release-drafter/release-drafter](https://github.com/release-drafter/release-drafter)
+and [actions/labeler](https://github.com/actions/labeler) config formats.
+
+**Modifications to `release-drafter.yml`**
+
+- Adds `template-file` so the release body can live in `.github/release_template.md` instead of being embedded in YAML.
+
+**Modifications to `labeler.yml`**
+
+- Adds `color` and `description` metadata to labels so the same config can also drive repository label setup.
+
+Colors are set according to the following label palette:
+
+| Label | Color | Swatch |
+| --- | --- | --- |
+| `major` | `#b91c1c` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#b91c1c;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `fix` | `#ea580c` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#ea580c;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `feature` | `#0f766e` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#0f766e;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `documentation` | `#65a30d` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#65a30d;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `maintenance` | `#7c3aed` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#7c3aed;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `dependencies` | `#2563eb` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#2563eb;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `devops` | `#0ea5e9` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#0ea5e9;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
+| `automerge` | `#eab308` | <span style="display:inline-block;width:1.25rem;height:1.25rem;background:#eab308;border:1px solid #d1d5db;border-radius:0.25rem;"></span> |
