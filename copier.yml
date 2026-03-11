@@ -20,6 +20,7 @@ site_generator:
   type: str
   default: mkdocs
   choices:
+    - none
     - mkdocs
     - jekyll
   help: Site workflow backend to use for docs publishing.

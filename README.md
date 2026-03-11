@@ -9,7 +9,7 @@ should be the generated workflows:
 - `ci_update.yml`
 - `pr_bot.yml`
 - `release_draft.yml`
-- `site.yml`
+- `site.yml` when a site workflow is enabled
 
 Those workflows keep the consumer repo aligned with this central CI repo,
 handle common PR automation, create release drafts, and set up site builds.
@@ -82,8 +82,9 @@ entrypoint workflows plus a shared CI config.
 
 `site_generator`
 
-- Chooses whether `site.yml` uses MkDocs or Jekyll.
-- `mkdocs` is the default and matches the rest of this repo most closely.
+- Chooses whether to generate `site.yml`, and if so whether it uses MkDocs or Jekyll.
+- `none` is the default and skips site workflow generation entirely.
+- `mkdocs` matches the rest of this repo most closely.
 - `jekyll` is there for repositories that already have an established Jekyll site.
 
 `site_version`
@@ -106,7 +107,7 @@ The template writes these main files into the target repository:
 - `.github/workflows/ci_update.yml`
 - `.github/workflows/pr_bot.yml`
 - `.github/workflows/release_draft.yml`
-- `.github/workflows/site.yml`
+- `.github/workflows/site.yml` when `site_generator` is not `none`
 - `.github/ci-config.yml`
 - `.github/release_template.md`
 
