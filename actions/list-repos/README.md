@@ -11,25 +11,17 @@ List repositories for a GitHub user and return a filtered JSON array of reposito
   with:
     github-token: ${{ github.token }}
     user: octocat
-    private: false
-    fork: false
-    archived: false
-
-- name: Show repositories
-  shell: bash
-  run: |
-    echo '${{ steps.repos.outputs.repository }}'
 ```
 
 ## Inputs
 
-| Name | Type | Description | Default |
-| --- | --- | --- | --- |
-| `github-token` | `string` | (optional) GitHub token used for GitHub API access. | `${{ github.token }}` |
-| `user` | `string` | (optional) GitHub username whose repositories should be listed. | `${{ github.repository_owner }}` |
-| `private` | `boolean` | (optional) Include only private repositories. | `false` |
-| `fork` | `boolean` | (optional) Include only fork repositories. | `false` |
-| `archived` | `boolean` | (optional) Include only archived repositories. | `false` |
+| Name | Description | Default |
+| --- | --- | --- |
+| `github-token` | (optional) GitHub token used for GitHub API access. | `${{ github.token }}` |
+| `user` | (optional) GitHub username whose repositories should be listed. | `${{ github.repository_owner }}` |
+| `private` | (optional) Include only private repositories. | `false` |
+| `fork` | (optional) Include only fork repositories. | `false` |
+| `archived` | (optional) Include only archived repositories. | `false` |
 
 ## Outputs
 
@@ -39,32 +31,19 @@ List repositories for a GitHub user and return a filtered JSON array of reposito
 
 ## Permissions
 
-- Requires a token that `gh` can use for GitHub API access.
-- Private repository listing requires a token for the target user account.
+- Public repository listing works with the default token.
+- Listing private repositories requires a token that can read the target user's private repositories.
 
 ## Advanced
 
-- The action supports GitHub users only and fails for organizations.
-- User repositories are queried from `/users/<user>/repos` for public access and `/user/repos` when `private: true`.
-- Results are paginated in batches of 100.
-- Filtering for `private`, `fork`, and `archived` is applied locally after each API response.
+- Supports GitHub users only and fails for organizations.
+- When `private: true`, repositories are queried from the authenticated `/user/repos` endpoint and then filtered to the requested owner.
+- `private`, `fork`, and `archived` are exact-match filters, not inclusive toggles.
 - The `repository` output is a JSON array string such as `["owner/repo-a","owner/repo-b"]`.
 
 ## Examples
 
-List private repositories with an explicit token:
-
-```yaml
-- name: List private repositories
-  id: private-repos
-  uses: athackst/ci/actions/list-repos@main
-  with:
-    github-token: ${{ secrets.CI_BOT_TOKEN }}
-    user: octocat
-    private: true
-```
-
-Only archived repositories:
+List only archived repositories:
 
 ```yaml
 - name: List archived repositories
@@ -76,14 +55,3 @@ Only archived repositories:
     archived: true
 ```
 
-Only fork repositories:
-
-```yaml
-- name: List fork repositories
-  id: forks
-  uses: athackst/ci/actions/list-repos@main
-  with:
-    github-token: ${{ github.token }}
-    user: octocat
-    fork: true
-```

@@ -99,7 +99,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - `## Permissions` when token scopes matter
 - `## Advanced` for non-obvious behavior or constraints users must know
 - `## Examples`
-- `Inputs` must use a table with columns: `Name`, `Type`, `Description`, `Default`.  `Description` should include (optional) if it is optional
+- `Inputs` must use a table with columns: `Name`, `Description`, `Default`.  `Description` should include (optional) if it is optional
 - `Outputs` must use a table with columns: `Name`, `Description`.
 - Keep `Usage` to the minimal working example first.
 - Omit `Permissions` when no token scope guidance is needed.
