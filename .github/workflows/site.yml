@@ -7,7 +7,7 @@ on:
     types: [published]
 
 concurrency:
-  group: ghpages-site
+  group: gh-pages-site
   cancel-in-progress: false
 
 jobs:
