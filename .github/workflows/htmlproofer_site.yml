@@ -92,3 +92,4 @@ jobs:
           swap_urls: |
             ^\/dev:
             ^\/v\d+\.\d+\.\d+:
+            ^\/latest:
