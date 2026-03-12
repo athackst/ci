@@ -43,3 +43,21 @@ jobs:
 - Reuses [`htmlproofer_site.yml`](./htmlproofer_site.md) for post-build link checking.
 - Deploys only when `pages: true` and the ref is `refs/heads/main`.
 - Exposes `host` and `base-path` internally so HTMLProofer can validate Pages-style links correctly.
+
+## Examples
+
+Testing on a PR:
+
+site.yml is no longer automatically tested on PRs.  If you want to test on a PR add the following to your test workflow
+
+```yaml
+jobs:
+  test-site:
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
+    with:
+      pages: false
+    secrets: inherit
+```

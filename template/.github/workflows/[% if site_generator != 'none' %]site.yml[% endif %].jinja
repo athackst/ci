@@ -1,32 +1,16 @@
 name: Site
 
 on:
-  pull_request:
   push:
     branches: [main]
   release:
     types: [published]
 
 concurrency:
-  group: "site-${{ github.event.pull_request.number || github.ref }}"
+  group: ghpages-site
   cancel-in-progress: false
 
 jobs:
-  site-pr:
-    if: ${{ github.event_name == 'pull_request' }}
-    permissions:
-      contents: read
-[%- if site_generator == "mkdocs" %]
-    uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
-    with:
-      pages: false
-[%- else %]
-    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
-    with:
-      pages: false
-[%- endif %]
-    secrets: inherit
-
   site-main:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     permissions:
