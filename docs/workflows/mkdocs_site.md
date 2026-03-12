@@ -43,7 +43,7 @@ jobs:
 - Reuses [`htmlproofer_site.yml`](./htmlproofer_site.md) for post-build link checking.
 - When `version` is empty, deploys the artifact to Pages only on `main`.
 - When `version` is non-empty, publishes versioned docs with `athackst/mkdocs-simple-plugin`.
-- `release-tag` is intended for release-mode version publishing, for example `v1.2.3 latest`.
+- For release-mode publishing, use `release-tag` for the concrete version and `version` for aliases, for example `release-tag: v1.2.3` with `version: latest`.
 
 ## Examples
 
