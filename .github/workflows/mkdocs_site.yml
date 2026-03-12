@@ -118,11 +118,29 @@ jobs:
       - name: Setup mkdocs config
         uses: athackst/ci/actions/mkdocs-config@main
       - name: Setup environment
+        id: mike-version
         run: |
-          echo "VERSION=${{ inputs.release-tag }} ${{ inputs.version }}" >> "$GITHUB_ENV"
-          echo "DEFAULT_VERSION=${{ inputs.release-tag }}" >> "$GITHUB_ENV"
+          git fetch --tags --force
+          if git tag --list 'v*' | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            HAS_RELEASE_TAG=true
+          else
+            HAS_RELEASE_TAG=false
+          fi
+          VERSION_INPUT="${{ inputs.version }}"
+          RELEASE_TAG="${{ inputs.release-tag }}"
+
+          if [ "$HAS_RELEASE_TAG" = false ] || [ -n "$RELEASE_TAG" ]; then
+            VERSION="$RELEASE_TAG $VERSION_INPUT"
+            DEFAULT_VERSION="$VERSION_INPUT"
+          else
+            VERSION="$VERSION_INPUT"
+            DEFAULT_VERSION=""
+          fi
+
+          echo "version=$VERSION" | tee -a "$GITHUB_OUTPUT"
+          echo "default-version=$DEFAULT_VERSION" | tee -a "$GITHUB_OUTPUT"
       - name: Publish Release docs
         uses: athackst/mkdocs-simple-plugin@main
         with:
-          version: ${{ env.VERSION }}
-          default_version: ${{ env.DEFAULT_VERSION }}
+          version: ${{ steps.mike-version.outputs.version }}
+          default_version: ${{ steps.mike-version.outputs.default-version }}

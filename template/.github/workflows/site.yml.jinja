@@ -59,7 +59,7 @@ jobs:
     with:
       pages: true
 [%- if site_version %]
-      version: ${{ github.event.release.tag_name }} latest
+      version: latest
       release-tag: ${{ github.event.release.tag_name }}
 [%- endif %]
     secrets: inherit
