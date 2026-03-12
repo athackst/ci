@@ -56,6 +56,21 @@ jobs:
     with:
       pages: true
       version: dev
-    secrets:
-      token: ${{ secrets.CI_BOT_TOKEN }}
+    secrets: inherit
+```
+
+Testing a PR:
+
+site.yml is no longer automatically tested on PRs.  If you want to test on a PR add the following to your test workflow
+
+```yaml
+jobs:
+  test-site:
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+    uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
+    with:
+      pages: false
+    secrets: inherit
 ```
