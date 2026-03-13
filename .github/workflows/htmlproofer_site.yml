@@ -93,3 +93,10 @@ jobs:
             ^\/dev:
             ^\/v\d+\.\d+\.\d+:
             ^\/latest:
+
+      - name: Save cache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          key: ${{ runner.os }}-htmlproofer
+          path: tmp/.htmlproofer
