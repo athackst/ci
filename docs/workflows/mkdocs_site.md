@@ -66,7 +66,6 @@ site.yml is no longer automatically tested on PRs.  If you want to test on a PR 
 ```yaml
 jobs:
   test-site:
-    if: ${{ github.event_name == 'pull_request' }}
     permissions:
       contents: read
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
