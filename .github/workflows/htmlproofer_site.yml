@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          path: blob/main/
+          path: main/
 
       - name: Download artifact
         uses: actions/download-artifact@v8
@@ -98,7 +98,7 @@ jobs:
             ^\/dev:
             ^\/v\d+\.\d+\.\d+:
             ^\/latest:
-            ^https\://github.com/${{ github.repository }}:file\:/${{ github.workspace }}
+            ^https\://github.com/${{ github.repository }}/blob/:file\:/${{ github.workspace }}/
 
       - name: Save cache
         if: always()
