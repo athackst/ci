@@ -18,6 +18,7 @@ jobs:
         uses: poseidon/wait-for-status-checks@v0.6.0
         with:
           token: ${{ github.token }}
+          ignore_pattern: .*automerge.*
       - name: Check automerge label
         id: automerge-label
         shell: bash
