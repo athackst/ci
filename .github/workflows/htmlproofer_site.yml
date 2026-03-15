@@ -30,6 +30,11 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          path: blob/main/
+
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
@@ -93,6 +98,7 @@ jobs:
             ^\/dev:
             ^\/v\d+\.\d+\.\d+:
             ^\/latest:
+            ^https\://github.com/${{ github.repository }}:file\:/${{ github.workspace }}
 
       - name: Save cache
         if: always()
