@@ -1,6 +1,6 @@
 # Configure MkDocs for GitHub Pages
 
-Copy the bundled MkDocs site config into the workspace and append the required Python packages for the site.
+Layer the bundled MkDocs site config into the workspace and append the required Python packages for the site.
 
 ## Usage
 
@@ -11,11 +11,12 @@ Copy the bundled MkDocs site config into the workspace and append the required P
 
 ## Advanced
 
-- Copies the bundled `mkdocs.yml` into the workspace root.
+- Layers the bundled `mkdocs.yml` into the workspace root as a base config.
+- When the repository already has an `mkdocs.yml`, its keys override the bundled defaults.
 - Copies the bundled `overrides/` directory into the workspace root.
 - Creates `requirements.txt` if it does not already exist.
 - Appends the action's bundled Python requirements to `requirements.txt`.
-- Existing workspace files with the same names are overwritten or extended.
+- Existing workspace files with the same names are merged or extended.
 
 ## Examples
 
