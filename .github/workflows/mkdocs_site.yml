@@ -75,6 +75,7 @@ jobs:
       - name: Debug output
         run: |
           tree
+          cat mkdocs.yml
           cat site/index.html
 
       - name: Upload artifact
