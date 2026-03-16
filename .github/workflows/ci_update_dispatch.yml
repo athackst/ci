@@ -8,12 +8,8 @@ on:
       - "template/**"
   workflow_dispatch:
     inputs:
-      event_type:
-        description: Repository dispatch event type to send
-        required: false
-        default: ci-update
       dry_run:
-        description: Check matches without sending dispatch events
+        description: 'Dry Run: Check matches without sending dispatch events'
         required: false
         type: boolean
         default: false
@@ -61,7 +57,7 @@ jobs:
 
       - name: Create GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.APP_ID }}
           owner: ${{ github.repository_owner }}
@@ -72,7 +68,7 @@ jobs:
         uses: actions/github-script@v8
         env:
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
-          EVENT_TYPE: ${{ inputs.event_type || 'ci-update' }}
+          EVENT_TYPE: 'ci-update'
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
