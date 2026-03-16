@@ -8,11 +8,15 @@ on:
       - "template/**"
   workflow_dispatch:
     inputs:
-      repos:
-        description: "Optional newline-delimited owner/repo list override."
-        type: string
+      event_type:
+        description: Repository dispatch event type to send
         required: false
-        default: ""
+        default: ci-update
+      dry_run:
+        description: Check matches without sending dispatch events
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -22,58 +26,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  get-repos:
+  repository-dispatch:
     runs-on: ubuntu-latest
     outputs:
-      count: ${{ steps.targets.outputs.count }}
-      repos-json: ${{ steps.targets.outputs.repos-json }}
-      repos-text: ${{ steps.targets.outputs.repos-text }}
+      checked: ${{ steps.dispatch.outputs.checked }}
+      matched: ${{ steps.dispatch.outputs.matched }}
+      dispatched: ${{ steps.dispatch.outputs.dispatched }}
       changes: ${{ steps.changes.outputs.paths }}
     steps:
       - uses: actions/checkout@v6
+        if: ${{ github.event_name == 'push' }}
         with:
           fetch-depth: 2
-
-      - name: List repositories
-        id: list
-        if: ${{ (github.event.inputs.repos || '') == '' }}
-        uses: ./actions/list-repos
-        with:
-          github-token: ${{ secrets.CI_BOT_TOKEN }}
-          user: ${{ github.repository_owner }}
-          private: "false"
-          fork: "false"
-          archived: "false"
-
-      - name: Resolve dispatch targets
-        id: targets
-        shell: bash
-        env:
-          REPOS_INPUT: ${{ github.event.inputs.repos || '' }}
-          REPOS_JSON: ${{ steps.list.outputs.repository || '[]' }}
-        run: |
-          set -euo pipefail
-          if [ -n "$REPOS_INPUT" ]; then
-            mapfile -t REPOS < <(printf '%s\n' "$REPOS_INPUT" | sed 's/\r$//' | sed 's/[[:space:]]*$//' | sed 's/^[[:space:]]*//' | grep -vE '^(#|$)' || true)
-          else
-            mapfile -t REPOS < <(jq -r '.[]' <<< "$REPOS_JSON")
-          fi
-          COUNT="${#REPOS[@]}"
-          echo "count=$COUNT" | tee -a "$GITHUB_OUTPUT"
-
-          if [ "$COUNT" -eq 0 ]; then
-            echo "No repositories to dispatch."
-            echo "repos-json=[]" | tee -a "$GITHUB_OUTPUT"
-            echo "repos-text=" | tee -a "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          {
-            echo "repos-json=$(printf '%s\n' "${REPOS[@]}" | jq -R . | jq -cs .)"
-            echo "repos-text<<EOF"
-            printf '%s\n' "${REPOS[@]}"
-            echo "EOF"
-          } | tee -a "$GITHUB_OUTPUT"
 
       - name: Compute changed paths
         id: changes
@@ -95,62 +59,112 @@ jobs:
             echo "EOF"
           } | tee -a "$GITHUB_OUTPUT"
 
-  repository-dispatch:
-    needs: get-repos
-    if: ${{ needs.get-repos.outputs.count != '0' }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        repository: ${{ fromJson(needs.get-repos.outputs.repos-json) }}
-    steps:
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v4
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
         with:
-          repository: ${{ matrix.repository }}
-          token: ${{ secrets.CI_BOT_TOKEN }}
-          event-type: ci-update
+          app-id: ${{ secrets.APP_ID }}
+          owner: ${{ github.repository_owner }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-  repository-dispatch-summary:
-    needs: [get-repos, repository-dispatch]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
+      - name: Dispatch ci updates to authorized repositories
+        id: dispatch
+        uses: actions/github-script@v8
+        env:
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          EVENT_TYPE: ${{ inputs.event_type || 'ci-update' }}
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const owner = context.repo.owner;
+            const currentRepo = context.repo.repo;
+            const dryRun = process.env.DRY_RUN === 'true';
+            const eventType = process.env.EVENT_TYPE || 'ci-update';
+            const matchPaths = ['.copier-answers.ci.yml'];
+
+            async function hasAnyMatch(repo) {
+              for (const path of matchPaths) {
+                try {
+                  await github.rest.repos.getContent({ owner, repo, path });
+                  return true;
+                } catch (error) {
+                  if (error.status !== 404) {
+                    throw error;
+                  }
+                }
+              }
+
+              return false;
+            }
+
+            const repos = await github.paginate(
+              github.rest.apps.listReposAccessibleToInstallation,
+              { per_page: 100 },
+            );
+
+            let checked = 0;
+            let matched = 0;
+            let dispatched = 0;
+
+            for (const repoInfo of repos) {
+              const repo = repoInfo.name;
+              if (repo === currentRepo) {
+                continue;
+              }
+
+              checked += 1;
+
+              if (!(await hasAnyMatch(repo))) {
+                continue;
+              }
+
+              matched += 1;
+
+              if (dryRun) {
+                continue;
+              }
+
+              await github.request('POST /repos/{owner}/{repo}/dispatches', {
+                owner,
+                repo,
+                event_type: eventType,
+              });
+              dispatched += 1;
+            }
+
+            core.setOutput('checked', String(checked));
+            core.setOutput('matched', String(matched));
+            core.setOutput('dispatched', String(dispatched));
+
       - name: Workflow summary
+        if: ${{ always() }}
         shell: bash
         env:
-          GET_REPOS_RESULT: ${{ needs.get-repos.result }}
-          DISPATCH_RESULT: ${{ needs.repository-dispatch.result }}
-          REPO_COUNT: ${{ needs.get-repos.outputs.count || '0' }}
-          REPOS_TEXT: ${{ needs.get-repos.outputs.repos-text || '' }}
-          CHANGED_PATHS: ${{ needs.get-repos.outputs.changes || '' }}
+          DISPATCH_RESULT: ${{ steps.dispatch.outcome }}
+          CHECKED: ${{ steps.dispatch.outputs.checked || '0' }}
+          MATCHED: ${{ steps.dispatch.outputs.matched || '0' }}
+          DISPATCHED: ${{ steps.dispatch.outputs.dispatched || '0' }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          CHANGED_PATHS: ${{ steps.changes.outputs.paths || '' }}
         run: |
           set -euo pipefail
           {
             echo "### CI Template Dispatch"
             echo ""
-            echo "- get-repos-result: \`${GET_REPOS_RESULT}\`"
             echo "- dispatch-result: \`${DISPATCH_RESULT}\`"
-            echo "- repo-count: \`${REPO_COUNT}\`"
-            echo ""
-            if [ "$REPO_COUNT" = "0" ]; then
-              echo "No repositories to dispatch."
-              echo ""
+            echo "- repositories-checked: \`${CHECKED}\`"
+            echo "- repositories-matched: \`${MATCHED}\`"
+            if [ "${DRY_RUN}" = "true" ]; then
+              echo "- dispatches-skipped-dry-run: \`${MATCHED}\`"
+            else
+              echo "- dispatches-sent: \`${DISPATCHED}\`"
             fi
+            echo ""
             if [ -n "${CHANGED_PATHS}" ]; then
               echo "<details><summary>Changed paths</summary>"
               echo ""
               echo '```text'
               printf '%s\n' "$CHANGED_PATHS"
-              echo '```'
-              echo ""
-              echo "</details>"
-              echo ""
-            fi
-            if [ -n "${REPOS_TEXT}" ]; then
-              echo "<details><summary>Dispatched repositories</summary>"
-              echo ""
-              echo '```text'
-              printf '%s\n' "${REPOS_TEXT}" | sort
               echo '```'
               echo ""
               echo "</details>"
