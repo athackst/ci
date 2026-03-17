@@ -45,16 +45,24 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-        USER: ${{ inputs.user || github.repository_owner }}
-        PUBLIC: ${{ inputs.public }}
-        PRIVATE: ${{ inputs.private }}
-        FORK: ${{ inputs.fork }}
-        ARCHIVED: ${{ inputs.archived }}
-        FILTER_PATHS: ${{ inputs.filter-paths }}
         OUTPUT_PATH: ${{ inputs.output-path }}
       run: |
         set -euo pipefail
-        REPOSITORIES="$("${{ github.action_path }}/get_repos.sh")"
+        ARGS=(
+          --user "${{ inputs.user || github.repository_owner }}"
+          --public "${{ inputs.public }}"
+          --private "${{ inputs.private }}"
+          --fork "${{ inputs.fork }}"
+          --archived "${{ inputs.archived }}"
+        )
+        while IFS= read -r filter_path; do
+          if [ -n "$filter_path" ]; then
+            ARGS+=(--filter-path "$filter_path")
+          fi
+        done <<'EOF'
+        ${{ inputs.filter-paths }}
+        EOF
+        REPOSITORIES="$(python3 "${{ github.action_path }}/list_repos.py" "${ARGS[@]}")"
         mkdir -p "$(dirname "$OUTPUT_PATH")"
         printf '%s\n' "$REPOSITORIES" > "$OUTPUT_PATH"
         echo "repository-file=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"

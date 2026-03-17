@@ -44,6 +44,7 @@ List repositories for a GitHub user and write a filtered JSON array of repositor
 - `public`, `private`, `fork`, and `archived` are inclusive toggles. The default `true` value includes that category, and `false` removes it from the results.
 - `filter-paths` checks each listed path with the GitHub contents API and returns the repository only when any path exists.
 - `repository-file` is useful when later workflow steps should read repo data without echoing repository names to the logs.
+- For local usage, call `python3 actions/list-repos/list_repos.py --user <name> ...` directly.
 
 ## Examples
 
@@ -106,4 +107,14 @@ Use the saved repository file in a later step:
 
 - name: Generate workflow status page
   run: python3 .github/scripts/generate_workflow_status.py --repos-file "${{ steps.managed.outputs.repository-file }}"
+```
+
+Local usage:
+
+```bash
+python3 actions/list-repos/list_repos.py \
+  --user octocat \
+  --fork false \
+  --archived false \
+  --filter-path .copier-answers.ci.yml
 ```
