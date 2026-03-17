@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 python3 actions/list-repos/list_repos.py \
+  --debug-timing \
   --user athackst \
   --fork false \
   --archived false \

@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 from urllib.error import HTTPError
@@ -50,6 +51,11 @@ def parse_args() -> argparse.Namespace:
         default=[],
         dest="filter_paths",
         help="Repository path that must exist. May be provided multiple times.",
+    )
+    parser.add_argument(
+        "--debug-timing",
+        action="store_true",
+        help="Print timing diagnostics to stderr.",
     )
     return parser.parse_args()
 
@@ -162,19 +168,53 @@ def matches_filter_paths(
     return any(client.path_exists(full_name, filter_path) for filter_path in filter_paths)
 
 
-def collect_repositories(args: argparse.Namespace, client: GitHubClient) -> list[dict[str, Any]]:
+def log_timing(args: argparse.Namespace, **metrics: float | int) -> None:
+    if not args.debug_timing:
+        return
+
+    print("list_repos timing:", file=sys.stderr)
+    ordered_keys = [
+        "owner_check_seconds",
+        "listing_seconds",
+        "filter_path_seconds",
+        "total_seconds",
+        "repository_count",
+        "filter_path_count",
+    ]
+    for key in ordered_keys:
+        if key not in metrics:
+            continue
+        value = metrics[key]
+        if isinstance(value, float):
+            print(f"  - {key}: {value:.3f}", file=sys.stderr)
+        else:
+            print(f"  - {key}: {value}", file=sys.stderr)
+
+
+def timed_collect_repositories(
+    args: argparse.Namespace, client: GitHubClient
+) -> tuple[list[dict[str, Any]], dict[str, float | int]]:
     include_public = args.public == "true"
     include_private = args.private == "true"
     include_forks = args.fork == "true"
     include_archived = args.archived == "true"
 
     if not include_public and not include_private:
-        return []
+        return [], {
+            "owner_check_seconds": 0.0,
+            "listing_seconds": 0.0,
+            "filter_path_seconds": 0.0,
+            "repository_count": 0,
+            "filter_path_count": len(args.filter_paths),
+        }
 
+    owner_check_start = time.perf_counter()
     owner_type = client.get_json(f"/users/{quote(args.user)}")["type"]
+    owner_check_seconds = time.perf_counter() - owner_check_start
     if owner_type != "User":
         raise ValueError(f"Expected GitHub user, got: {owner_type}")
 
+    listing_start = time.perf_counter()
     page = 1
     repositories: list[dict[str, Any]] = []
     while True:
@@ -203,7 +243,11 @@ def collect_repositories(args: argparse.Namespace, client: GitHubClient) -> list
             break
         page += 1
 
+    listing_seconds = time.perf_counter() - listing_start
+
+    filter_path_seconds = 0.0
     if args.filter_paths:
+        filter_start = time.perf_counter()
         max_workers = min(16, max(1, len(repositories)))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             matches = list(
@@ -217,7 +261,19 @@ def collect_repositories(args: argparse.Namespace, client: GitHubClient) -> list
             for repository, matched in zip(repositories, matches, strict=False)
             if matched
         ]
+        filter_path_seconds = time.perf_counter() - filter_start
 
+    return repositories, {
+        "owner_check_seconds": owner_check_seconds,
+        "listing_seconds": listing_seconds,
+        "filter_path_seconds": filter_path_seconds,
+        "repository_count": len(repositories),
+        "filter_path_count": len(args.filter_paths),
+    }
+
+
+def collect_repositories(args: argparse.Namespace, client: GitHubClient) -> list[dict[str, Any]]:
+    repositories, _ = timed_collect_repositories(args, client)
     return repositories
 
 
@@ -226,11 +282,22 @@ def main() -> int:
     client = GitHubClient(resolve_token())
 
     try:
-        repositories = collect_repositories(args, client)
+        total_start = time.perf_counter()
+        repositories, metrics = timed_collect_repositories(args, client)
+        total_seconds = time.perf_counter() - total_start
     except ValueError as error:
         print(str(error), file=sys.stderr)
         return 1
 
+    log_timing(
+        args,
+        owner_check_seconds=metrics["owner_check_seconds"],
+        listing_seconds=metrics["listing_seconds"],
+        filter_path_seconds=metrics["filter_path_seconds"],
+        total_seconds=total_seconds,
+        repository_count=metrics["repository_count"],
+        filter_path_count=metrics["filter_path_count"],
+    )
     print(json.dumps(repositories, separators=(",", ":")))
     return 0
 

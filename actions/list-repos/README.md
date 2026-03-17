@@ -118,3 +118,14 @@ python3 actions/list-repos/list_repos.py \
   --archived false \
   --filter-path .copier-answers.ci.yml
 ```
+
+Profile a local run:
+
+```bash
+python3 actions/list-repos/list_repos.py \
+  --user octocat \
+  --fork false \
+  --archived false \
+  --filter-path .copier-answers.ci.yml \
+  --debug-timing > /tmp/repositories.json
+```
