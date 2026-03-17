@@ -28,19 +28,24 @@ on:
         type: string
         required: false
         default: "chore: apply CI template update"
+      checkout-ref:
+        description: Optional git ref to check out before applying template updates.
+        type: string
+        required: false
+        default: ""
     secrets:
       token:
         description: Optional token override for checkout, push, and PR operations.
         required: false
     outputs:
       changed:
-        description: Whether create-pull-request created or updated a PR (typically indicates template changes were applied).
+        description: Whether template changes were produced by Copier.
         value: ${{ jobs.update.outputs.changed }}
       branch:
-        description: Branch name returned by create-pull-request, if a PR was created or updated.
+        description: Branch name used for the update, whether a PR was created or changes were pushed directly.
         value: ${{ jobs.update.outputs.branch }}
       pr-url:
-        description: URL for the update PR, if created or updated.
+        description: URL for the update PR, if one was created or updated.
         value: ${{ jobs.update.outputs.pr-url }}
 
 permissions:
@@ -54,13 +59,14 @@ jobs:
   update:
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.pr.outputs.pull-request-number != '' }}
-      branch: ${{ steps.pr.outputs.pull-request-branch }}
+      changed: ${{ steps.changes.outputs.changed }}
+      branch: ${{ steps.pr.outputs.pull-request-branch || steps.push-branch.outputs.branch }}
       pr-url: ${{ steps.pr.outputs.pull-request-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.checkout-ref || github.ref }}
           fetch-depth: 0
           token: ${{ secrets.token || github.token }}
 
@@ -79,15 +85,26 @@ jobs:
           if [ ! -f "$ANSWERS_FILE" ]; then
             echo "No $ANSWERS_FILE found; skipping Copier update."
             echo "ran=false" | tee -a "$GITHUB_OUTPUT"
-            exit 0
+            exit 1
           fi
 
           echo "ran=true" | tee -a "$GITHUB_OUTPUT"
           copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref HEAD --defaults
 
+      - name: Detect changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" | tee -a "$GITHUB_OUTPUT"
+          fi
+
       - name: Create or update PR
         id: pr
-        if: ${{ inputs.create-pr }}
+        if: ${{ inputs.create-pr && steps.changes.outputs.changed == 'true' }}
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.token || github.token }}
@@ -97,6 +114,22 @@ jobs:
           title: ${{ inputs.pr-title }}
           body: ${{ inputs.commit-message }}
           labels: ${{ inputs.automerge && 'automerge' || '' }}
+
+      - name: Push update branch
+        id: push-branch
+        if: ${{ !inputs.create-pr && steps.changes.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          BRANCH_NAME: ${{ inputs.pr-branch }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH_NAME"
+          git add -A
+          git commit -m "${{ inputs.commit-message }}"
+          git push --force-with-lease origin "$BRANCH_NAME"
+          echo "branch=$BRANCH_NAME" | tee -a "$GITHUB_OUTPUT"
 
       - name: Setup labels
         id: setup-labels
@@ -146,13 +179,14 @@ jobs:
         shell: bash
         env:
           APPLY_RAN: ${{ steps.apply.outputs.ran || 'false' }}
+          CHANGED: ${{ steps.changes.outputs.changed || 'false' }}
           CREATE_PR_REQUESTED: ${{ inputs.create-pr }}
           AUTOMERGE_REQUESTED: ${{ inputs.automerge }}
           PR_BRANCH_INPUT: ${{ inputs.pr-branch }}
           PR_OPERATION: ${{ steps.pr.outputs.pull-request-operation }}
           PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
           PR_URL: ${{ steps.pr.outputs.pull-request-url }}
-          PR_BRANCH: ${{ steps.pr.outputs.pull-request-branch }}
+          PR_BRANCH: ${{ steps.pr.outputs.pull-request-branch || steps.push-branch.outputs.branch }}
           CREATED_LABELS: ${{ steps.setup-labels.outputs.created-labels }}
           UPDATED_LABELS: ${{ steps.setup-labels.outputs.updated-labels }}
           UNCHANGED_LABELS: ${{ steps.setup-labels.outputs.unchanged-labels }}
@@ -167,6 +201,8 @@ jobs:
 
             if [ "${APPLY_RAN}" != "true" ]; then
               echo ":grey_exclamation: No update attempted (missing \`.copier-answers.ci.yml\`)."
+            elif [ "${CHANGED}" != "true" ]; then
+              echo ":white_check_mark: Copier ran, but no file changes were produced."
             elif [ -n "${PR_URL}" ]; then
               echo ":white_check_mark: PR created or updated successfully."
               echo ""
@@ -179,7 +215,9 @@ jobs:
               echo ""
               echo "pr-operation: \`${PR_OPERATION:-none}\`"
             else
-              echo "PR creation disabled by input."
+              echo ":white_check_mark: Update branch pushed without creating a PR."
+              echo ""
+              echo "pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
             fi
 
             echo ""

@@ -1,5 +1,5 @@
 name: List Repos
-description: List repositories for a user and return a filtered JSON array of full repo names.
+description: List repositories for a user and return a filtered JSON array of repository metadata.
 inputs:
   github-token:
     description: GitHub token used for GitHub API access.
@@ -9,22 +9,34 @@ inputs:
     description: GitHub username whose repositories should be listed.
     required: false
     default: ""
+  public:
+    description: Include public repositories when true. Set to false to exclude them.
+    required: false
+    default: "true"
   private:
-    description: Include only private repositories.
+    description: Include private repositories when true. Set to false to exclude them.
     required: false
-    default: "false"
+    default: "true"
   fork:
-    description: Include only fork repositories.
+    description: Include fork repositories when true. Set to false to exclude them.
     required: false
-    default: "false"
+    default: "true"
   archived:
-    description: Include only archived repositories.
+    description: Include archived repositories when true. Set to false to exclude them.
     required: false
-    default: "false"
+    default: "true"
+  filter-paths:
+    description: Optional newline-delimited repository paths. Repositories are returned only if any listed path exists.
+    required: false
+    default: ""
+  output-path:
+    description: Optional path to write the repository JSON file.
+    required: false
+    default: ".github/repositories.json"
 outputs:
-  repository:
-    description: JSON array of matching repository full names.
-    value: ${{ steps.list.outputs.repository }}
+  repository-file:
+    description: Path to a JSON file containing matching repository metadata objects.
+    value: ${{ steps.list.outputs.repository-file }}
 runs:
   using: composite
   steps:
@@ -33,11 +45,24 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-        USER: ${{ inputs.user || github.repository_owner }}
-        PRIVATE: ${{ inputs.private }}
-        FORK: ${{ inputs.fork }}
-        ARCHIVED: ${{ inputs.archived }}
+        OUTPUT_PATH: ${{ inputs.output-path }}
       run: |
         set -euo pipefail
-        REPOSITORIES="$("${{ github.action_path }}/get_repos.sh")"
-        echo "repository=${REPOSITORIES}" | tee -a "$GITHUB_OUTPUT"
+        ARGS=(
+          --user "${{ inputs.user || github.repository_owner }}"
+          --public "${{ inputs.public }}"
+          --private "${{ inputs.private }}"
+          --fork "${{ inputs.fork }}"
+          --archived "${{ inputs.archived }}"
+        )
+        while IFS= read -r filter_path; do
+          if [ -n "$filter_path" ]; then
+            ARGS+=(--filter-path "$filter_path")
+          fi
+        done <<'EOF'
+        ${{ inputs.filter-paths }}
+        EOF
+        REPOSITORIES="$(python3 "${{ github.action_path }}/list_repos.py" "${ARGS[@]}")"
+        mkdir -p "$(dirname "$OUTPUT_PATH")"
+        printf '%s\n' "$REPOSITORIES" > "$OUTPUT_PATH"
+        echo "repository-file=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"

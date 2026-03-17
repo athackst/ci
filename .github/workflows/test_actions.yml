@@ -388,21 +388,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install bats
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bats
-
-      - name: Test list-repos script (bats)
+      - name: Test list-repos script
         shell: bash
         run: |
           set +e
-          BATS_OUTPUT="$(bats tests/bats/list_repos.bats 2>&1)"
-          BATS_STATUS=$?
+          TEST_OUTPUT="$(python3 -m unittest actions/list-repos/tests/test_list_repos.py 2>&1)"
+          TEST_STATUS=$?
           set -e
           TEST_SUMMARY="list-repos action test"
-          if [ "$BATS_STATUS" -eq 0 ]; then
+          if [ "$TEST_STATUS" -eq 0 ]; then
             TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
           else
             TEST_SUMMARY=":x: $TEST_SUMMARY failed."
@@ -414,15 +408,15 @@ jobs:
             echo "<details><summary>$TEST_SUMMARY</summary>"
             echo ""
             echo '```text'
-            echo "$BATS_OUTPUT"
+            echo "$TEST_OUTPUT"
             echo '```'
             echo ""
             echo "</details>"
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
-          echo "$BATS_OUTPUT"
-          exit "$BATS_STATUS"
+          echo "$TEST_OUTPUT"
+          exit "$TEST_STATUS"
 
       - name: Test build docs
         id: mkdocs
