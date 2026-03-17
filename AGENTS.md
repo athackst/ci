@@ -94,15 +94,39 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - `# <Action Name>`
 - Short description of the action
 - `## Usage`
-- `## Inputs`
-- `## Outputs`
+- `## Inputs` when inputs are specified
+- `## Outputs` when outputs are specified
 - `## Permissions` when token scopes matter
 - `## Advanced` for non-obvious behavior or constraints users must know
 - `## Examples`
-- `Inputs` must use a table with columns: `Name`, `Description`, `Default`.  `Description` should include (optional) if it is optional
-- `Outputs` must use a table with columns: `Name`, `Description`.
+- `Inputs` must use a table with columns: `Name`, `Description`, `Default`.  `Description` should include (optional) if it is optional.  Omit `Inputs` if no inputs are specified.
+- `Outputs` must use a table with columns: `Name`, `Description`. Omit `Outputs` if no outputs are specified.
 - Keep `Usage` to the minimal working example first.
 - Omit `Permissions` when no token scope guidance is needed.
+- Omit `Examples` when `Usage` already covers the practical case.
+- Keep `Advanced` concise and limited to non-obvious behavior that affects correct usage.
+- `Advanced` should describe user-facing behavior and constraints, not internal implementation details.
+
+## Reusable workflow documentation format
+
+Reusable workflow documentation files are located in docs/workflows.
+
+- Reusable workflow READMEs should use this section order:
+- `# <Workflow Name>`
+- Short description of the workflow
+- `## Usage`
+- `## Inputs` when inputs are specified
+- `## Secrets` when secrets are specified
+- `## Outputs` when outputs are specified
+- `## Permissions` when callers need token scope guidance
+- `## Advanced` for non-obvious behavior or constraints users must know
+- `## Examples`
+- `Inputs` must use a table with columns: `Name`, `Description`, `Default`. `Description` should include (optional) if it is optional. Omit `Inputs` if no inputs are specified.
+- `Secrets` must use a table with columns: `Name`, `Description`, `Required`. Omit `Secrets` if no secrets are specified.
+- `Outputs` must use a table with columns: `Name`, `Description`. Omit `Outputs` if no outputs are specified.
+- Keep `Usage` to the minimal working reusable workflow call first.
+- `Usage` examples should show `uses: athackst/ci/.github/workflows/<file>.yml@main`.
+- Omit `Permissions` when no caller guidance is needed.
 - Omit `Examples` when `Usage` already covers the practical case.
 - Keep `Advanced` concise and limited to non-obvious behavior that affects correct usage.
 - `Advanced` should describe user-facing behavior and constraints, not internal implementation details.
@@ -112,4 +136,5 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Never run untrusted PR code in `pull_request_target` mutation jobs.
 - Keep permissions minimal per job.
 - If broader permissions (for example `actions: write`) are used, add an in-file comment explaining why.
+- When permissions change in reusable workflows under `.github/workflows/`, double-check corresponding files under `template/.github/workflows/` to ensure caller-facing permissions still match the intended contract.
 - Avoid destructive git operations; never hard reset in automation.
