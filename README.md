@@ -148,7 +148,7 @@ Colors are set according to the following label palette:
 
 ### Setting up GitHub App for `ci_update_dispatch.yml`
 
-The central dispatcher workflow in this repository, [`ci_update_dispatch.yml`](./.github/workflows/ci_update_dispatch.yml), also requires a GitHub App so it can discover managed repositories, read their `.copier-answers.ci.yml` files, refresh the public workflow status page, and send `repository_dispatch` events.
+The central dispatcher workflow in this repository, [`ci_update_dispatch.yml`](https://github.com/athackst/ci/blob/main/.github/workflows/ci_update_dispatch.yml), also requires a GitHub App so it can discover managed repositories, read their `.copier-answers.ci.yml` files, refresh the public workflow status page, and send `repository_dispatch` events.
 
 Setup notes:
 

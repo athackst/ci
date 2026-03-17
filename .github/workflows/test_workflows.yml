@@ -117,8 +117,6 @@ jobs:
     with:
       pages: false
       artifact-name: github-pages-mkdocs-test
-      htmlproofer-ignore-urls: |
-        /^https://github.com/athackst/ci$/
 
   workflow-mkdocs-site-verify:
     permissions:
