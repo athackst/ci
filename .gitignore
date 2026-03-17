@@ -1,3 +1,3 @@
 __pycache__
 *.token
-.copier-answers.ci.yml
+/.copier-answers.ci.yml

@@ -265,7 +265,35 @@ jobs:
 
           gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
 
+  workflow-ci-updater-fixture-branch:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      fixture-branch: ${{ steps.branch.outputs.fixture-branch }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create ci_updater fixture branch
+        id: branch
+        shell: bash
+        env:
+          FIXTURE_BRANCH: ci-test/ci-updater-fixture-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$FIXTURE_BRANCH"
+          cp tests/fixtures/ci_updater/.copier-answers.ci.yml .
+          git add -f .copier-answers.ci.yml
+          git commit -m "test: prepare ci_updater fixture"
+          git push --force-with-lease origin "$FIXTURE_BRANCH"
+          echo "fixture-branch=$FIXTURE_BRANCH" | tee -a "$GITHUB_OUTPUT"
+
   workflow-ci-updater:
+    needs: [workflow-ci-updater-fixture-branch]
     permissions:
       contents: write
       pull-requests: write
@@ -274,11 +302,13 @@ jobs:
     uses: ./.github/workflows/ci_updater.yml
     secrets: inherit
     with:
-      create-pr: true
+      create-pr: false
+      pr-branch: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
+      checkout-ref: ${{ needs.workflow-ci-updater-fixture-branch.outputs.fixture-branch }}
 
   workflow-ci-updater-verify:
     permissions:
-      contents: read
+      contents: write
     needs: [workflow-ci-updater]
     runs-on: ubuntu-latest
     steps:
@@ -288,6 +318,7 @@ jobs:
           CHANGED: ${{ needs.workflow-ci-updater.outputs.changed }}
           BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
           PR_URL: ${{ needs.workflow-ci-updater.outputs.pr-url }}
+          EXPECTED_BRANCH: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
 
@@ -304,8 +335,12 @@ jobs:
               echo "Invalid branch output: HEAD"
               exit 1
             }
-            [ -n "$PR_URL" ] || {
-              echo "Missing pr-url output when changed=true"
+            [ "$BRANCH" = "$EXPECTED_BRANCH" ] || {
+              echo "Unexpected branch output: $BRANCH"
+              exit 1
+            }
+            [ -z "$PR_URL" ] || {
+              echo "Expected no pr-url when create-pr=false"
               exit 1
             }
           fi
@@ -318,10 +353,60 @@ jobs:
             echo "- pr-url: \`$PR_URL\`"
             echo ""
             if [ "$CHANGED" != "true" ]; then
-              echo "_No PR created/updated (likely no template changes)._"
+              echo "_No branch pushed (likely no template changes)._"
               echo ""
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify ci_updater branch exists
+        if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_BRANCH: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${{ github.repository }}/branches/${TEST_BRANCH}" >/dev/null
+
+      - name: Verify ci_updater branch content
+        if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
+        uses: actions/checkout@v6
+        with:
+          ref: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
+          fetch-depth: 1
+
+      - name: Compare ci_updater fixture result
+        if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          EXPECTED_CONTENT: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          grep -q "^## What's changed" .github/release_template.md
+          if grep -q '^outdated fixture content$' .github/release_template.md; then
+            echo "Fixture content was not updated"
+            exit 1
+          fi
+
+      - name: Delete ci_updater test branch
+        if: ${{ always() && needs.workflow-ci-updater.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_BRANCH: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${TEST_BRANCH}" || true
+
+      - name: Delete ci_updater fixture branch
+        if: ${{ always() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIXTURE_BRANCH: ci-test/ci-updater-fixture-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${FIXTURE_BRANCH}" || true
 
   workflows-success:
     needs:
