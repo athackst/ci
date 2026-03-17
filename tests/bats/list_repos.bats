@@ -47,17 +47,33 @@ teardown() {
 }
 
 @test "list-repos filters public non-fork non-archived repos across pages" {
-  run env USER="athackst" PRIVATE="false" FORK="false" ARCHIVED="false" \
+  run env USER="athackst" PUBLIC="true" PRIVATE="false" FORK="false" ARCHIVED="false" \
     bash actions/list-repos/get_repos.sh
 
   [ "$status" -eq 0 ]
-  [ "$output" = '["athackst/repo-public-1","athackst/repo-public-2"]' ]
+  [ "$output" = '[{"owner":"athackst","name":"repo-public-1","full_name":"athackst/repo-public-1","private":false,"fork":false,"archived":false},{"owner":"athackst","name":"repo-public-2","full_name":"athackst/repo-public-2","private":false,"fork":false,"archived":false}]' ]
 }
 
 @test "list-repos filters private repos" {
-  run env USER="athackst" PRIVATE="true" FORK="false" ARCHIVED="false" \
+  run env USER="athackst" PUBLIC="false" PRIVATE="true" FORK="false" ARCHIVED="false" \
     bash actions/list-repos/get_repos.sh
 
   [ "$status" -eq 0 ]
-  [ "$output" = '["athackst/repo-private-1"]' ]
+  [ "$output" = '[{"owner":"athackst","name":"repo-private-1","full_name":"athackst/repo-private-1","private":true,"fork":false,"archived":false}]' ]
+}
+
+@test "list-repos defaults include public and private repos while excluding disabled categories" {
+  run env USER="athackst" FORK="false" ARCHIVED="false" \
+    bash actions/list-repos/get_repos.sh
+
+  [ "$status" -eq 0 ]
+  [ "$output" = '[{"owner":"athackst","name":"repo-public-2","full_name":"athackst/repo-public-2","private":false,"fork":false,"archived":false},{"owner":"athackst","name":"repo-private-1","full_name":"athackst/repo-private-1","private":true,"fork":false,"archived":false}]' ]
+}
+
+@test "list-repos returns empty when public and private repos are both excluded" {
+  run env USER="athackst" PUBLIC="false" PRIVATE="false" \
+    bash actions/list-repos/get_repos.sh
+
+  [ "$status" -eq 0 ]
+  [ "$output" = '[]' ]
 }

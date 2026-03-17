@@ -15,7 +15,8 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 concurrency:
   group: ci-template-dispatch
@@ -31,7 +32,6 @@ jobs:
       changes: ${{ steps.changes.outputs.paths }}
     steps:
       - uses: actions/checkout@v6
-        if: ${{ github.event_name == 'push' }}
         with:
           fetch-depth: 2
 
@@ -63,66 +63,64 @@ jobs:
           owner: ${{ github.repository_owner }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
+      - name: List managed repositories
+        id: repos
+        uses: ./actions/list-repos
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          user: ${{ github.repository_owner }}
+          filter-paths: |
+            .copier-answers.ci.yml
+          output-path: .github/repositories.json
+
+      - name: Refresh workflow status page
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/generate_workflow_status.py --repos-file "${{ steps.repos.outputs.repository-file }}"
+
+      - name: Create or update workflow status PR
+        id: status-pr
+        if: ${{ inputs.dry_run != true }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ github.token }}
+          add-paths: docs/workflow_status.md
+          branch: docs/refresh-workflow-status
+          delete-branch: true
+          commit-message: "docs: refresh workflow status page"
+          title: "docs: refresh workflow status page"
+          body: "Automated refresh of the public workflow status page."
+          labels: automerge
+
       - name: Dispatch ci updates to authorized repositories
         id: dispatch
         uses: actions/github-script@v8
         env:
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
           EVENT_TYPE: 'ci-update'
+          REPOS_FILE: ${{ steps.repos.outputs.repository-file }}
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
+            const fs = require('fs');
             const owner = context.repo.owner;
-            const currentRepo = context.repo.repo;
             const dryRun = process.env.DRY_RUN === 'true';
             const eventType = process.env.EVENT_TYPE || 'ci-update';
-            const matchPaths = ['.copier-answers.ci.yml'];
+            const repos = JSON.parse(fs.readFileSync(process.env.REPOS_FILE, 'utf8'));
 
-            async function hasAnyMatch(repo) {
-              for (const path of matchPaths) {
-                try {
-                  await github.rest.repos.getContent({ owner, repo, path });
-                  return true;
-                } catch (error) {
-                  if (error.status !== 404) {
-                    throw error;
-                  }
-                }
-              }
-
-              return false;
-            }
-
-            const repos = await github.paginate(
-              github.rest.apps.listReposAccessibleToInstallation,
-              { per_page: 100 },
-            );
-
-            let checked = 0;
-            let matched = 0;
+            const checked = repos.length;
+            const matched = repos.length;
             let dispatched = 0;
 
             for (const repoInfo of repos) {
-              const repo = repoInfo.name;
-              if (repo === currentRepo) {
-                continue;
-              }
-
-              checked += 1;
-
-              if (!(await hasAnyMatch(repo))) {
-                continue;
-              }
-
-              matched += 1;
-
               if (dryRun) {
                 continue;
               }
 
               await github.request('POST /repos/{owner}/{repo}/dispatches', {
                 owner,
-                repo,
+                repo: repoInfo.name,
                 event_type: eventType,
               });
               dispatched += 1;
@@ -141,19 +139,23 @@ jobs:
           MATCHED: ${{ steps.dispatch.outputs.matched || '0' }}
           DISPATCHED: ${{ steps.dispatch.outputs.dispatched || '0' }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          STATUS_PR: ${{ steps.status-pr.outputs.pull-request-url || '' }}
           CHANGED_PATHS: ${{ steps.changes.outputs.paths || '' }}
         run: |
           set -euo pipefail
           {
             echo "### CI Template Dispatch"
             echo ""
-            echo "- dispatch-result: \`${DISPATCH_RESULT}\`"
-            echo "- repositories-checked: \`${CHECKED}\`"
-            echo "- repositories-matched: \`${MATCHED}\`"
+            printf -- '- dispatch-result: `%s`\n' "$DISPATCH_RESULT"
+            printf -- '- repositories-checked: `%s`\n' "$CHECKED"
+            printf -- '- repositories-matched: `%s`\n' "$MATCHED"
+            if [ -n "${STATUS_PR}" ]; then
+              echo "- workflow-status-pr: ${STATUS_PR}"
+            fi
             if [ "${DRY_RUN}" = "true" ]; then
-              echo "- dispatches-skipped-dry-run: \`${MATCHED}\`"
+              printf -- '- dispatches-skipped-dry-run: `%s`\n' "$MATCHED"
             else
-              echo "- dispatches-sent: \`${DISPATCHED}\`"
+              printf -- '- dispatches-sent: `%s`\n' "$DISPATCHED"
             fi
             echo ""
             if [ -n "${CHANGED_PATHS}" ]; then
