@@ -146,24 +146,24 @@ jobs:
           {
             echo "### CI Template Dispatch"
             echo ""
-            printf -- '- dispatch-result: `%s`\n' "$DISPATCH_RESULT"
-            printf -- '- repositories-checked: `%s`\n' "$CHECKED"
-            printf -- '- repositories-matched: `%s`\n' "$MATCHED"
+            echo "- dispatch-result: ${DISPATCH_RESULT}"
+            echo "- repositories-checked: ${CHECKED}"
+            echo "- repositories-matched: ${MATCHED}"
             if [ -n "${STATUS_PR}" ]; then
               echo "- workflow-status-pr: ${STATUS_PR}"
             fi
             if [ "${DRY_RUN}" = "true" ]; then
-              printf -- '- dispatches-skipped-dry-run: `%s`\n' "$MATCHED"
+              echo "- dispatches-skipped-dry-run: ${MATCHED}"
             else
-              printf -- '- dispatches-sent: `%s`\n' "$DISPATCHED"
+              echo "- dispatches-sent: ${DISPATCHED}"
             fi
             echo ""
             if [ -n "${CHANGED_PATHS}" ]; then
               echo "<details><summary>Changed paths</summary>"
               echo ""
               echo '```text'
-              printf '%s\n' "$CHANGED_PATHS"
-              echo '```'
+              printf "%s\n" "$CHANGED_PATHS"
+             echo '```'
               echo ""
               echo "</details>"
               echo ""
