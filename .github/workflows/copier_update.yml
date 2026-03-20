@@ -93,12 +93,13 @@ jobs:
         shell: bash
         env:
           UPDATED_FILES: ${{ steps.commit.outputs.updated-files || '' }}
+          MARKER: "<!-- ci:copier-update -->"
         run: |
           set -euo pipefail
           {
-            echo "marker=<!-- ci:copier-update -->"
+            echo "marker=$MARKER"
             echo "body<<EOF"
-            echo "<!-- ci:copier-update -->"
+            echo "$MARKER"
             echo "Applied Copier-generated workflow updates."
             if [ -n "${UPDATED_FILES}" ]; then
               echo
@@ -110,13 +111,24 @@ jobs:
             echo "EOF"
           } | tee -a "$GITHUB_OUTPUT"
 
-      - name: Create Copier update comment
+      - name: Find existing Copier update comment
+        id: find-copier-comment
+        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
+        uses: peter-evans/find-comment@v4
+        with:
+          token: ${{ secrets.CI_BOT_TOKEN || github.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ steps.copier-comment.outputs.marker }}
+
+      - name: Create or update Copier update comment
         if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
         uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ secrets.CI_BOT_TOKEN || github.token }}
           issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-copier-comment.outputs.comment-id }}
           body: ${{ steps.copier-comment.outputs.body }}
+          edit-mode: replace
 
       - name: Workflow summary
         if: ${{ always() }}

@@ -14,17 +14,20 @@ on:
         required: false
         default: ""
       push-branch:
-        description: Optional branch override for pushing bump commits (defaults to PR head branch).
+        description: Optional branch override for pushing bump commits or opening bump PRs.
         type: string
         required: false
         default: ""
     outputs:
       changed:
-        description: Whether the bump script produced changes that were committed and pushed.
+        description: Whether the bump script produced changes that were prepared for push or a bump PR.
         value: ${{ jobs.pr-bump.outputs.changed }}
       version:
         description: Resolved version from the version resolver action, if any.
         value: ${{ jobs.pr-bump.outputs.resolved-version }}
+      branch:
+        description: Branch that received the bump commit or was used for the bump PR, if any.
+        value: ${{ jobs.pr-bump.outputs.target-branch }}
     secrets:
       token:
         description: Optional token override for labeling, version resolution, and automerge.
@@ -36,10 +39,12 @@ permissions:
 
 jobs:
   pr-bump:
+    if: ${{ inputs.bump-script != '' }}
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.bump.outputs.changed || 'false' }}
+      changed: ${{ steps.commit.outputs.changed || 'false' }}
       resolved-version: ${{ steps.version.outputs.resolved-version || '' }}
+      target-branch: ${{ steps.bump-commit.outputs.target-branch || steps.bump-pr.outputs.pull-request-branch || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -66,12 +71,8 @@ jobs:
 
       - name: Run bump script
         id: bump
-        if: ${{ inputs.bump-script != '' }}
         shell: bash
         env:
-          HEAD_REF: ${{ github.head_ref }}
-          PUSH_BRANCH: ${{ inputs.push-branch }}
-          FROM_REF: ${{ steps.version.outputs.from-ref }}
           VERSION: ${{ steps.version.outputs.resolved-version }}
           MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
           MINOR_VERSION: ${{ steps.version.outputs.minor-version }}
@@ -88,6 +89,10 @@ jobs:
 
           bash "$SCRIPT_PATH"
 
+      - name: Commit updated files
+        id: commit
+        shell: bash
+        run: |
           if [ -z "$(git status --porcelain)" ]; then
             echo "Bump script produced no changes."
             echo "changed=false" | tee -a "$GITHUB_OUTPUT"
@@ -102,18 +107,8 @@ jobs:
           git add -A
           CHANGED_FILES="$(git diff --cached --name-only)"
 
-          TARGET_BRANCH="$PUSH_BRANCH"
-          if [ -z "$TARGET_BRANCH" ]; then
-            TARGET_BRANCH="$HEAD_REF"
-          fi
-          if [ -z "$TARGET_BRANCH" ] || [ "$TARGET_BRANCH" = "HEAD" ]; then
-            echo "Unable to resolve a valid target branch for bump commit push."
-            exit 1
-          fi
-
           {
             echo "changed=true"
-            echo "target-branch=$TARGET_BRANCH"
             echo "changed-files<<EOF"
             printf '%s\n' "$CHANGED_FILES"
             echo "EOF"
@@ -122,22 +117,59 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: apply automated version bump"
+
+      - name: Create or update bump PR
+        id: bump-pr
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.token || github.token }}
+          branch: ${{ inputs.push-branch || 'ci/pr-bump' }}
+          commit-message: "chore: apply automated version bump"
+          title: "chore: apply automated version bump"
+          body: |
+            Automated PR created by `pr_bump.yml`.
+
+            Resolved version: `${{ steps.version.outputs.resolved-version || 'unknown' }}`
+          labels: automerge, skip-changelog
+
+      - name: Push commit
+        id: bump-commit
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          TARGET_BRANCH: ${{ inputs.push-branch || github.head_ref || github.ref_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -z "$TARGET_BRANCH" ] || [ "$TARGET_BRANCH" = "HEAD" ]; then
+            echo "Unable to resolve a valid target branch for commit push."
+            exit 1
+          fi
+          echo "target-branch=$TARGET_BRANCH" | tee -a "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --heads origin "${TARGET_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${TARGET_BRANCH}"
+            git rebase "origin/${TARGET_BRANCH}"
+          else
+            echo "Remote branch ${TARGET_BRANCH} does not exist yet; pushing current HEAD to create it."
+          fi
           git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
 
       - name: Build PR bump comment body
         id: bump-comment
-        if: ${{ github.event_name == 'pull_request' && steps.bump.outputs.changed == 'true' }}
+        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
         shell: bash
         env:
-          TARGET_BRANCH: ${{ steps.bump.outputs.target-branch || '' }}
+          TARGET_BRANCH: ${{ steps.bump-commit.outputs.target-branch || '' }}
           VERSION: ${{ steps.version.outputs.resolved-version || '' }}
-          CHANGED_FILES: ${{ steps.bump.outputs.changed-files || '' }}
+          CHANGED_FILES: ${{ steps.commit.outputs.changed-files || '' }}
+          MARKER: "<!-- ci:pr-bump -->"
         run: |
           set -euo pipefail
           {
-            echo "marker=<!-- ci:pr-bump -->"
+            echo "marker=$MARKER"
             echo "body<<EOF"
-            echo "<!-- ci:pr-bump -->"
+            echo "$MARKER"
             printf '%s' "Applied automated version bump commit"
             if [ -n "${VERSION}" ]; then
               printf " for \`%s\`" "${VERSION}"
@@ -158,7 +190,7 @@ jobs:
 
       - name: Find existing PR bump comment
         id: find-bump-comment
-        if: ${{ github.event_name == 'pull_request' && steps.bump.outputs.changed == 'true' }}
+        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
         uses: peter-evans/find-comment@v4
         with:
           token: ${{ secrets.token || github.token }}
@@ -166,7 +198,7 @@ jobs:
           body-includes: ${{ steps.bump-comment.outputs.marker }}
 
       - name: Create or update PR bump comment
-        if: ${{ github.event_name == 'pull_request' && steps.bump.outputs.changed == 'true' }}
+        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
         uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ secrets.token || github.token }}
@@ -181,14 +213,16 @@ jobs:
         env:
           ACTOR: ${{ github.actor }}
           BUMP_SCRIPT: ${{ inputs.bump-script }}
-          CHANGED: ${{ steps.bump.outputs.changed || 'false' }}
-          TARGET_BRANCH: ${{ steps.bump.outputs.target-branch || '' }}
-          CHANGED_FILES: ${{ steps.bump.outputs.changed-files || '' }}
+          CHANGED: ${{ steps.commit.outputs.changed || 'false' }}
+          TARGET_BRANCH: ${{ steps.bump-commit.outputs.target-branch || steps.bump-pr.outputs.pull-request-branch }}
+          CHANGED_FILES: ${{ steps.commit.outputs.changed-files || '' }}
           FROM_REF: ${{ steps.version.outputs.from-ref }}
           VERSION: ${{ steps.version.outputs.resolved-version }}
           MAJOR_VERSION: ${{ steps.version.outputs.major-version }}
           MINOR_VERSION: ${{ steps.version.outputs.minor-version }}
           PATCH_VERSION: ${{ steps.version.outputs.patch-version }}
+          BUMP_PR_NUMBER: ${{ steps.bump-pr.outputs.pull-request-number || '' }}
+          BUMP_PR_OPERATION: ${{ steps.bump-pr.outputs.pull-request-operation || '' }}
         run: |
           set -euo pipefail
 
@@ -196,11 +230,15 @@ jobs:
             echo "### PR Bump"
             echo ""
 
-            if [ -z "${BUMP_SCRIPT}" ]; then
-              echo ":information_source: No bump script configured; workflow performed no bump."
-            elif [ -n "${VERSION}" ]; then
+            if [ -n "${VERSION}" ]; then
               if [ "${CHANGED}" = "true" ]; then
-                echo ":white_check_mark: Bump commit was created and pushed."
+                if [ "${{ github.event_name }}" = "pull_request" ]; then
+                  echo ":white_check_mark: Bump commit was created and pushed."
+                elif [ -n "${BUMP_PR_NUMBER}" ]; then
+                  echo ":white_check_mark: Bump PR #${BUMP_PR_NUMBER} was ${BUMP_PR_OPERATION:-created or updated}."
+                else
+                  echo ":x: Changes were not committed"
+                fi
               else
                 echo ":information_source: Bump script ran but produced no changes."
               fi
