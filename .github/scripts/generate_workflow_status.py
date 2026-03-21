@@ -85,10 +85,17 @@ def load_matching_repositories(
     ]
 
     if visibility == "public":
-        return [repository for repository in matching_repositories if not repository["private"]]
-    if visibility == "private":
-        return [repository for repository in matching_repositories if repository["private"]]
-    return matching_repositories
+        filtered_repositories = [
+            repository for repository in matching_repositories if not repository["private"]
+        ]
+    elif visibility == "private":
+        filtered_repositories = [
+            repository for repository in matching_repositories if repository["private"]
+        ]
+    else:
+        filtered_repositories = matching_repositories
+
+    return sorted(filtered_repositories, key=lambda repository: repository["name"].lower())
 
 
 def main() -> None:
