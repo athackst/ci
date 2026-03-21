@@ -1,6 +1,6 @@
 # PR Bump
 
-Resolve version metadata for a pull request and optionally run a repository-specific bump script that commits and pushes changes.
+Resolve version metadata and optionally run a repository-specific bump script that either pushes changes back to a PR branch or opens a bump PR.
 
 ## Usage
 
@@ -20,7 +20,7 @@ jobs:
 | --- | --- | --- |
 | `configuration-path` | (optional) Path to the unified CI config file. | `.github/ci-config.yml` |
 | `bump-script` | (optional) Script path to run after version resolution. | `""` |
-| `push-branch` | (optional) Branch override for pushing bump commits. | PR head branch |
+| `push-branch` | (optional) Branch override for pushing bump commits or opening bump PRs. | PR head branch for `pull_request`; otherwise `ci/pr-bump` |
 
 ## Secrets
 
@@ -32,18 +32,21 @@ jobs:
 
 | Name | Description |
 | --- | --- |
-| `changed` | Whether the bump script produced changes that were committed and pushed. |
+| `changed` | Whether the bump script produced changes that were prepared for push or a bump PR. |
 | `version` | Resolved semantic version, if any. |
+| `branch` | Branch that received the bump commit or was used for the bump PR, if any. |
 
 ## Permissions
 
 - Requires `contents: write` to push bump commits.
-- Requires `pull-requests: write` to update the PR comment when a bump commit is created.
+- Requires `pull-requests: write` to update the PR comment or open/update a bump PR.
 
 ## Advanced
 
 - Does nothing if `bump-script` is empty.
 - Resolves version metadata from the shared CI config before running the bump script.
 - Exposes `FROM_REF`, `VERSION`, `MAJOR_VERSION`, `MINOR_VERSION`, `PATCH_VERSION`, and `PR_INFO_PATH` to the bump script.
-- Pushes to `push-branch` if set; otherwise it uses the PR head branch.
+- On `pull_request`, pushes to `push-branch` if set; otherwise it uses the PR head branch.
+- On other events, opens or updates a PR from `push-branch` if set; otherwise it uses `ci/pr-bump`.
+- Non-`pull_request` bump PRs are labeled `automerge` and `skip-changelog`.
 - Maintains a single updatable PR comment for bump results.

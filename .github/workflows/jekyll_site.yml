@@ -84,7 +84,6 @@ jobs:
 
   test-site:
     needs: build-site
-    if: ${{ always() }}
     permissions:
       contents: read
     uses: athackst/ci/.github/workflows/htmlproofer_site.yml@main
