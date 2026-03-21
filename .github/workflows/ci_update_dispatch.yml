@@ -84,7 +84,7 @@ jobs:
         if: ${{ inputs.dry_run != true }}
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.CI_BOT_TOKEN }}
           add-paths: docs/workflow_status.md
           branch: docs/refresh-workflow-status
           delete-branch: true
