@@ -271,8 +271,6 @@ jobs:
       fixture-branch: ${{ steps.branch.outputs.fixture-branch }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Create ci_updater fixture branch
         id: branch
@@ -281,10 +279,15 @@ jobs:
           FIXTURE_BRANCH: ci-test/ci-updater-fixture-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
+
+          FIXTURE_ANSWERS_PATH="$RUNNER_TEMP/ci-updater-fixture-answers.yml"
+          cp tests/fixtures/ci_updater/.copier-answers.ci.yml "$FIXTURE_ANSWERS_PATH"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$FIXTURE_BRANCH"
-          cp tests/fixtures/ci_updater/.copier-answers.ci.yml .
+          git fetch origin main --depth=1
+          git checkout -B "$FIXTURE_BRANCH" origin/main
+          cp "$FIXTURE_ANSWERS_PATH" .copier-answers.ci.yml
           git add -f .copier-answers.ci.yml
           git commit -m "test: prepare ci_updater fixture"
           git push --force-with-lease origin "$FIXTURE_BRANCH"

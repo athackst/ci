@@ -137,14 +137,19 @@ Colors are set according to the following label palette:
 
 | Label | Color | Preview |
 | --- | --- | --- |
-| `major` | `#b91c1c` | ![major](https://img.shields.io/badge/major-b91c1c?style=flat-square) |
-| `fix` | `#ea580c` | ![fix](https://img.shields.io/badge/fix-ea580c?style=flat-square) |
-| `feature` | `#0f766e` | ![feature](https://img.shields.io/badge/feature-0f766e?style=flat-square) |
-| `documentation` | `#65a30d` | ![documentation](https://img.shields.io/badge/documentation-65a30d?style=flat-square) |
-| `maintenance` | `#7c3aed` | ![maintenance](https://img.shields.io/badge/maintenance-7c3aed?style=flat-square) |
-| `dependencies` | `#2563eb` | ![dependencies](https://img.shields.io/badge/dependencies-2563eb?style=flat-square) |
-| `devops` | `#0ea5e9` | ![devops](https://img.shields.io/badge/devops-0ea5e9?style=flat-square) |
-| `automerge` | `#eab308` | ![automerge](https://img.shields.io/badge/automerge-eab308?style=flat-square) |
+| `breaking` | `#7f1d1d` | ![breaking](https://img.shields.io/badge/breaking-7f1d1d?style=flat-square) |
+| `bug` | `#d73a4a` | ![bug](https://img.shields.io/badge/bug-d73a4a?style=flat-square) |
+| `enhancement` | `#0f766e` | ![enhancement](https://img.shields.io/badge/enhancement-0f766e?style=flat-square) |
+| `maintenance` | `#0ea5e9` | ![maintenance](https://img.shields.io/badge/maintenance-0ea5e9?style=flat-square) |
+| `dependencies` | `#1d4ed8` | ![dependencies](https://img.shields.io/badge/dependencies-1d4ed8?style=flat-square) |
+| `documentation` | `#64748b` | ![documentation](https://img.shields.io/badge/documentation-64748b?style=flat-square) |
+| `automerge` | `#ca8a04` | ![automerge](https://img.shields.io/badge/automerge-ca8a04?style=flat-square) |
+| `good first issue` | `#c4b5fd` | ![good first issue](https://img.shields.io/badge/good%20first%20issue-c4b5fd?style=flat-square) |
+| `help wanted` | `#db2777` | ![help wanted](https://img.shields.io/badge/help%20wanted-db2777?style=flat-square) |
+| `question` | `#7e22ce` | ![question](https://img.shields.io/badge/question-7e22ce?style=flat-square) |
+| `duplicate` | `#cbd5e1` | ![duplicate](https://img.shields.io/badge/duplicate-cbd5e1?style=flat-square) |
+| `invalid` | `#a3a3a3` | ![invalid](https://img.shields.io/badge/invalid-a3a3a3?style=flat-square) |
+| `wontfix` | `#78716c` | ![wontfix](https://img.shields.io/badge/wontfix-78716c?style=flat-square) |
 
 ### Setting up GitHub App for `ci_update_dispatch.yml`
 
