@@ -5,6 +5,12 @@ on:
     paths:
       - "copier.yml"
       - "template/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "copier.yml"
+      - "template/**"
   workflow_dispatch:
 
 permissions:
@@ -42,8 +48,6 @@ jobs:
       - name: Commit generated workflow updates
         id: commit
         shell: bash
-        env:
-          HEAD_REF: ${{ github.head_ref || github.ref_name }}
         run: |
           set -euo pipefail
 
@@ -79,17 +83,11 @@ jobs:
             printf '%s\n' "$STAGED_FILES"
             echo "EOF"
           } | tee -a "$GITHUB_OUTPUT"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: update generated workflows from Copier template"
-          git push origin "HEAD:refs/heads/${HEAD_REF}"
-
           echo "changed=true" | tee -a "$GITHUB_OUTPUT"
 
       - name: Build Copier update comment body
         id: copier-comment
-        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
+        if: ${{ steps.commit.outputs.changed == 'true' }}
         shell: bash
         env:
           UPDATED_FILES: ${{ steps.commit.outputs.updated-files || '' }}
@@ -111,6 +109,17 @@ jobs:
             echo "EOF"
           } | tee -a "$GITHUB_OUTPUT"
 
+      - name: Push commit
+        if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update generated workflows from Copier template"
+          git push origin "HEAD:refs/heads/${HEAD_REF}"
+
       - name: Find existing Copier update comment
         id: find-copier-comment
         if: ${{ github.event_name == 'pull_request' && steps.commit.outputs.changed == 'true' }}
@@ -129,6 +138,26 @@ jobs:
           comment-id: ${{ steps.find-copier-comment.outputs.comment-id }}
           body: ${{ steps.copier-comment.outputs.body }}
           edit-mode: replace
+
+      - name: Create or update copier PR
+        id: copier-pr
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.CI_BOT_TOKEN || github.token }}
+          branch: "ci/pr-copier-update"
+          commit-message: "Apply copier update"
+          title: "Apply copier update"
+          body: ${{ steps.copier-comment.outputs.body }}
+          labels: automerge
+
+      - name: Setup labels
+        id: setup-labels
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: athackst/ci/actions/setup-labels@main
+        with:
+          github-token: ${{ secrets.CI_BOT_TOKEN || github.token }}
+          configuration-path: .github/ci-config.yml
 
       - name: Workflow summary
         if: ${{ always() }}
