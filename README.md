@@ -143,7 +143,7 @@ Colors are set according to the following label palette:
 | `maintenance` | `#0ea5e9` | ![maintenance](https://img.shields.io/badge/maintenance-0ea5e9?style=flat-square) |
 | `dependencies` | `#1d4ed8` | ![dependencies](https://img.shields.io/badge/dependencies-1d4ed8?style=flat-square) |
 | `documentation` | `#64748b` | ![documentation](https://img.shields.io/badge/documentation-64748b?style=flat-square) |
-| `automerge` | `#ca8a04` | ![automerge](https://img.shields.io/badge/automerge-ca8a04?style=flat-square) |
+| `automerge` | `#eab308` | ![automerge](https://img.shields.io/badge/automerge-eab308?style=flat-square) |
 | `good first issue` | `#c4b5fd` | ![good first issue](https://img.shields.io/badge/good%20first%20issue-c4b5fd?style=flat-square) |
 | `help wanted` | `#db2777` | ![help wanted](https://img.shields.io/badge/help%20wanted-db2777?style=flat-square) |
 | `question` | `#7e22ce` | ![question](https://img.shields.io/badge/question-7e22ce?style=flat-square) |
