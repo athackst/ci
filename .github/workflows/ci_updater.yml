@@ -131,13 +131,6 @@ jobs:
           git push --force-with-lease origin "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Setup labels
-        id: setup-labels
-        uses: athackst/ci/actions/setup-labels@main
-        with:
-          github-token: ${{ secrets.token || github.token }}
-          configuration-path: .github/ci-config.yml
-
       - name: Create issue if failure
         if: ${{ failure() }}
         uses: actions/github-script@v8
@@ -151,10 +144,6 @@ jobs:
               `- Run: ${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
               `- Target branch input: \`${process.env.PR_BRANCH}\``,
               `- PR title input: \`${process.env.PR_TITLE}\``,
-              `- Created labels: \`${process.env.CREATED_LABELS || ''}\``,
-              `- Updated labels: \`${process.env.UPDATED_LABELS || ''}\``,
-              `- Unchanged labels: \`${process.env.UNCHANGED_LABELS || ''}\``,
-              `- Skipped labels: \`${process.env.SKIPPED_LABELS || ''}\``,
             ].join('\n')
             await github.rest.issues.create({
               owner: context.repo.owner,
@@ -169,10 +158,6 @@ jobs:
           SERVER_URL: ${{ github.server_url }}
           PR_BRANCH: ${{ inputs.pr-branch }}
           PR_TITLE: ${{ inputs.pr-title }}
-          CREATED_LABELS: ${{ steps.setup-labels.outputs.created-labels }}
-          UPDATED_LABELS: ${{ steps.setup-labels.outputs.updated-labels }}
-          UNCHANGED_LABELS: ${{ steps.setup-labels.outputs.unchanged-labels }}
-          SKIPPED_LABELS: ${{ steps.setup-labels.outputs.skipped-labels }}
 
       - name: Workflow summary
         if: ${{ always() }}
@@ -187,10 +172,6 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
           PR_URL: ${{ steps.pr.outputs.pull-request-url }}
           PR_BRANCH: ${{ steps.pr.outputs.pull-request-branch || steps.push-branch.outputs.branch }}
-          CREATED_LABELS: ${{ steps.setup-labels.outputs.created-labels }}
-          UPDATED_LABELS: ${{ steps.setup-labels.outputs.updated-labels }}
-          UNCHANGED_LABELS: ${{ steps.setup-labels.outputs.unchanged-labels }}
-          SKIPPED_LABELS: ${{ steps.setup-labels.outputs.skipped-labels }}
         run: |
           set -euo pipefail
 
@@ -219,12 +200,4 @@ jobs:
               echo ""
               echo "pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
             fi
-
-            echo ""
-            echo "### Setup Labels Summary"
-            echo "setup-labels created-labels: \`${CREATED_LABELS}\`"
-            echo "setup-labels updated-labels: \`${UPDATED_LABELS}\`"
-            echo "setup-labels unchanged-labels: \`${UNCHANGED_LABELS}\`"
-            echo "setup-labels skipped-labels: \`${SKIPPED_LABELS}\`"
-            echo ""
           } >> "$GITHUB_STEP_SUMMARY"
