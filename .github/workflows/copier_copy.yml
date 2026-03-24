@@ -1,4 +1,4 @@
-name: Copier Update
+name: Copier Copy
 
 on:
   pull_request:
