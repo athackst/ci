@@ -18,9 +18,11 @@ API_BASE = "https://api.github.com"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="List repositories for a GitHub user as JSON."
+        description="List repositories for a GitHub owner as JSON."
     )
-    parser.add_argument("--user", required=True, help="GitHub username to inspect.")
+    parser.add_argument(
+        "--user", required=True, help="GitHub user or organization owner to inspect."
+    )
     parser.add_argument(
         "--public",
         choices=["true", "false"],
@@ -103,9 +105,6 @@ class GitHubClient:
 def list_response_items(
     client: GitHubClient, user: str, include_private: bool, page: int
 ) -> list[dict[str, Any]]:
-    if not include_private:
-        return list_public_response_items(client, user, page)
-
     try:
         return client.get_json(
             "/user/repos",
@@ -119,11 +118,13 @@ def list_response_items(
 
 
 def list_public_response_items(
-    client: GitHubClient, user: str, page: int
+    client: GitHubClient, owner: str, owner_type: str, page: int
 ) -> list[dict[str, Any]]:
-    return client.get_json(
-        f"/users/{quote(user)}/repos", params={"page": page, "per_page": 100}
-    )
+    if owner_type == "Organization":
+        path = f"/orgs/{quote(owner)}/repos"
+    else:
+        path = f"/users/{quote(owner)}/repos"
+    return client.get_json(path, params={"page": page, "per_page": 100})
 
 
 def normalize_repository(item: dict[str, Any]) -> dict[str, Any]:
@@ -211,8 +212,8 @@ def timed_collect_repositories(
     owner_check_start = time.perf_counter()
     owner_type = client.get_json(f"/users/{quote(args.user)}")["type"]
     owner_check_seconds = time.perf_counter() - owner_check_start
-    if owner_type != "User":
-        raise ValueError(f"Expected GitHub user, got: {owner_type}")
+    if owner_type not in {"User", "Organization"}:
+        raise ValueError(f"Expected GitHub user or organization, got: {owner_type}")
 
     listing_start = time.perf_counter()
     page = 1
@@ -221,7 +222,7 @@ def timed_collect_repositories(
         if include_private:
             response_items = list_response_items(client, args.user, include_private, page)
         else:
-            response_items = list_public_response_items(client, args.user, page)
+            response_items = list_public_response_items(client, args.user, owner_type, page)
 
         page_repositories: list[dict[str, Any]] = []
         for item in response_items:

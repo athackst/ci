@@ -1,6 +1,6 @@
 # List Repos
 
-List repositories for a GitHub user and write a filtered JSON array of repository metadata to a file.
+List repositories for a GitHub user or organization owner and write a filtered JSON array of repository metadata to a file.
 
 ## Usage
 
@@ -18,7 +18,7 @@ List repositories for a GitHub user and write a filtered JSON array of repositor
 | Name | Description | Default |
 | --- | --- | --- |
 | `github-token` | (optional) GitHub token used for GitHub API access. | `${{ github.token }}` |
-| `user` | (optional) GitHub username whose repositories should be listed. | `${{ github.repository_owner }}` |
+| `user` | (optional) GitHub user or organization owner whose repositories should be listed. | `${{ github.repository_owner }}` |
 | `public` | (optional) Include public repositories when `true`. Set to `false` to exclude them. | `"true"` |
 | `private` | (optional) Include private repositories when `true`. Set to `false` to exclude them. | `"true"` |
 | `fork` | (optional) Include fork repositories when `true`. Set to `false` to exclude them. | `"true"` |
@@ -35,11 +35,11 @@ List repositories for a GitHub user and write a filtered JSON array of repositor
 ## Permissions
 
 - Public repository listing works with the default token.
-- Listing private repositories requires a token that can read the target user's private repositories.
+- Listing private repositories requires a token that can read the target owner's private repositories.
 
 ## Advanced
 
-- Supports GitHub users only and fails for organizations.
+- Supports both GitHub users and organizations.
 - When `private: true`, the action uses authenticated repo listing so private repositories can be included; with GitHub App tokens it falls back to installation repositories.
 - `public`, `private`, `fork`, and `archived` are inclusive toggles. The default `true` value includes that category, and `false` removes it from the results.
 - `filter-paths` checks each listed path with the GitHub contents API and returns the repository only when any path exists.
