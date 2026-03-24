@@ -1,10 +1,10 @@
-name: 'Configure Mkdocs for GitHub Pages'
-description: 'A GitHub Action to enable mkdocs for Pages and extract various metadata about a site.'
+name: 'Configure MkDocs for GitHub Pages'
+description: 'A GitHub Action to enable MkDocs for Pages and extract various metadata about a site.'
 
 runs:
   using: 'composite'
   steps:
-    - name: Setup mkdocs config
+    - name: Setup MkDocs config
       shell: bash
       run: |
         bash "${{ github.action_path }}/setup_mkdocs.sh"
