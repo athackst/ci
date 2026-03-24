@@ -5,12 +5,6 @@ on:
     paths:
       - "copier.yml"
       - "template/**"
-  push:
-    branches:
-      - main
-    paths:
-      - "copier.yml"
-      - "template/**"
   workflow_dispatch:
 
 permissions:
@@ -19,7 +13,7 @@ permissions:
 
 concurrency:
   group: copier-update-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   copier-update:
@@ -150,14 +144,6 @@ jobs:
           title: "Apply copier update"
           body: ${{ steps.copier-comment.outputs.body }}
           labels: automerge
-
-      - name: Setup labels
-        id: setup-labels
-        if: ${{ github.event_name != 'pull_request' }}
-        uses: athackst/ci/actions/setup-labels@main
-        with:
-          github-token: ${{ secrets.CI_BOT_TOKEN || github.token }}
-          configuration-path: .github/ci-config.yml
 
       - name: Workflow summary
         if: ${{ always() }}
