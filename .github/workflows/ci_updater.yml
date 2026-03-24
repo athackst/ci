@@ -85,7 +85,7 @@ jobs:
           if [ ! -f "$ANSWERS_FILE" ]; then
             echo "No $ANSWERS_FILE found; skipping Copier update."
             echo "ran=false" | tee -a "$GITHUB_OUTPUT"
-            exit 1
+            exit 0
           fi
 
           echo "ran=true" | tee -a "$GITHUB_OUTPUT"
