@@ -8,11 +8,6 @@ on:
         type: boolean
         required: false
         default: true
-      automerge:
-        description: Enable auto-merge (squash) on the updater PR.
-        type: boolean
-        required: false
-        default: false
       pr-branch:
         description: Branch name used for template updates.
         type: string
@@ -113,7 +108,7 @@ jobs:
           commit-message: ${{ inputs.commit-message }}
           title: ${{ inputs.pr-title }}
           body: ${{ inputs.commit-message }}
-          labels: ${{ inputs.automerge && 'automerge' || '' }}
+          labels: automerge, skip-changelog
 
       - name: Push update branch
         id: push-branch
