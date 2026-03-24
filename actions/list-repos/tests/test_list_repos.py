@@ -148,6 +148,64 @@ class ListReposTests(unittest.TestCase):
 
         self.assertEqual(repositories, [])
 
+    def test_collect_repositories_filters_public_organization_repos(self):
+        client = FakeClient(
+            {
+                ("/users/athackst", ()): {"type": "Organization"},
+                (
+                    "/orgs/athackst/repos",
+                    (("page", 1), ("per_page", 100)),
+                ): [
+                    {"full_name": "athackst/repo-public-1", "private": False, "fork": False, "archived": False},
+                    {"full_name": "someone-else/repo-public-2", "private": False, "fork": False, "archived": False},
+                    {"full_name": "athackst/repo-archived-1", "private": False, "fork": False, "archived": True},
+                ],
+            }
+        )
+        args = self.make_args(public="true", private="false", fork="false", archived="false")
+
+        repositories = list_repos.collect_repositories(args, client)
+
+        self.assertEqual([repo["name"] for repo in repositories], ["repo-public-1"])
+
+    def test_collect_repositories_uses_installation_fallback_for_organization(self):
+        client = FakeClient(
+            {
+                ("/users/athackst", ()): {"type": "Organization"},
+                (
+                    "/user/repos",
+                    (("affiliation", "owner"), ("page", 1), ("per_page", 100), ("visibility", "all")),
+                ): HTTPError(
+                    url="https://api.github.com/user/repos",
+                    code=403,
+                    msg="forbidden",
+                    hdrs=None,
+                    fp=None,
+                ),
+                (
+                    "/installation/repositories",
+                    (("page", 1), ("per_page", 100)),
+                ): {
+                    "repositories": [
+                        {"full_name": "athackst/repo-private-1", "private": True, "fork": False, "archived": False},
+                        {"full_name": "someone-else/repo-private-2", "private": True, "fork": False, "archived": False},
+                    ]
+                },
+            }
+        )
+        args = self.make_args(public="false", private="true", fork="false", archived="false")
+
+        repositories = list_repos.collect_repositories(args, client)
+
+        self.assertEqual([repo["name"] for repo in repositories], ["repo-private-1"])
+
+    def test_collect_repositories_rejects_unsupported_owner_type(self):
+        client = FakeClient({("/users/athackst", ()): {"type": "Enterprise"}})
+        args = self.make_args()
+
+        with self.assertRaisesRegex(ValueError, "Expected GitHub user or organization"):
+            list_repos.collect_repositories(args, client)
+
 
 if __name__ == "__main__":
     unittest.main()
