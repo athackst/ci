@@ -3,4 +3,5 @@
 .github/workflows/ci_update.yml
 .github/workflows/pr_bot.yml
 .github/workflows/release_draft.yml
+.github/workflows/setup_labels.yml
 .github/workflows/site.yml

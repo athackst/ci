@@ -53,6 +53,7 @@ collect_copier_managed_paths() {
   [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/site.yml" ]
   [ -f "${wf_dir}/ci_update.yml" ]
+  [ -f "${wf_dir}/setup_labels.yml" ]
   [ -f "${answers_file}" ]
 
   run grep -q "mkdocs_site.yml@main" "${wf_dir}/site.yml"
@@ -74,6 +75,7 @@ collect_copier_managed_paths() {
   [ -f "${wf_dir}/release_draft.yml" ]
   [ ! -f "${wf_dir}/site.yml" ]
   [ -f "${wf_dir}/ci_update.yml" ]
+  [ -f "${wf_dir}/setup_labels.yml" ]
   [ -f "${answers_file}" ]
 
   run grep -q "site_generator: none" "${answers_file}"
@@ -92,6 +94,7 @@ collect_copier_managed_paths() {
   [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/site.yml" ]
   [ -f "${wf_dir}/ci_update.yml" ]
+  [ -f "${wf_dir}/setup_labels.yml" ]
   [ -f "${answers_file}" ]
 
   run grep -q "jekyll_site.yml@main" "${wf_dir}/site.yml"
