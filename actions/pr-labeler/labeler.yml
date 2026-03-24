@@ -1,42 +1,33 @@
-major:
-  - head-branch: ["^major", "^breaking", "^break"]
+breaking:
+  - head-branch: ["^major", "^break"]
   - description: "Breaking or major-version change"
-  - color: "b91c1c"
+  - color: "#7f1d1d"
 
-fix: 
+bug:
   - head-branch: ['^fix', '^bug']
   - description: "Something isn't working"
-  - color: "ea580c"
+  - color: "#d73a4a"
 
-feature:
+enhancement:
   - head-branch: ["^feat", "^new", "^enhance"]
   - description: "New feature or request"
-  - color: "0f766e"
+  - color: "#0f766e"
+  
+maintenance:
+  - head-branch: ['^chore', '^maint', '^noop', '^no-op', '^upkeep', '^dev']
+  - changed-files:
+    - any-glob-to-any-file: [".github/**", ".vscode/**"]
+  - description: "Non-behavior related change"
+  - color: "#0ea5e9"
+
+dependencies:
+  - head-branch: ['^deps', '^dependencies']
+  - description: "Pull requests that update a dependency file"
+  - color: "#1d4ed8"
 
 documentation:
   - changed-files:
-      - any-glob-to-any-file: "**/*.md"
+    - any-glob-to-any-file: "**/*.md"
   - head-branch: ["^doc"]
-  - description: "Change to documentation"
-  - color: "65a30d"
-
-maintenance: 
-  - head-branch: ['^chore', '^maint', '^noop', '^no-op', '^upkeep', '^dev']
-  - description: "Non-behavior related change"
-  - color: "7c3aed"
-
-dependencies: 
-  - head-branch: ['^deps', '^dependencies']
-  - description: "Pull requests that update a dependency file"
-  - color: "2563eb"
-
-devops:
-  - changed-files:
-    - any-glob-to-any-file: [".github/**", ".vscode/**"]
-  - description: "Change to development workflows"
-  - color: "0ea5e9"
-
-automerge:
-  - head-branch: ['^dependabot/', '^chore/update-ci-template$']
-  - description: "PRs eligible for automatic merge"
-  - color: "eab308"
+  - description: "Improvements or additions to documentation"
+  - color: "#64748b"
