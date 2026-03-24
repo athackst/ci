@@ -18,7 +18,7 @@ jobs:
 | --- | --- | --- |
 | `create-pr` | (optional) Create or update a PR with template changes. | `true` |
 | `automerge` | (optional) Add the `automerge` label to the updater PR. | `false` |
-| `pr-branch` | (optional) Branch name used for template updates. | `chore/update-ci-template` |
+| `pr-branch` | (optional) Branch name used for template updates. | `ci/update-ci-template` |
 | `pr-title` | (optional) Pull request title. | `chore: update CI template` |
 | `commit-message` | (optional) Commit message for template updates. | `chore: apply CI template update` |
 
@@ -61,4 +61,3 @@ jobs:
     secrets:
       token: ${{ secrets.CI_BOT_TOKEN }}
 ```
-

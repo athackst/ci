@@ -17,7 +17,7 @@ on:
         description: Branch name used for template updates.
         type: string
         required: false
-        default: chore/update-ci-template
+        default: ci/update-ci-template
       pr-title:
         description: Pull request title.
         type: string
