@@ -8,6 +8,11 @@ on:
         type: boolean
         required: false
         default: true
+      automerge:
+        description: Deprecated. Retained for compatibility; updater PRs are labeled automatically.
+        type: boolean
+        required: false
+        default: false
       pr-branch:
         description: Branch name used for template updates.
         type: string
