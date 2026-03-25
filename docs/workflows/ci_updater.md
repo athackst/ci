@@ -1,6 +1,6 @@
 # CI Updater
 
-Run `copier update`, open or update a template-sync PR, and refresh repository labels from the shared CI config.
+Run `copier update` and open or update a template-sync PR.
 
 ## Usage
 
@@ -17,10 +17,11 @@ jobs:
 | Name | Description | Default |
 | --- | --- | --- |
 | `create-pr` | (optional) Create or update a PR with template changes. | `true` |
-| `automerge` | (optional) Add the `automerge` label to the updater PR. | `false` |
+| `automerge` | (optional) Deprecated. Retained for compatibility; updater PRs are labeled automatically. | `false` |
 | `pr-branch` | (optional) Branch name used for template updates. | `ci/update-ci-template` |
 | `pr-title` | (optional) Pull request title. | `chore: update CI template` |
 | `commit-message` | (optional) Commit message for template updates. | `chore: apply CI template update` |
+| `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
 
 ## Secrets
 
@@ -32,9 +33,9 @@ jobs:
 
 | Name | Description |
 | --- | --- |
-| `changed` | Whether `create-pull-request` created or updated a PR. |
-| `branch` | Branch name returned by `create-pull-request`, if any. |
-| `pr-url` | URL for the updater PR, if any. |
+| `changed` | Whether template changes were produced by Copier. |
+| `branch` | Branch name used for the update, whether a PR was created or changes were pushed directly. |
+| `pr-url` | URL for the updater PR, if one was created or updated. |
 
 ## Permissions
 
@@ -44,9 +45,9 @@ jobs:
 ## Advanced
 
 - Skips the Copier update entirely when `.copier-answers.ci.yml` is missing.
-- Runs `setup-labels` against `.github/ci-config.yml` after applying template updates.
-- Creates a failure issue with updater context and setup-labels outputs if the workflow fails.
-- Writes a final workflow summary for both the Copier PR path and label setup results.
+- The `automerge` input is deprecated and currently has no effect; updater PRs are labeled automatically.
+- Creates a failure issue with updater context if the workflow fails.
+- Writes a final workflow summary for both the PR and direct-push paths.
 
 ## Examples
 
