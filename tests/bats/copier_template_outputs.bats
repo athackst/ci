@@ -67,7 +67,6 @@ collect_copier_managed_paths_with_bump() {
 
   [ -f "${wf_dir}/ci_update.yml" ]
   [ -f "${wf_dir}/pr_automerge.yml" ]
-  [ -f "${wf_dir}/pr_bot.yml" ]
   [ -f "${wf_dir}/pr_labeler.yml" ]
   [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/setup_labels.yml" ]
@@ -94,7 +93,6 @@ collect_copier_managed_paths_with_bump() {
 
   [ -f "${wf_dir}/ci_update.yml" ]
   [ -f "${wf_dir}/pr_automerge.yml" ]
-  [ -f "${wf_dir}/pr_bot.yml" ]
   [ -f "${wf_dir}/pr_labeler.yml" ]
   [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/setup_labels.yml" ]
@@ -115,7 +113,6 @@ collect_copier_managed_paths_with_bump() {
 
   [ -f "${wf_dir}/ci_update.yml" ]
   [ -f "${wf_dir}/pr_automerge.yml" ]
-  [ -f "${wf_dir}/pr_bot.yml" ]
   [ -f "${wf_dir}/pr_labeler.yml" ]
   [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/setup_labels.yml" ]

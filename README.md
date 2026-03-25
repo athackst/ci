@@ -7,8 +7,11 @@ Copier template first. After that, the primary entrypoints in the consumer repo
 should be the generated workflows:
 
 - `ci_update.yml`
-- `pr_bot.yml`
+- `pr_automerge.yml`
+- `pr_bump.yml`
+- `pr_labeler.yml`
 - `release_draft.yml`
+- `setup_labels.yml`
 - `site.yml` when a site workflow is enabled
 
 Those workflows keep the consumer repo aligned with this central CI repo,
@@ -41,18 +44,18 @@ Or use the helper script in this repo to apply the template and set the secret:
 tools/init_ci_repo.sh --repo owner/repo
 ```
 
-Add the `CI_BOT_TOKEN` token to the repository with the following permissions:
+Add a repository secret named `CI_BOT_TOKEN`:
 
-- `contents: write`
-- `pull requests: write`
-- `issues: write`
-- `actions: write`
+1. Create a Fine-grained personal access token for the target repository.
+2. In the repository, go to `Settings -> Secrets and variables -> Actions`.
+3. Add a new repository secret named `CI_BOT_TOKEN` with that token value.
 
-Why:
+Required repository permissions for the token:
 
-- `ci_update.yml` needs to push template-sync branches and open or update PRs.
-- `pr_bot.yml` uses the token for automerge and optional `pr_bump.yml` pushes.
-- `ci_updater.yml` may need `actions: write` when template updates modify `.github/workflows/*`.
+- `Contents: Read and write` (used in `ci_update.yml`, `pr_bump.yml`)
+- `Pull requests: Read and write` (used in `pr_automerge.yml`, `pr_bump.yml`)
+- `Issues: Read and write` (used in `pr_labeler.yml`, `setup_labels.yml`, `pr_automerge.yml`)
+- `Actions: Read and write` (used in `ci_update.yml`)
 
 ## Mental model
 
@@ -77,7 +80,7 @@ entrypoint workflows plus a shared CI config.
 `bump_script_path`
 
 - Optional path to a script in the target repository.
-- If set, `pr_bot.yml` will also run `pr_bump.yml` for trusted same-repo PRs.
+- If set, `pr_bump.yml` will also run `bump.yml` for trusted same-repo PRs.
 - Leave it empty if the repo does not maintain a version file, changelog file, or other bumpable artifact in PRs.
 
 `site_generator`
@@ -99,17 +102,6 @@ entrypoint workflows plus a shared CI config.
 - Contents for `.github/release_template.md`.
 - Used by `release_draft.yml` when rendering the draft release body.
 - Supports `$CHANGES` for generated changelog content and `$VERSION` / `$RESOLVED_VERSION` for the resolved version.
-
-### Generated files
-
-The template writes these main files into the target repository:
-
-- `.github/workflows/ci_update.yml`
-- `.github/workflows/pr_bot.yml`
-- `.github/workflows/release_draft.yml`
-- `.github/workflows/site.yml` when `site_generator` is not `none`
-- `.github/ci-config.yml`
-- `.github/release_template.md`
 
 ### Shared CI config
 
