@@ -1,15 +1,9 @@
-# This file is generated from athackst/ci/template/.github/workflows/automerge.yml.jinja.
+# This file is generated from athackst/ci/template/.github/workflows/pr_automerge.yml.jinja.
 # Do not edit directly; update the template instead.
 
-name: Automerge
+name: PR Automerge
 
 on:
-  workflow_run:
-    workflows:
-      - Labeler
-    types:
-      - completed
-
   pull_request_target:
     types:
       - labeled

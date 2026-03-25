@@ -1,4 +1,4 @@
-# PR Labeler
+# Labeler
 
 Apply pull request labels from the shared CI config.
 
@@ -7,9 +7,16 @@ Apply pull request labels from the shared CI config.
 ```yaml
 jobs:
   pr-labels:
-    uses: athackst/ci/.github/workflows/pr_labeler.yml@main
-    secrets: inherit
+    uses: athackst/ci/.github/workflows/labeler.yml@main
+    secrets:
+      token: ${{ secrets.CI_BOT_TOKEN }}
 ```
+
+## Secrets
+
+| Name | Description | Required |
+| --- | --- | --- |
+| `token` | Token used to resolve config and apply PR labels. | No |
 
 ## Permissions
 

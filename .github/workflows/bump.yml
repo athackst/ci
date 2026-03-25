@@ -1,4 +1,4 @@
-name: PR Bump
+name: Bump
 
 on:
   workflow_call:

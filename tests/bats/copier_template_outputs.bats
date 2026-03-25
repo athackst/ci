@@ -65,13 +65,13 @@ collect_copier_managed_paths_with_bump() {
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
-  [ -f "${wf_dir}/pr_bot.yml" ]
-  [ -f "${wf_dir}/labeler.yml" ]
-  [ -f "${wf_dir}/automerge.yml" ]
-  [ -f "${wf_dir}/release_draft.yml" ]
-  [ -f "${wf_dir}/site.yml" ]
   [ -f "${wf_dir}/ci_update.yml" ]
+  [ -f "${wf_dir}/pr_automerge.yml" ]
+  [ -f "${wf_dir}/pr_bot.yml" ]
+  [ -f "${wf_dir}/pr_labeler.yml" ]
+  [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/setup_labels.yml" ]
+  [ -f "${wf_dir}/site.yml" ]
   [ -f "${answers_file}" ]
 
   run grep -q "mkdocs_site.yml@main" "${wf_dir}/site.yml"
@@ -92,13 +92,13 @@ collect_copier_managed_paths_with_bump() {
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
-  [ -f "${wf_dir}/pr_bot.yml" ]
-  [ -f "${wf_dir}/labeler.yml" ]
-  [ -f "${wf_dir}/automerge.yml" ]
-  [ -f "${wf_dir}/release_draft.yml" ]
-  [ ! -f "${wf_dir}/site.yml" ]
   [ -f "${wf_dir}/ci_update.yml" ]
+  [ -f "${wf_dir}/pr_automerge.yml" ]
+  [ -f "${wf_dir}/pr_bot.yml" ]
+  [ -f "${wf_dir}/pr_labeler.yml" ]
+  [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/setup_labels.yml" ]
+  [ ! -f "${wf_dir}/site.yml" ]
   [ -f "${answers_file}" ]
 
   run grep -q "site_generator: none" "${answers_file}"
@@ -113,13 +113,13 @@ collect_copier_managed_paths_with_bump() {
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
-  [ -f "${wf_dir}/pr_bot.yml" ]
-  [ -f "${wf_dir}/labeler.yml" ]
-  [ -f "${wf_dir}/automerge.yml" ]
-  [ -f "${wf_dir}/release_draft.yml" ]
-  [ -f "${wf_dir}/site.yml" ]
   [ -f "${wf_dir}/ci_update.yml" ]
+  [ -f "${wf_dir}/pr_automerge.yml" ]
+  [ -f "${wf_dir}/pr_bot.yml" ]
+  [ -f "${wf_dir}/pr_labeler.yml" ]
+  [ -f "${wf_dir}/release_draft.yml" ]
   [ -f "${wf_dir}/setup_labels.yml" ]
+  [ -f "${wf_dir}/site.yml" ]
   [ -f "${answers_file}" ]
 
   run grep -q "jekyll_site.yml@main" "${wf_dir}/site.yml"
@@ -136,9 +136,9 @@ collect_copier_managed_paths_with_bump() {
   render_variant none "scripts/bump.sh"
   wf_dir="${out_dir}/.github/workflows"
 
-  [ -f "${wf_dir}/bump.yml" ]
+  [ -f "${wf_dir}/pr_bump.yml" ]
 
-  run grep -q "bump-script: scripts/bump.sh" "${wf_dir}/bump.yml"
+  run grep -q "bump-script: scripts/bump.sh" "${wf_dir}/pr_bump.yml"
   [ "$status" -eq 0 ]
 
   run "$ACTIONLINT" "${wf_dir}"/*.yml
