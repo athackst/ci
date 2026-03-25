@@ -105,7 +105,8 @@ jobs:
           TEST_BRANCH: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${TEST_BRANCH}" || true
+          ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
 
   workflow-mkdocs-site:
     permissions:
@@ -397,7 +398,8 @@ jobs:
           TEST_BRANCH: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${TEST_BRANCH}" || true
+          ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
 
       - name: Delete ci_updater fixture branch
         if: ${{ always() }}
@@ -407,7 +409,8 @@ jobs:
           FIXTURE_BRANCH: ci-test/ci-updater-fixture-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${FIXTURE_BRANCH}" || true
+          ENCODED_BRANCH="${FIXTURE_BRANCH//\//%2F}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
 
   workflows-success:
     needs:
