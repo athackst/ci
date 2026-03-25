@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: GitHub Checks
+        id: checks
         uses: poseidon/wait-for-status-checks@v0.6.0
+        continue-on-error: true
         with:
           token: ${{ github.token }}
           ignore_pattern: .*automerge.*
@@ -43,7 +45,7 @@ jobs:
 
       - name: Enable auto-merge for labeled PR
         id: merge
-        if: ${{ steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
+        if: ${{ steps.checks.outcome == 'success' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token || github.token }}
@@ -54,6 +56,7 @@ jobs:
         if: ${{ always() }}
         shell: bash
         env:
+          CHECKS_OUTCOME: ${{ steps.checks.outcome || 'skipped' }}
           HAS_AUTOMERGE: ${{ steps.automerge-label.outputs.has-automerge || 'false' }}
           IS_DRAFT: ${{ github.event.pull_request.draft }}
           MERGE_OUTCOME: ${{ steps.merge.outcome || 'skipped' }}
@@ -64,6 +67,8 @@ jobs:
             echo ""
             if [ "${HAS_AUTOMERGE}" != "true" ]; then
               echo "Skipped: missing \`automerge\` label."
+            elif [ "${CHECKS_OUTCOME}" != "success" ]; then
+              echo "Skipped: required checks are not passing yet."
             elif [ "${IS_DRAFT}" = "true" ]; then
               echo "Skipped: PR is draft."
             elif [ "${MERGE_OUTCOME}" = "success" ]; then
