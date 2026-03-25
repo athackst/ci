@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -98,8 +101,45 @@ def load_matching_repositories(
     return sorted(filtered_repositories, key=lambda repository: repository["name"].lower())
 
 
+def list_remote_workflow_files(owner: str, repo: str, token: str | None) -> set[str]:
+    """Return the set of workflow filenames that exist in the remote repository."""
+    url = f"https://api.github.com/repos/{owner}/{repo}/contents/.github/workflows"
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "workflow-status-generator",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    request = Request(url, headers=headers)
+
+    try:
+        with urlopen(request) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError as error:
+        if error.code == 404:
+            return set()
+        raise RuntimeError(
+            f"Unable to query workflows for {owner}/{repo}: HTTP {error.code}"
+        ) from error
+    except URLError as error:
+        raise RuntimeError(
+            f"Unable to query workflows for {owner}/{repo}: {error.reason}"
+        ) from error
+
+    if not isinstance(payload, list):
+        return set()
+
+    return {
+        entry.get("name", "")
+        for entry in payload
+        if isinstance(entry, dict) and entry.get("type") == "file"
+    }
+
+
 def main() -> None:
     args = parse_args()
+    github_token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
     managed_workflows = [
         line.strip()
         for line in COPIER_PATHS.read_text().splitlines()
@@ -125,15 +165,19 @@ def main() -> None:
     for repository in matching_repos:
         owner = repository["owner"]
         repo = repository["name"]
+        remote_workflow_files = list_remote_workflow_files(owner, repo, github_token)
         row = [f"[`{repository['full_name']}`](https://github.com/{repository['full_name']})"]
         for workflow_path in managed_workflows:
             workflow_file = Path(workflow_path).name
             workflow_name = Path(workflow_path).stem
-            row.append(
-                f"[![{workflow_name}]"
-                f"(https://github.com/{owner}/{repo}/actions/workflows/{workflow_file}/badge.svg?branch=main)]"
-                f"(https://github.com/{owner}/{repo}/actions/workflows/{workflow_file})"
-            )
+            if workflow_file in remote_workflow_files:
+                row.append(
+                    f"[![{workflow_name}]"
+                    f"(https://github.com/{owner}/{repo}/actions/workflows/{workflow_file}/badge.svg)]"
+                    f"(https://github.com/{owner}/{repo}/actions/workflows/{workflow_file})"
+                )
+            else:
+                row.append("-")
         lines.append("| " + " | ".join(row) + " |")
 
     lines.extend(
