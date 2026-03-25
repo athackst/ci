@@ -1,0 +1,37 @@
+# This file is generated from athackst/ci/template/.github/workflows/[% if bump_script_path %]bump.yml[% endif %].jinja.
+# Do not edit directly; update the template instead.
+
+name: Bump
+
+on:
+  workflow_run:
+    workflows:
+      - Labeler
+    types:
+      - completed
+
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+
+jobs:
+  pr-label:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' }}
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: athackst/ci/.github/workflows/pr_labeler.yml@main
+    secrets: inherit
+
+  pr-bump:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' }}
+    needs: pr-label
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: athackst/ci/.github/workflows/pr_bump.yml@main
+    with:
+      bump-script: [[ bump_script_path ]]
+    secrets:
+      token: ${{ secrets.CI_BOT_TOKEN }}
