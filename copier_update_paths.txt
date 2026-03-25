@@ -1,7 +1,10 @@
 .github/ci-config.yml
 .github/release_template.md
 .github/workflows/ci_update.yml
+.github/workflows/pr_automerge.yml
 .github/workflows/pr_bot.yml
+.github/workflows/pr_bump.yml
+.github/workflows/pr_labeler.yml
 .github/workflows/release_draft.yml
 .github/workflows/setup_labels.yml
 .github/workflows/site.yml

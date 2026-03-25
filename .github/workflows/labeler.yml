@@ -1,0 +1,48 @@
+name: Labeler
+on:
+  workflow_call:
+    secrets:
+      token:
+        description: Optional token override for config resolution and PR labeling.
+        required: false
+
+jobs:
+  pr-labeler:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get configuration
+        id: config
+        continue-on-error: true
+        uses: athackst/ci/actions/resolve-config@main
+        with:
+          configuration-path: .github/ci-config.yml
+          github-token: ${{ secrets.token || github.token }}
+
+      - name: Run PR labeler
+        id: labeler
+        uses: athackst/ci/actions/pr-labeler@main
+        with:
+          github_token: ${{ secrets.token || github.token }}
+          configuration-path: ${{ steps.config.outputs.config-path }}
+
+      - name: Summarize added labels
+        if: ${{ (steps.labeler.outputs.new-labels || '') != '' }}
+        shell: bash
+        env:
+          NEW_LABELS: ${{ steps.labeler.outputs.new-labels }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "### PR Labeler"
+            echo ""
+            echo "Added labels:"
+            echo ""
+            echo '```text'
+            printf '%s\n' "$NEW_LABELS"
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"

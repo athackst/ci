@@ -1,4 +1,4 @@
-# PR Bump
+# Bump
 
 Resolve version metadata and optionally run a repository-specific bump script that either pushes changes back to a PR branch or opens a bump PR.
 
@@ -7,7 +7,7 @@ Resolve version metadata and optionally run a repository-specific bump script th
 ```yaml
 jobs:
   pr-bump:
-    uses: athackst/ci/.github/workflows/pr_bump.yml@main
+    uses: athackst/ci/.github/workflows/bump.yml@main
     with:
       bump-script: scripts/bump_version.sh
     secrets:

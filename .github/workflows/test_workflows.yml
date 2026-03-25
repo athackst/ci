@@ -20,32 +20,32 @@ jobs:
         with:
           files: ".github/workflows/*.yml"
 
-  workflow-pr-bump:
+  workflow-bump:
     permissions:
       contents: write
       pull-requests: write
-    uses: ./.github/workflows/pr_bump.yml
+    uses: ./.github/workflows/bump.yml
     with:
       bump-script: tests/fixtures/pr_bump.sh
       push-branch: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
     secrets: inherit
 
-  workflow-pr-bump-verify-and-cleanup:
+  workflow-bump-verify-and-cleanup:
     permissions:
       contents: write
       pull-requests: read
-    needs: [workflow-pr-bump]
+    needs: [workflow-bump]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Verify pr_bump workflow result
+      - name: Verify bump workflow result
         shell: bash
         env:
-          RESULT: ${{ needs.workflow-pr-bump.result }}
+          RESULT: ${{ needs.workflow-bump.result }}
         run: |
           set -euo pipefail
           [ "$RESULT" = "success" ] || {
-            echo "workflow-pr-bump result was: $RESULT"
+            echo "workflow-bump result was: $RESULT"
             exit 1
           }
 
@@ -55,7 +55,7 @@ jobs:
           ref: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
           fetch-depth: 1
 
-      - name: Verify pr_bump fixture output
+      - name: Verify bump fixture output
         shell: bash
         env:
           RUN_ID: ${{ github.run_id }}
@@ -415,7 +415,7 @@ jobs:
   workflows-success:
     needs:
       - workflow-lint
-      - workflow-pr-bump-verify-and-cleanup
+      - workflow-bump-verify-and-cleanup
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify
       - workflow-htmlproofer-site
