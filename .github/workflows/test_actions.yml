@@ -130,8 +130,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          LABEL_ONE="ci-setup-labels-${{ github.run_id }}-one"
-          LABEL_TWO="ci-setup-labels-${{ github.run_id }}-two"
+          TEST_SCOPE="${{ github.event.pull_request.number || github.run_id }}"
+          LABEL_ONE="ci-setup-labels-${TEST_SCOPE}-one"
+          LABEL_TWO="ci-setup-labels-${TEST_SCOPE}-two"
           CONFIG_PATH="$RUNNER_TEMP/setup-labels-test.yml"
 
           {
@@ -230,6 +231,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
+          set -euo pipefail
           echo "Pre-clean labels on PR #${{ github.event.pull_request.number }}"
           jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
             echo "Removing label: $label"
@@ -256,8 +258,8 @@ jobs:
         run: |
           set -euo pipefail
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          # Poll for expected labels to avoid timing-related flakes from eventual consistency.
-          for attempt in {1..12}; do
+          # Poll with backoff to reduce rate-limit pressure and avoid timing flakes.
+          for sleep_seconds in 1 2 4 8 16 24; do
             ACTUAL_LABELS_JSON="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels | map(.name)')"
             MISSING_COUNT="$(
               jq -n \
@@ -268,8 +270,8 @@ jobs:
             if [ "$MISSING_COUNT" -eq 0 ]; then
               break
             fi
-            echo "Attempt ${attempt}: waiting for expected labels to appear..."
-            sleep 5
+            echo "Expected labels not visible yet; retrying in ${sleep_seconds}s..."
+            sleep "${sleep_seconds}"
           done
           echo "actual-labels-json=$ACTUAL_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
 
@@ -333,18 +335,6 @@ jobs:
 
           exit "$BATS_STATUS"
 
-      - name: Post-clean expected labels
-        if: ${{ always() }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
-        run: |
-          echo "Post-clean labels on PR #${{ github.event.pull_request.number }}"
-          jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
-            echo "Removing label: $label"
-            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
-          done
 
   actions-mkdocs-config:
     permissions:
