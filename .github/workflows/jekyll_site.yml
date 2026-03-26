@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.295.0
+        uses: ruby/setup-ruby@v1.297.0
         with:
           working-directory: ${{ inputs.path }}
           bundler-cache: true
