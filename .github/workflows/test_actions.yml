@@ -252,10 +252,25 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
+          set -euo pipefail
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          sleep 10  # Wait a moment for labels to be applied
-          ACTUAL_LABELS_JSON="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels | map(.name)')"
+          # Poll for expected labels to avoid timing-related flakes from eventual consistency.
+          for attempt in {1..12}; do
+            ACTUAL_LABELS_JSON="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels | map(.name)')"
+            MISSING_COUNT="$(
+              jq -n \
+                --argjson expected "$EXPECTED_LABELS_JSON" \
+                --argjson actual "$ACTUAL_LABELS_JSON" \
+                '$expected | map(select(. as $l | ($actual | index($l) | not))) | length'
+            )"
+            if [ "$MISSING_COUNT" -eq 0 ]; then
+              break
+            fi
+            echo "Attempt ${attempt}: waiting for expected labels to appear..."
+            sleep 5
+          done
           echo "actual-labels-json=$ACTUAL_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
 
       - name: Check PR label assertion
