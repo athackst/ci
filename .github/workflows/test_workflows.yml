@@ -401,8 +401,7 @@ jobs:
   workflow-ci-updater-cleanup:
     if: ${{ always() }}
     needs:
-      - workflow-ci-updater-fixture-branch
-      - workflow-ci-updater
+      - workflow-ci-updater-verify
     permissions:
       contents: write
     runs-on: ubuntu-latest
