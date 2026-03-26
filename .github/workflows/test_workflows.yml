@@ -27,7 +27,7 @@ jobs:
     uses: ./.github/workflows/bump.yml
     with:
       bump-script: tests/fixtures/pr_bump.sh
-      push-branch: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
+      push-branch: ci-test/pr-bump-pr-${{ github.event.pull_request.number }}
     secrets: inherit
 
   workflow-bump-verify-and-cleanup:
@@ -52,7 +52,7 @@ jobs:
       - name: Checkout PR head branch
         uses: actions/checkout@v6
         with:
-          ref: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
+          ref: ci-test/pr-bump-pr-${{ github.event.pull_request.number }}
           fetch-depth: 1
 
       - name: Verify bump fixture output
@@ -102,7 +102,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TEST_BRANCH: ci-test/pr-bump-${{ github.run_id }}-${{ github.run_attempt }}
+          TEST_BRANCH: ci-test/pr-bump-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
           ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
@@ -277,7 +277,7 @@ jobs:
         id: branch
         shell: bash
         env:
-          FIXTURE_BRANCH: ci-test/ci-updater-fixture-${{ github.run_id }}-${{ github.run_attempt }}
+          FIXTURE_BRANCH: ci-test/ci-updater-fixture-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
 
@@ -305,7 +305,7 @@ jobs:
     secrets: inherit
     with:
       create-pr: false
-      pr-branch: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
+      pr-branch: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
       checkout-ref: ${{ needs.workflow-ci-updater-fixture-branch.outputs.fixture-branch }}
 
   workflow-ci-updater-verify:
@@ -320,7 +320,7 @@ jobs:
           CHANGED: ${{ needs.workflow-ci-updater.outputs.changed }}
           BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
           PR_URL: ${{ needs.workflow-ci-updater.outputs.pr-url }}
-          EXPECTED_BRANCH: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
+          EXPECTED_BRANCH: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
 
@@ -368,12 +368,12 @@ jobs:
           TEST_BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
         run: |
           set -euo pipefail
-          for attempt in {1..12}; do
+          for sleep_seconds in 1 2 4 8 16 24; do
             if gh api "repos/${{ github.repository }}/branches/${TEST_BRANCH}" >/dev/null 2>&1; then
               exit 0
             fi
-            echo "Attempt ${attempt}: branch ${TEST_BRANCH} not visible yet, retrying..."
-            sleep 5
+            echo "Branch ${TEST_BRANCH} not visible yet; retrying in ${sleep_seconds}s..."
+            sleep "${sleep_seconds}"
           done
           echo "Branch ${TEST_BRANCH} was not found after waiting."
           exit 1
@@ -410,7 +410,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TEST_BRANCH: ci-test/ci-updater-${{ github.run_id }}-${{ github.run_attempt }}
+          TEST_BRANCH: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
           ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
@@ -420,7 +420,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          FIXTURE_BRANCH: ci-test/ci-updater-fixture-${{ github.run_id }}-${{ github.run_attempt }}
+          FIXTURE_BRANCH: ci-test/ci-updater-fixture-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
           ENCODED_BRANCH="${FIXTURE_BRANCH//\//%2F}"
