@@ -390,8 +390,16 @@ jobs:
             exit 1
           fi
 
+  workflow-ci-updater-cleanup:
+    if: ${{ always() }}
+    needs:
+      - workflow-ci-updater-fixture-branch
+      - workflow-ci-updater
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
       - name: Delete ci_updater test branch
-        if: ${{ always() && needs.workflow-ci-updater.outputs.changed == 'true' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -402,7 +410,6 @@ jobs:
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
 
       - name: Delete ci_updater fixture branch
-        if: ${{ always() }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
