@@ -50,7 +50,7 @@ runs:
 
     - name: Label PR
       id: labeler
-      uses: actions/labeler@main
+      uses: actions/labeler@v5
       with:
         configuration-path: ${{ steps.config.outputs.config-path }}
         repo-token: ${{ inputs.github_token }}
