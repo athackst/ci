@@ -57,6 +57,20 @@ Required repository permissions for the token:
 - `Issues: Read and write` (used in `pr_labeler.yml`, `setup_labels.yml`, `pr_automerge.yml`)
 - `Actions: Read and write` (used in `ci_update.yml`)
 
+Set up a GitHub App for `ci_update_dispatch.yml`:
+
+1. Create a GitHub App owned by the same account or organization that owns this repo.
+2. Install the app on this repo and on every repository that should receive `ci-update` dispatches.
+3. In this repo, add these Actions secrets:
+   - `APP_ID`: the GitHub App ID
+   - `APP_PRIVATE_KEY`: the GitHub App private key PEM
+4. In the app repository permissions, grant `Contents: Read and write`.
+   This is needed because:
+   - the dispatcher needs to read `.copier-answers.ci.yml` from installed repositories
+   - `repository_dispatch` is sent through the repository contents API surface and requires write-level access
+   - write access also covers the read access needed for repo matching
+5. If the dispatcher stops matching or dispatching repos, first confirm the app is still installed on the target repositories and that the private key in `APP_PRIVATE_KEY` is current.
+
 ## Mental model
 
 This repo is opinionated around one shared CI config file, `.github/ci-config.yml`,
@@ -142,21 +156,3 @@ Colors are set according to the following label palette:
 | `duplicate` | `#cbd5e1` | ![duplicate](https://img.shields.io/badge/duplicate-cbd5e1?style=flat-square) |
 | `invalid` | `#a3a3a3` | ![invalid](https://img.shields.io/badge/invalid-a3a3a3?style=flat-square) |
 | `wontfix` | `#78716c` | ![wontfix](https://img.shields.io/badge/wontfix-78716c?style=flat-square) |
-
-### Setting up GitHub App for `ci_update_dispatch.yml`
-
-The central dispatcher workflow in this repository, [`ci_update_dispatch.yml`](https://github.com/athackst/ci/blob/main/.github/workflows/ci_update_dispatch.yml), also requires a GitHub App so it can discover managed repositories, read their `.copier-answers.ci.yml` files, refresh the public workflow status page, and send `repository_dispatch` events.
-
-Setup notes:
-
-1. Create a GitHub App owned by the same account or organization that owns this repo.
-2. Install the app on this repo and on every repository that should receive `ci-update` dispatches.
-3. In this repo, add these Actions secrets:
-   - `APP_ID`: the GitHub App ID
-   - `APP_PRIVATE_KEY`: the GitHub App private key PEM
-4. In the app repository permissions, grant `Contents: Read and write`.
-   This is needed because:
-   - the dispatcher needs to read `.copier-answers.ci.yml` from installed repositories
-   - `repository_dispatch` is sent through the repository contents API surface and requires write-level access
-   - write access also covers the read access needed for repo matching
-5. If the dispatcher stops matching or dispatching repos, first confirm the app is still installed on the target repositories and that the private key in `APP_PRIVATE_KEY` is current.
