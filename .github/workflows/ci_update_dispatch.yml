@@ -73,29 +73,9 @@ jobs:
             .copier-answers.ci.yml
           output-path: .github/repositories.json
 
-      - name: Refresh workflow status page
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/generate_workflow_status.py --repos-file "${{ steps.repos.outputs.repository-file }}"
-
-      - name: Create or update workflow status PR
-        id: status-pr
-        if: ${{ inputs.dry_run != true }}
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.CI_BOT_TOKEN }}
-          add-paths: docs/workflow_status.md
-          branch: docs/refresh-workflow-status
-          delete-branch: true
-          commit-message: "docs: refresh workflow status page"
-          title: "docs: refresh workflow status page"
-          body: "Automated refresh of the public workflow status page."
-          labels: automerge
-
       - name: Dispatch ci updates to authorized repositories
         id: dispatch
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
           EVENT_TYPE: 'ci-update'
@@ -139,7 +119,6 @@ jobs:
           MATCHED: ${{ steps.dispatch.outputs.matched || '0' }}
           DISPATCHED: ${{ steps.dispatch.outputs.dispatched || '0' }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
-          STATUS_PR: ${{ steps.status-pr.outputs.pull-request-url || '' }}
           CHANGED_PATHS: ${{ steps.changes.outputs.paths || '' }}
         run: |
           set -euo pipefail
@@ -149,9 +128,6 @@ jobs:
             echo "- dispatch-result: ${DISPATCH_RESULT}"
             echo "- repositories-checked: ${CHECKED}"
             echo "- repositories-matched: ${MATCHED}"
-            if [ -n "${STATUS_PR}" ]; then
-              echo "- workflow-status-pr: ${STATUS_PR}"
-            fi
             if [ "${DRY_RUN}" = "true" ]; then
               echo "- dispatches-skipped-dry-run: ${MATCHED}"
             else
