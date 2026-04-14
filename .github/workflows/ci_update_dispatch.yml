@@ -75,7 +75,7 @@ jobs:
 
       - name: Dispatch ci updates to authorized repositories
         id: dispatch
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
           EVENT_TYPE: 'ci-update'
