@@ -55,6 +55,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
+      # Required to persist and update the draft release ID repository variable.
+      actions: write
     runs-on: ubuntu-latest
     outputs:
       id: ${{ steps.release.outputs.id }}
@@ -103,3 +105,13 @@ jobs:
           tag-name: ${{ inputs.tag-name }}
           release-match-pattern: ${{ inputs.release-match-pattern }}
           changelog: ${{ steps.changelog.outputs.changelog }}
+
+      - name: Persist draft release id
+        if: ${{ steps.release.outputs.id != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.token || github.token }}
+          RELEASE_ID: ${{ steps.release.outputs.id }}
+        run: |
+          set -euo pipefail
+          gh variable set DRAFT_RELEASE_ID --body "$RELEASE_ID"
