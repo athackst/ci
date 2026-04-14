@@ -43,10 +43,12 @@ jobs:
 
 - Requires `contents: write` to create or update releases.
 - Requires `pull-requests: read` for version/changelog resolution.
+- Requires `actions: write` to persist `DRAFT_RELEASE_ID` as a repository variable.
 
 ## Advanced
 
 - Resolves config first with `resolve-config`, then feeds the same config into version resolution and changelog generation.
 - Uses the resolved version and generated changelog as the default release name, tag, and body inputs.
 - Supports caller overrides for release `name`, `tag-name`, and draft matching pattern.
+- Persists the resulting release id in repository variable `DRAFT_RELEASE_ID` to warm future ID-first migrations.
 - Checks out tags with full history so semantic version resolution can compare against prior tags.

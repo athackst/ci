@@ -224,12 +224,14 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
+      actions: write
     uses: ./.github/workflows/release_drafter.yml
     with:
       name: Test Workflow Release ${{ github.run_id }}-${{ github.run_attempt }}
       tag-name: test-workflow-${{ github.run_id }}-${{ github.run_attempt }}
       release-match-pattern: ^test-workflow-${{ github.run_id }}-${{ github.run_attempt }}$
-    secrets: inherit
+    secrets:
+      token: ${{ secrets.CI_BOT_TOKEN }}
 
   workflow-release-draft-verify-and-cleanup:
     permissions:
