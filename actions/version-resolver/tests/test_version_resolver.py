@@ -84,35 +84,61 @@ version-resolver:
         self.assertEqual(compact["title"], "Add feature")
         self.assertEqual(compact["labels"], ["docs", "feature"])
 
-    def test_fetch_merged_prs_from_compare_deduplicates(self):
-        compare_payload = {
-            "total_commits": 2,
-            "commits": [
-                {"sha": "sha1"},
-                {"sha": "sha2"},
-            ],
+    def test_fetch_merged_prs_from_graphql_search_filters_and_deduplicates(self):
+        graphql_page = {
+            "search": {
+                "pageInfo": {"hasNextPage": False, "endCursor": None},
+                "nodes": [
+                    {
+                        "number": 1,
+                        "title": "Feature",
+                        "url": "https://example/pr/1",
+                        "mergedAt": "2024-01-01T00:00:00Z",
+                        "mergeCommit": {"oid": "sha1"},
+                        "labels": {"nodes": [{"name": "feature"}]},
+                    },
+                    {
+                        "number": 1,
+                        "title": "Feature duplicate",
+                        "url": "https://example/pr/1",
+                        "mergedAt": "2024-01-01T00:00:00Z",
+                        "mergeCommit": {"oid": "sha1"},
+                        "labels": {"nodes": [{"name": "feature"}]},
+                    },
+                    {
+                        "number": 2,
+                        "title": "Out of range",
+                        "url": "https://example/pr/2",
+                        "mergedAt": "2024-01-02T00:00:00Z",
+                        "mergeCommit": {"oid": "sha-out"},
+                        "labels": {"nodes": [{"name": "bug"}]},
+                    },
+                ],
+            }
         }
-        pulls_sha1 = [
-            {"number": 1, "merged_at": "2024-01-01T00:00:00Z", "labels": []},
-            {"number": 2, "merged_at": None, "labels": []},
-        ]
-        pulls_sha2 = [
-            {"number": 1, "merged_at": "2024-01-01T00:00:00Z", "labels": []},
-            {"number": 3, "merged_at": "2024-01-03T00:00:00Z", "labels": []},
-        ]
         with mock.patch.object(
             resolver,
-            "gh_get",
-            side_effect=[compare_payload, pulls_sha1, pulls_sha2],
+            "gh_graphql",
+            return_value=graphql_page,
+        ), mock.patch.object(
+            resolver,
+            "get_ref_commit_date",
+            side_effect=["2024-01-01T00:00:00Z", "2024-01-10T00:00:00Z"],
         ):
-            prs = resolver.fetch_merged_prs_from_compare("owner/repo", "token", "from", "to")
-        self.assertEqual(sorted(pr["number"] for pr in prs), [1, 3])
+            prs = resolver.fetch_merged_prs_from_graphql_search(
+                "owner/repo",
+                "token",
+                "from",
+                "to",
+                {"sha1"},
+            )
+        self.assertEqual(sorted(pr["number"] for pr in prs), [1])
 
     def test_fetch_merged_prs_falls_back_to_pagination(self):
         with mock.patch.object(
             resolver,
-            "fetch_merged_prs_from_compare",
-            side_effect=RuntimeError("truncated"),
+            "fetch_merged_prs_from_graphql_search",
+            side_effect=RuntimeError("graphql failed"),
         ), mock.patch.object(
             resolver,
             "fetch_merged_prs_from_pagination",
@@ -121,6 +147,35 @@ version-resolver:
             prs = resolver.fetch_merged_prs("owner/repo", "token", "from", "to", {"sha"})
         fallback.assert_called_once()
         self.assertEqual([pr["number"] for pr in prs], [9])
+
+    def test_get_current_pr_from_event(self):
+        with tempfile.NamedTemporaryFile("w", delete=False) as fh:
+            json.dump(
+                {
+                    "pull_request": {
+                        "number": 42,
+                        "title": "My PR",
+                        "html_url": "https://example/pr/42",
+                        "merged_at": None,
+                        "merge_commit_sha": None,
+                        "labels": [{"name": "feature"}],
+                        "base": {"repo": {"full_name": "owner/repo"}},
+                    }
+                },
+                fh,
+            )
+            event_path = fh.name
+
+        with mock.patch.dict(
+            "os.environ",
+            {"GITHUB_EVENT_NAME": "pull_request", "GITHUB_EVENT_PATH": event_path},
+            clear=False,
+        ):
+            pr = resolver.get_current_pr_from_event("owner/repo")
+
+        self.assertIsNotNone(pr)
+        self.assertEqual(pr["number"], 42)
+        self.assertEqual(pr["labels"], [{"name": "feature"}])
 
     def test_resolve_all(self):
         config_text = """\
