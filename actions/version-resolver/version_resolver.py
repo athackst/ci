@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -100,32 +101,113 @@ def gh_get(url, token, accept="application/vnd.github+json"):
         return json.loads(resp.read().decode("utf-8"))
 
 
-def fetch_merged_prs_from_compare(repo, token, from_ref, to_ref):
-    compare_url = f"https://api.github.com/repos/{repo}/compare/{from_ref}...{to_ref}"
-    compare_data = gh_get(compare_url, token)
-    commits = compare_data.get("commits", [])
+def gh_graphql(query, variables, token):
+    payload = json.dumps({"query": query, "variables": variables}).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.github.com/graphql",
+        data=payload,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "version-resolver-action",
+            "Content-Type": "application/json",
+        },
+    )
+    with urllib.request.urlopen(req) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
 
-    if compare_data.get("total_commits", len(commits)) > len(commits):
-        raise RuntimeError("Compare response is truncated; use pagination fallback.")
+    if body.get("errors"):
+        messages = "; ".join(error.get("message", "unknown graphql error") for error in body["errors"])
+        raise RuntimeError(f"GraphQL query failed: {messages}")
+    return body.get("data", {})
+
+
+def get_ref_commit_date(ref):
+    result = subprocess.run(
+        ["git", "show", "-s", "--format=%cI", ref],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def iso_date(value):
+    if not value:
+        return ""
+    return value.split("T", 1)[0]
+
+
+def fetch_merged_prs_from_graphql_search(repo, token, from_ref, to_ref, commit_shas):
+    if not commit_shas:
+        return []
+
+    from_date = iso_date(get_ref_commit_date(from_ref))
+    to_date = iso_date(get_ref_commit_date(to_ref))
+    search_query = f"repo:{repo} is:pr is:merged merged:{from_date}..{to_date}"
+
+    query = """
+query($searchQuery: String!, $after: String) {
+  search(query: $searchQuery, type: ISSUE, first: 100, after: $after) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      ... on PullRequest {
+        number
+        title
+        url
+        mergedAt
+        mergeCommit {
+          oid
+        }
+        labels(first: 100) {
+          nodes {
+            name
+          }
+        }
+      }
+    }
+  }
+}
+"""
 
     prs_by_number = {}
-    for commit in commits:
-        sha = commit.get("sha")
-        if not sha:
-            continue
-        pulls_url = f"https://api.github.com/repos/{repo}/commits/{sha}/pulls"
-        pulls = gh_get(
-            pulls_url,
-            token,
-            accept="application/vnd.github+json, application/vnd.github.groot-preview+json",
-        )
-        if not isinstance(pulls, list):
-            continue
-        for pr in pulls:
-            number = pr.get("number")
-            if not number or not pr.get("merged_at"):
+    cursor = None
+    while True:
+        data = gh_graphql(query, {"searchQuery": search_query, "after": cursor}, token)
+        search = data.get("search", {})
+        nodes = search.get("nodes", [])
+        for node in nodes:
+            if not isinstance(node, dict):
                 continue
-            prs_by_number[number] = pr
+            number = node.get("number")
+            merge_commit_sha = (node.get("mergeCommit") or {}).get("oid")
+            if not number or not merge_commit_sha:
+                continue
+            if merge_commit_sha not in commit_shas:
+                continue
+
+            label_nodes = (node.get("labels") or {}).get("nodes", [])
+            prs_by_number[number] = {
+                "number": number,
+                "title": node.get("title"),
+                "html_url": node.get("url"),
+                "merged_at": node.get("mergedAt"),
+                "merge_commit_sha": merge_commit_sha,
+                "labels": [
+                    {"name": label.get("name")}
+                    for label in label_nodes
+                    if isinstance(label, dict) and label.get("name")
+                ],
+            }
+
+        page_info = search.get("pageInfo") or {}
+        if not page_info.get("hasNextPage"):
+            break
+        cursor = page_info.get("endCursor")
 
     return list(prs_by_number.values())
 
@@ -155,18 +237,53 @@ def fetch_merged_prs_from_pagination(repo, token, commit_shas):
 
 def fetch_merged_prs(repo, token, from_ref, to_ref, commit_shas):
     try:
-        prs = fetch_merged_prs_from_compare(repo, token, from_ref, to_ref)
+        prs = fetch_merged_prs_from_graphql_search(repo, token, from_ref, to_ref, commit_shas)
         if prs:
             return prs
     except urllib.error.HTTPError as exc:
         print(
-            f"Compare-based PR discovery failed ({exc.code}); falling back to pagination.",
+            f"GraphQL-based PR discovery failed ({exc.code}); falling back to pagination.",
             file=sys.stderr,
         )
     except Exception:
-        print("Compare-based PR discovery failed; falling back to pagination.", file=sys.stderr)
+        print("GraphQL-based PR discovery failed; falling back to pagination.", file=sys.stderr)
 
     return fetch_merged_prs_from_pagination(repo, token, commit_shas)
+
+
+def get_current_pr_from_event(repo):
+    if os.getenv("GITHUB_EVENT_NAME") != "pull_request":
+        return None
+
+    event_path = os.getenv("GITHUB_EVENT_PATH")
+    if not event_path:
+        return None
+
+    with open(event_path, "r", encoding="utf-8") as fh:
+        payload = json.load(fh)
+
+    pr = payload.get("pull_request")
+    if not isinstance(pr, dict):
+        return None
+
+    base_full_name = ((pr.get("base") or {}).get("repo") or {}).get("full_name")
+    if isinstance(base_full_name, str) and base_full_name.lower() != repo.lower():
+        return None
+
+    labels = [
+        {"name": label.get("name")}
+        for label in pr.get("labels", [])
+        if isinstance(label, dict) and label.get("name")
+    ]
+
+    return {
+        "number": pr.get("number"),
+        "title": pr.get("title"),
+        "html_url": pr.get("html_url"),
+        "merged_at": pr.get("merged_at"),
+        "merge_commit_sha": pr.get("merge_commit_sha"),
+        "labels": labels,
+    }
 
 
 def pr_labels(pr):
@@ -195,6 +312,12 @@ def resolve_all(config_path, repo, token, to_ref):
     config = load_version_config(config_path)
     commit_shas = get_commit_range(from_ref, to_ref)
     prs = fetch_merged_prs(repo, token, from_ref, to_ref, commit_shas)
+    current_pr = get_current_pr_from_event(repo)
+    if current_pr:
+        current_number = current_pr.get("number")
+        existing_numbers = {pr.get("number") for pr in prs if pr.get("number") is not None}
+        if current_number not in existing_numbers:
+            prs.append(current_pr)
 
     labels = set()
     for pr in prs:
