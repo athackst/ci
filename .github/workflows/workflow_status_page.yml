@@ -2,8 +2,7 @@ name: Update Workflow Status Page
 
 on:
   push:
-    branches-ignore:
-      - docs/refresh-workflow-status
+    branches: [main]
 
   workflow_dispatch:
     inputs:
