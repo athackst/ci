@@ -22,7 +22,7 @@ jobs:
     needs:
       - release-draft
     permissions:
-      contents: read
+      actions: write
     runs-on: ubuntu-latest
     steps:
       - name: Persist draft release id
