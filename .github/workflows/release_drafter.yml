@@ -18,10 +18,15 @@ on:
         required: false
         default: ""
       release-match-pattern:
-        description: Regex used to select the draft release to update by tag name.
+        description: Deprecated compatibility input; no longer used for draft lookup.
         type: string
         required: false
         default: "^v[0-9.]+$"
+      draft-release-id:
+        description: Optional explicit draft id 
+        type: string
+        required: false
+        default: ""
     secrets:
       token:
         description: Optional token override used to create or update draft release.
@@ -55,8 +60,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
-      # Required to persist and update the draft release ID repository variable.
-      actions: write
+    concurrency:
+      group: release-draft-${{ github.repository }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     outputs:
       id: ${{ steps.release.outputs.id }}
@@ -102,16 +108,7 @@ jobs:
           configuration-path: ${{ steps.config.outputs.config-path }}
           resolved-version: ${{ steps.version.outputs.resolved-version }}
           name: ${{ inputs.name }}
-          tag-name: ${{ inputs.tag-name }}
+          tag-name: ${{ inputs.tag-name || '' }}
           release-match-pattern: ${{ inputs.release-match-pattern }}
+          draft-release-id: ${{ inputs.draft-release-id || '' }}
           changelog: ${{ steps.changelog.outputs.changelog }}
-
-      - name: Persist draft release id
-        if: ${{ steps.release.outputs.id != '' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
-          RELEASE_ID: ${{ steps.release.outputs.id }}
-        run: |
-          set -euo pipefail
-          gh variable set DRAFT_RELEASE_ID --body "$RELEASE_ID"

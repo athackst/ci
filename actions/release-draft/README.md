@@ -22,9 +22,9 @@ Create or update a draft GitHub release from a release-drafter style config, a r
 | `configuration-path` | (optional) Path to a release-drafter style config file. | Bundled `release-drafter.yml` |
 | `changelog` | Changelog content interpolated into the release body template. | None |
 | `resolved-version` | Version interpolated into the release name and tag templates. | None |
-| `release-match-pattern` | (optional) Regex used to find an existing draft release to update by tag name. | `^v[0-9]+(\.[0-9]+)*$` |
 | `name` | (optional) Release name override. | Rendered from config |
 | `tag-name` | (optional) Release tag name override. | Rendered from config |
+| `draft-release-id` | (optional) Existing draft release ID to update directly before falling back to create. | `""` |
 
 ## Outputs
 
@@ -45,9 +45,8 @@ Create or update a draft GitHub release from a release-drafter style config, a r
 - Uses the bundled `release-drafter.yml` when `configuration-path` is not set.
 - Supports `name-template`, `tag-template`, and `template`, plus `template-file` for loading the release body from a file.
 - Template interpolation supports `$RESOLVED_VERSION`, `$VERSION`, `$CHANGES`, and `$CHANGELOG`.
-- If exactly one draft release matches `release-match-pattern`, that draft is updated in place.
-- If multiple draft releases match `release-match-pattern`, the action fails rather than guessing.
-- If a non-draft release already exists for the resolved tag, the action fails instead of replacing it.
+- When `draft-release-id` is provided, the action updates that draft release directly.
+- If direct update fails or no `draft-release-id` is provided, the action creates a new draft release.
 
 ## Examples
 

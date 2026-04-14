@@ -15,7 +15,7 @@ inputs:
     description: Version used for release template interpolation.
     required: true
   release-match-pattern:
-    description: Regex used to select the draft release to update by tag name.
+    description: Deprecated compatibility input; no longer used for draft lookup.
     required: false
     default: "^v[0-9]+(\\.[0-9]+)*$"
   name:
@@ -24,6 +24,10 @@ inputs:
     default: ""
   tag-name:
     description: Optional release tag name override.
+    required: false
+    default: ""
+  draft-release-id:
+    description: (optional) Existing draft release ID to update directly.
     required: false
     default: ""
 outputs:
@@ -97,6 +101,7 @@ runs:
         RELEASE_NAME: ${{ inputs.name || steps.render.outputs.name }}
         CHANGELOG: ${{ steps.render.outputs.changelog }}
         RELEASE_MATCH_PATTERN: ${{ inputs.release-match-pattern }}
+        DRAFT_RELEASE_ID: ${{ inputs.draft-release-id }}
       run: |
         set -euo pipefail
         echo "Creating or updating draft release in repo.."
