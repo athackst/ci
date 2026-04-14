@@ -619,7 +619,7 @@ jobs:
           token: ${{ github.token }}
           configuration-path: ./tests/fixtures/test-release-drafter.yml
           resolved-version: ${{ steps.test-values.outputs.resolved-version }}
-          release-match-pattern: ^test-${{ steps.test-values.outputs.resolved-version }}$
+          tag-name: test-${{ steps.test-values.outputs.resolved-version }}
           changelog: |
             # Test Changelog
 

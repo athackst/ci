@@ -19,7 +19,8 @@ jobs:
 | `configuration-path` | (optional) Path to the release-drafter style config file. | `.github/ci-config.yml` |
 | `name` | (optional) Explicit release name override. | `""` |
 | `tag-name` | (optional) Explicit release tag name override. | `""` |
-| `release-match-pattern` | (optional) Regex used to select the draft release to update by tag name. | `^v[0-9.]+$` |
+| `release-match-pattern` | (optional) Deprecated compatibility input; no longer used for draft lookup. | `^v[0-9.]+$` |
+| `draft-release-id` | (optional) Explicit draft release ID to update directly before create fallback. | `""` |
 
 ## Secrets
 
@@ -43,12 +44,11 @@ jobs:
 
 - Requires `contents: write` to create or update releases.
 - Requires `pull-requests: read` for version/changelog resolution.
-- Requires `actions: write` to persist `DRAFT_RELEASE_ID` as a repository variable.
 
 ## Advanced
 
 - Resolves config first with `resolve-config`, then feeds the same config into version resolution and changelog generation.
 - Uses the resolved version and generated changelog as the default release name, tag, and body inputs.
-- Supports caller overrides for release `name`, `tag-name`, and draft matching pattern.
-- Persists the resulting release id in repository variable `DRAFT_RELEASE_ID` to warm future ID-first migrations.
+- Supports caller overrides for release `name` and `tag-name`.
+- Supports optional direct update of a known draft release via `draft-release-id`.
 - Checks out tags with full history so semantic version resolution can compare against prior tags.
