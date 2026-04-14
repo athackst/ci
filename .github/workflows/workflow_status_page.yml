@@ -1,0 +1,53 @@
+name: Update Workflow Status Page
+
+on:
+  push:
+    branches: [main]
+
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry Run: Check matches without sending dispatch events"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  update-workflow-status-page:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: List managed repositories
+        id: repos
+        uses: ./actions/list-repos
+        with:
+          github-token: ${{ github.token }}
+          filter-paths: |
+            .copier-answers.ci.yml
+          private: false
+          fork: false
+          archived: false
+          output-path: .github/repositories.json
+
+      - name: Refresh workflow status page
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/generate_workflow_status.py --repos-file "${{ steps.repos.outputs.repository-file }}"
+
+      - name: Create or update workflow status PR
+        id: status-pr
+        if: ${{ inputs.dry_run != true }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.CI_BOT_TOKEN }}
+          add-paths: docs/workflow_status.md
+          branch: docs/refresh-workflow-status
+          delete-branch: true
+          commit-message: "docs: refresh workflow status page"
+          title: "docs: refresh workflow status page"
+          body: "Automated refresh of the public workflow status page."
+          labels: automerge
