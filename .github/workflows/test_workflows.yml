@@ -205,7 +205,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Upload HTMLProofer fixture artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-htmlproofer-test
           path: ./tests/fixtures/htmlproofer_site
