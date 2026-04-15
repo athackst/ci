@@ -16,6 +16,9 @@ concurrency:
   group: update-workflow-status-page
   cancel-in-progress: true
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
   update-workflow-status-page:
     permissions:
@@ -24,15 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Get gh rate limit
+      - name: Get gh rate limit before
         shell: bash
         run: |
-          set -euo pipefail
           gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
-        env:
-            GH_TOKEN: ${{ github.token }}
 
-          
       - name: List managed repositories
         id: repos
         uses: ./actions/list-repos
@@ -44,6 +43,11 @@ jobs:
           fork: false
           archived: false
           output-path: .github/repositories.json
+
+      - name: Get gh rate limit after listing repositories
+        shell: bash
+        run: |
+          gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
 
       - name: Refresh workflow status page
         shell: bash
@@ -65,10 +69,7 @@ jobs:
           body: "Automated refresh of the public workflow status page."
           labels: automerge
 
-      - name: Get gh rate limit
+      - name: Get gh rate limit after
         shell: bash
         run: |
-          set -euo pipefail
           gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
-        env:
-            GH_TOKEN: ${{ github.token }}
