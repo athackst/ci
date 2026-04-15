@@ -12,6 +12,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: update-workflow-status-page
+  cancel-in-progress: true
+
 jobs:
   update-workflow-status-page:
     permissions:
@@ -20,6 +24,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Get gh rate limit
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
+          
       - name: List managed repositories
         id: repos
         uses: ./actions/list-repos
@@ -51,3 +61,9 @@ jobs:
           title: "docs: refresh workflow status page"
           body: "Automated refresh of the public workflow status page."
           labels: automerge
+
+      - name: Get gh rate limit
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
