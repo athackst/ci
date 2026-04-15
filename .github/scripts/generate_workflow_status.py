@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
+import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -29,12 +31,6 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=OUTPUT_PATH,
         help="Markdown file to write.",
-    )
-    parser.add_argument(
-        "--visibility",
-        choices=["public", "private", "all"],
-        default="public",
-        help="Repository visibility to include in the status page.",
     )
     return parser.parse_args()
 
@@ -76,65 +72,160 @@ def normalize_repository(record: Any) -> dict[str, Any]:
     }
 
 
-def load_matching_repositories(
-    repos_file: Path, visibility: str
-) -> list[dict[str, Any]]:
+def load_matching_repositories(repos_file: Path) -> list[dict[str, Any]]:
     repositories = json.loads(repos_file.read_text())
     normalized = [normalize_repository(record) for record in repositories]
-    matching_repositories = [
+    public_repositories = [
         repository
         for repository in normalized
-        if not repository["fork"] and not repository["archived"]
+        if not repository["private"] and not repository["fork"] and not repository["archived"]
     ]
 
-    if visibility == "public":
-        filtered_repositories = [
-            repository for repository in matching_repositories if not repository["private"]
-        ]
-    elif visibility == "private":
-        filtered_repositories = [
-            repository for repository in matching_repositories if repository["private"]
-        ]
-    else:
-        filtered_repositories = matching_repositories
-
-    return sorted(filtered_repositories, key=lambda repository: repository["name"].lower())
+    return sorted(public_repositories, key=lambda repository: repository["name"].lower())
 
 
-def list_remote_workflow_files(owner: str, repo: str, token: str | None) -> set[str]:
-    """Return the set of workflow filenames that exist in the remote repository."""
-    url = f"https://api.github.com/repos/{owner}/{repo}/contents/.github/workflows"
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "User-Agent": "workflow-status-generator",
-    }
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+def _retry_delay_seconds(headers: Any, body_text: str) -> int | None:
+    retry_after = headers.get("Retry-After") if headers else None
+    if retry_after:
+        try:
+            return max(int(retry_after), 1)
+        except ValueError:
+            return 1
 
-    request = Request(url, headers=headers)
+    remaining = headers.get("X-RateLimit-Remaining") if headers else None
+    reset = headers.get("X-RateLimit-Reset") if headers else None
+    if remaining == "0" and reset:
+        try:
+            return max(int(reset) - int(time.time()) + 1, 1)
+        except ValueError:
+            return 1
 
-    try:
-        with urlopen(request) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except HTTPError as error:
-        if error.code == 404:
-            return set()
-        raise RuntimeError(
-            f"Unable to query workflows for {owner}/{repo}: HTTP {error.code}"
-        ) from error
-    except URLError as error:
-        raise RuntimeError(
-            f"Unable to query workflows for {owner}/{repo}: {error.reason}"
-        ) from error
+    lowered = body_text.lower()
+    if "rate limit" in lowered or "secondary rate limit" in lowered:
+        return 5
+    return None
 
-    if not isinstance(payload, list):
-        return set()
 
-    return {
-        entry.get("name", "")
-        for entry in payload
-        if isinstance(entry, dict) and entry.get("type") == "file"
-    }
+def graphql_request(query: str, token: str | None, *, allow_token_fallback: bool = True) -> dict[str, Any]:
+    payload = json.dumps({"query": query}).encode("utf-8")
+    max_attempts = 5
+    for attempt in range(1, max_attempts + 1):
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "workflow-status-generator",
+            "Content-Type": "application/json",
+        }
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        request = Request("https://api.github.com/graphql", data=payload, method="POST", headers=headers)
+
+        try:
+            with urlopen(request) as response:
+                response_body = response.read().decode("utf-8")
+                parsed = json.loads(response_body)
+                errors = parsed.get("errors") or []
+                if errors:
+                    messages = "; ".join(
+                        error.get("message", "unknown graphql error") for error in errors
+                    )
+                    delay = _retry_delay_seconds(response.headers, messages)
+                    if delay is not None and attempt < max_attempts:
+                        print(
+                            f"GraphQL rate limit hit; retrying in {delay}s "
+                            f"(attempt {attempt}/{max_attempts}).",
+                            file=sys.stderr,
+                        )
+                        time.sleep(delay)
+                        continue
+                    raise RuntimeError(f"GraphQL query failed: {messages}")
+
+                data = parsed.get("data")
+                if not isinstance(data, dict):
+                    return {}
+                return data
+        except HTTPError as error:
+            body_text = error.read().decode("utf-8", errors="replace")
+            delay = _retry_delay_seconds(error.headers, body_text)
+            if delay is not None and attempt < max_attempts:
+                print(
+                    f"Workflow metadata query throttled; retrying in {delay}s "
+                    f"(attempt {attempt}/{max_attempts}).",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+                continue
+            if (
+                token
+                and allow_token_fallback
+                and error.code == 403
+                and "rate limit" in body_text.lower()
+            ):
+                print(
+                    "Token rate limit exceeded for GraphQL query; retrying without token for public repos.",
+                    file=sys.stderr,
+                )
+                return graphql_request(query, None, allow_token_fallback=False)
+            raise RuntimeError(f"Unable to query workflow metadata: HTTP {error.code}") from error
+        except URLError as error:
+            raise RuntimeError(f"Unable to query workflow metadata: {error.reason}") from error
+
+    return {}
+
+
+def list_remote_workflow_files_batched(
+    repositories: list[dict[str, Any]], token: str | None, chunk_size: int = 30
+) -> dict[str, set[str]]:
+    workflows_by_repo: dict[str, set[str]] = {repository["full_name"]: set() for repository in repositories}
+
+    for start in range(0, len(repositories), chunk_size):
+        chunk = repositories[start : start + chunk_size]
+        fields = []
+        for index, repository in enumerate(chunk):
+            owner_literal = json.dumps(repository["owner"])
+            name_literal = json.dumps(repository["name"])
+            fields.append(
+                f"""
+  repo_{index}: repository(owner: {owner_literal}, name: {name_literal}) {{
+    workflows: object(expression: "HEAD:.github/workflows") {{
+      __typename
+      ... on Tree {{
+        entries {{
+          name
+          type
+        }}
+      }}
+    }}
+  }}"""
+            )
+        query = "query {\n" + "\n".join(fields) + "\n}"
+        data = graphql_request(query, token)
+
+        for index, repository in enumerate(chunk):
+            key = f"repo_{index}"
+            repo_data = data.get(key)
+            if not isinstance(repo_data, dict):
+                continue
+
+            workflows = repo_data.get("workflows")
+            if not isinstance(workflows, dict):
+                continue
+            if workflows.get("__typename") != "Tree":
+                continue
+
+            entries = workflows.get("entries")
+            if not isinstance(entries, list):
+                continue
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                if entry.get("type") != "blob":
+                    continue
+                name = entry.get("name")
+                if isinstance(name, str):
+                    workflows_by_repo[repository["full_name"]].add(name)
+
+    return workflows_by_repo
 
 
 def main() -> None:
@@ -145,15 +236,14 @@ def main() -> None:
         for line in COPIER_PATHS.read_text().splitlines()
         if line.strip().startswith(".github/workflows/")
     ]
-    matching_repos = load_matching_repositories(args.repos_file, args.visibility)
+    matching_repos = load_matching_repositories(args.repos_file)
+    workflows_by_repo = list_remote_workflow_files_batched(matching_repos, github_token)
 
     header_labels = [Path(path).stem for path in managed_workflows]
     lines = [
         "# Workflow Status",
         "",
-        f"{args.visibility.capitalize()} repositories using this CI template, with live status badges for the managed workflows listed in `copier_update_paths.txt`."
-        if args.visibility != "all"
-        else "Repositories using this CI template, with live status badges for the managed workflows listed in `copier_update_paths.txt`.",
+        "Public repositories using this CI template, with live status badges for the managed workflows listed in `copier_update_paths.txt`.",
         "",
         f"- Repositories shown: {len(matching_repos)}",
         f"- Managed workflows shown: {len(managed_workflows)}",
@@ -165,7 +255,7 @@ def main() -> None:
     for repository in matching_repos:
         owner = repository["owner"]
         repo = repository["name"]
-        remote_workflow_files = list_remote_workflow_files(owner, repo, github_token)
+        remote_workflow_files = workflows_by_repo.get(repository["full_name"], set())
         row = [f"[`{repository['full_name']}`](https://github.com/{repository['full_name']})"]
         for workflow_path in managed_workflows:
             workflow_file = Path(workflow_path).name
