@@ -29,6 +29,9 @@ jobs:
         run: |
           set -euo pipefail
           gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
+        env:
+            GH_TOKEN: ${{ github.token }}
+
           
       - name: List managed repositories
         id: repos
@@ -67,3 +70,5 @@ jobs:
         run: |
           set -euo pipefail
           gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
+        env:
+            GH_TOKEN: ${{ github.token }}
