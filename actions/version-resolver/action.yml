@@ -21,6 +21,9 @@ outputs:
   from-ref:
     description: Resolved changelog base reference.
     value: ${{ steps.resolve.outputs.from-ref }}
+  latest-semver-tag:
+    description: Latest reachable semantic version tag that was detected (if any).
+    value: ${{ steps.resolve.outputs.latest-semver-tag }}
   resolved-version:
     description: Resolved semantic version.
     value: ${{ steps.resolve.outputs.resolved-version }}
@@ -96,6 +99,7 @@ runs:
         jq -e . "$RESOLVER_JSON_PATH" > /dev/null
 
         echo "from-ref=$(jq -r '.from_ref // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
+        echo "latest-semver-tag=$(jq -r '.latest_semver_tag // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
         echo "resolved-version=$(jq -r '.resolved_version // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
         echo "major-version=$(jq -r '.major_version // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"
         echo "minor-version=$(jq -r '.minor_version // ""' "$RESOLVER_JSON_PATH")" | tee -a "$GITHUB_OUTPUT"

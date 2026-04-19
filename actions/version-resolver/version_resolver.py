@@ -308,6 +308,11 @@ def resolve_all(config_path, repo, token, to_ref):
         [latest_semver_tag] if latest_semver_tag else [],
         get_first_commit(),
     )
+    if latest_semver_tag:
+        print(f"Found latest semantic version tag: {latest_semver_tag}", file=sys.stderr)
+    else:
+        print("No semantic version tag found; falling back to first commit.", file=sys.stderr)
+    print(f"Resolved changelog base ref: {from_ref}", file=sys.stderr)
 
     config = load_version_config(config_path)
     commit_shas = get_commit_range(from_ref, to_ref)
@@ -330,6 +335,7 @@ def resolve_all(config_path, repo, token, to_ref):
 
     return {
         "from_ref": from_ref,
+        "latest_semver_tag": latest_semver_tag or "",
         "to_ref": to_ref,
         "pr_info": {
             "pull_requests": [compact_pr(pr) for pr in prs],
@@ -346,6 +352,7 @@ def to_line(result):
     lines = []
     key_map = {
         "from-ref": "from_ref",
+        "latest-semver-tag": "latest_semver_tag",
         "resolved-version": "resolved_version",
         "major-version": "major_version",
         "minor-version": "minor_version",

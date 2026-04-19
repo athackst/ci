@@ -206,6 +206,7 @@ version-resolver:
             out = resolver.resolve_all(config_path, "owner/repo", "token", "HEAD")
 
         self.assertEqual(out["from_ref"], "v1.2.3")
+        self.assertEqual(out["latest_semver_tag"], "v1.2.3")
         self.assertEqual(out["to_ref"], "HEAD")
         self.assertEqual(out["pr_info"]["labels"], ["bug", "feature"])
         self.assertEqual(len(out["pr_info"]["pull_requests"]), 2)
@@ -218,6 +219,7 @@ version-resolver:
         out = resolver.to_line(
             {
                 "from_ref": "v1.2.3",
+                "latest_semver_tag": "v1.2.3",
                 "resolved_version": "1.3.0",
                 "major_version": "1",
                 "minor_version": "3",
@@ -225,6 +227,7 @@ version-resolver:
             }
         )
         self.assertIn("from-ref=v1.2.3", out)
+        self.assertIn("latest-semver-tag=v1.2.3", out)
         self.assertIn("resolved-version=1.3.0", out)
         self.assertIn("major-version=1", out)
         self.assertIn("minor-version=3", out)
