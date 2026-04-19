@@ -22,7 +22,7 @@ def parse_version(tag: str):
 
 
 def is_semver_tag(tag: str):
-    return re.match(r"^v\d+\.\d+\.\d+$", (tag or "").strip()) is not None
+    return re.match(r"^v?\d+\.\d+\.\d+$", (tag or "").strip()) is not None
 
 
 def bump_version(version, bump):

@@ -34,12 +34,12 @@ class VersionResolverTests(unittest.TestCase):
 
     def test_is_semver_tag(self):
         self.assertTrue(resolver.is_semver_tag("v1.2.3"))
-        self.assertFalse(resolver.is_semver_tag("1.2.3"))
+        self.assertTrue(resolver.is_semver_tag("1.2.3"))
         self.assertFalse(resolver.is_semver_tag("ci-test-123"))
 
     def test_get_latest_semver_tag(self):
-        tags = ["ci-test-123", "v2.0.0", "v1.9.0"]
-        self.assertEqual(resolver.get_latest_semver_tag(tags), "v2.0.0")
+        tags = ["ci-test-123", "2.0.0", "v1.9.0"]
+        self.assertEqual(resolver.get_latest_semver_tag(tags), "2.0.0")
         self.assertIsNone(resolver.get_latest_semver_tag(["ci-test-123", "dev-tag"]))
 
     def test_resolve_base_ref(self):

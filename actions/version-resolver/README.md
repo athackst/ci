@@ -38,7 +38,7 @@ Resolve the changelog base ref and next semantic version from merged pull reques
 
 ## Advanced
 
-- Uses the latest reachable `vX.Y.Z` tag as `from-ref`; if no semantic version tag exists, it falls back to the repository's first commit.
+- Uses the latest reachable `vX.Y.Z` or `X.Y.Z` tag as `from-ref`; if no semantic version tag exists, it falls back to the repository's first commit.
 - Pull request discovery prefers the compare API and falls back to paginated closed pull request listing when needed.
 - Any configured `major` label wins over `minor`, and any configured `minor` label wins over `patch`.
 - If no merged PR labels match configured `major` or `minor` labels, the version defaults to a patch bump.
