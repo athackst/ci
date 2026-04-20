@@ -91,6 +91,7 @@ jobs:
       - name: Test with htmlproofer
         uses: athackst/htmlproofer-action@main
         with:
+          max_concurrency: 10
           host: ${{ inputs.host }}
           base_path: ${{ inputs.base-path }}
           ignore_urls: ${{ steps.ignore-urls.outputs.ignore_urls }}
