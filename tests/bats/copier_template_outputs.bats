@@ -17,10 +17,12 @@ teardown() {
 render_variant() {
   local variant="$1"
   local bump_script_path="${2:-}"
+  local do_releases="${3:-true}"
 
   copier copy --trust --defaults \
     --data "site_generator=${variant}" \
     --data "bump_script_path=${bump_script_path}" \
+    --data "do_releases=${do_releases}" \
     . "${out_dir}"
 }
 
@@ -31,15 +33,18 @@ collect_copier_managed_paths() {
   local all_paths=()
 
   for variant in "${variants[@]}"; do
-    variant_dir="$(mktemp -d "${out_dir}/render-${variant}.XXXXXX")"
-    copier copy --trust --defaults \
-      --data "site_generator=${variant}" \
-      --data "bump_script_path=" \
-      . "${variant_dir}" >/dev/null 2>&1
+    for do_releases in true false; do
+      variant_dir="$(mktemp -d "${out_dir}/render-${variant}-${do_releases}.XXXXXX")"
+      copier copy --trust --defaults \
+        --data "site_generator=${variant}" \
+        --data "bump_script_path=" \
+        --data "do_releases=${do_releases}" \
+        . "${variant_dir}" >/dev/null 2>&1
 
-    while IFS= read -r rel_path; do
-      all_paths+=("${rel_path}")
-    done < <(cd "${variant_dir}" && find .github -type f | sort)
+      while IFS= read -r rel_path; do
+        all_paths+=("${rel_path}")
+      done < <(cd "${variant_dir}" && find .github -type f | sort)
+    done
   done
 
   printf '%s\n' "${all_paths[@]}" | sort -u
@@ -53,6 +58,7 @@ collect_copier_managed_paths_with_bump() {
   copier copy --trust --defaults \
     --data "site_generator=none" \
     --data "bump_script_path=scripts/bump.sh" \
+    --data "do_releases=true" \
     . "${variant_dir}" >/dev/null 2>&1
 
   while IFS= read -r rel_path; do
@@ -61,7 +67,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier renders mkdocs variant" {
-  render_variant mkdocs
+  render_variant mkdocs "" true
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -87,7 +93,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier skips site workflow when disabled" {
-  render_variant none
+  render_variant none "" true
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -107,7 +113,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier renders jekyll variant" {
-  render_variant jekyll
+  render_variant jekyll "" true
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -130,7 +136,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier renders bump workflow when configured" {
-  render_variant none "scripts/bump.sh"
+  render_variant none "scripts/bump.sh" true
   wf_dir="${out_dir}/.github/workflows"
 
   [ -f "${wf_dir}/pr_bump.yml" ]
@@ -139,6 +145,38 @@ collect_copier_managed_paths_with_bump() {
   [ "$status" -eq 0 ]
 
   run "$ACTIONLINT" "${wf_dir}"/*.yml
+  [ "$status" -eq 0 ]
+}
+
+@test "copier skips release draft workflow when do_releases is false" {
+  render_variant mkdocs "" false
+  wf_dir="${out_dir}/.github/workflows"
+  answers_file="${out_dir}/.copier-answers.ci.yml"
+
+  [ -f "${wf_dir}/ci_update.yml" ]
+  [ -f "${wf_dir}/pr_automerge.yml" ]
+  [ -f "${wf_dir}/pr_labeler.yml" ]
+  [ ! -f "${wf_dir}/release_draft.yml" ]
+  [ -f "${wf_dir}/setup_labels.yml" ]
+  [ -f "${wf_dir}/site.yml" ]
+  [ -f "${answers_file}" ]
+
+  run grep -q "do_releases: false" "${answers_file}"
+  [ "$status" -eq 0 ]
+
+  run "$ACTIONLINT" "${wf_dir}"/*.yml
+  [ "$status" -eq 0 ]
+}
+
+@test "copier renders release draft workflow when do_releases is true" {
+  render_variant mkdocs "" true
+  wf_dir="${out_dir}/.github/workflows"
+  answers_file="${out_dir}/.copier-answers.ci.yml"
+
+  [ -f "${wf_dir}/release_draft.yml" ]
+  [ -f "${answers_file}" ]
+
+  run grep -q "do_releases: true" "${answers_file}"
   [ "$status" -eq 0 ]
 }
 

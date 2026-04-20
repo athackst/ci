@@ -28,8 +28,13 @@ site_generator:
 site_version:
   type: bool
   default: false
-  help: Use a MkDocs version alias used for branch publishes.
-  when: "[[ site_generator == 'mkdocs' ]]"
+  help: "DEPRECATED: Replaced by do_releases."
+  when: false
+
+do_releases:
+  type: bool
+  default: "[[ site_versions if site_versions is defined else false ]]"
+  help: Whether to create releases or new versions.
 
 release_template:
   type: str
@@ -38,3 +43,4 @@ release_template:
 
     $CHANGES
   help: Template for release description body, using $CHANGES for the changelog and $VERSION for the resolved version.
+  when: "[[ do_releases ]]"
