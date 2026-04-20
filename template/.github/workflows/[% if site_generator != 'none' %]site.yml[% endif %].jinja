@@ -24,7 +24,7 @@ jobs:
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
     with:
       pages: true
-[%- if site_version %]
+[%- if do_releases %]
       version: dev
 [%- endif %]
 [%- else %]
@@ -45,7 +45,7 @@ jobs:
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
     with:
       pages: true
-[%- if site_version %]
+[%- if do_releases %]
       version: latest
       release-tag: ${{ github.event.release.tag_name }}
 [%- endif %]

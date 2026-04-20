@@ -9,4 +9,4 @@ release_template: '## What''s changed
 
     '
 site_generator: mkdocs
-site_version: false
+do_releases: false
