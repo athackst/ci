@@ -21,6 +21,7 @@ jobs:
 | `tag-name` | (optional) Explicit release tag name override. | `""` |
 | `release-match-pattern` | (optional) Deprecated compatibility input; no longer used for draft lookup. | `^v[0-9.]+$` |
 | `draft-release-id` | (optional) Explicit draft release ID to update directly before create fallback. | `""` |
+| `reuse-existing-draft` | (optional) Update an existing draft when no release ID or matching tag is found. | `true` |
 
 ## Secrets
 
@@ -51,4 +52,7 @@ jobs:
 - Uses the resolved version and generated changelog as the default release name, tag, and body inputs.
 - Supports caller overrides for release `name` and `tag-name`.
 - Supports optional direct update of a known draft release via `draft-release-id`.
+- Otherwise, updates a draft release with the resolved tag when one exists.
+- If no matching tag is found and `reuse-existing-draft` is `true`, updates the newest existing draft release.
+- If no release ID, matching tag, or reusable draft is available, creates a new draft release.
 - Checks out tags with full history so semantic version resolution can compare against prior tags.

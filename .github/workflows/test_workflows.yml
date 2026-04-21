@@ -228,6 +228,7 @@ jobs:
     with:
       name: Test Workflow Release ${{ github.run_id }}-${{ github.run_attempt }}
       tag-name: test-workflow-${{ github.run_id }}-${{ github.run_attempt }}
+      reuse-existing-draft: false
     secrets:
       token: ${{ secrets.CI_BOT_TOKEN }}
 

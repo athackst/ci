@@ -30,6 +30,10 @@ inputs:
     description: (optional) Existing draft release ID to update directly.
     required: false
     default: ""
+  reuse-existing-draft:
+    description: (optional) Update an existing draft when no release ID or matching tag is found.
+    required: false
+    default: "true"
 outputs:
   id:
     description: The release ID.
@@ -98,6 +102,7 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.token }}
         TAG_NAME: ${{ inputs.tag-name || steps.render.outputs.tag-name }}
+        REUSE_EXISTING_DRAFT: ${{ inputs.reuse-existing-draft }}
         RELEASE_NAME: ${{ inputs.name || steps.render.outputs.name }}
         CHANGELOG: ${{ steps.render.outputs.changelog }}
         RELEASE_MATCH_PATTERN: ${{ inputs.release-match-pattern }}
