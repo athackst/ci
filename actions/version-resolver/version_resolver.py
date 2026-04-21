@@ -58,6 +58,68 @@ def get_tags():
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def get_remote_tags(remote="origin"):
+    result = subprocess.run(
+        ["git", "ls-remote", "--tags", "--refs", remote],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or f"git ls-remote failed for {remote}"
+        print(f"Unable to inspect remote tags: {message}", file=sys.stderr)
+        return set()
+
+    tags = set()
+    for line in result.stdout.splitlines():
+        parts = line.split()
+        if len(parts) != 2:
+            continue
+        ref = parts[1]
+        if ref.startswith("refs/tags/"):
+            tags.add(ref.removeprefix("refs/tags/"))
+    return tags
+
+
+def is_shallow_repository():
+    result = subprocess.run(
+        ["git", "rev-parse", "--is-shallow-repository"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and result.stdout.strip().lower() == "true"
+
+
+def fetch_tags(remote="origin"):
+    command = ["git", "fetch", "--tags", "--force", "--prune", remote]
+    if is_shallow_repository():
+        command.insert(-1, "--unshallow")
+
+    subprocess.run(command, check=True)
+
+
+def ensure_tags_available(remote="origin"):
+    shallow_repository = is_shallow_repository()
+    remote_tags = get_remote_tags(remote)
+    if not remote_tags and not shallow_repository:
+        return
+
+    local_tags = set(get_tags())
+    missing_tags = remote_tags - local_tags
+    if not missing_tags and not shallow_repository:
+        print("Local checkout already has remote tags and full history.", file=sys.stderr)
+        return
+
+    reasons = []
+    if missing_tags:
+        reasons.append(f"{len(missing_tags)} missing tag(s)")
+    if shallow_repository:
+        reasons.append("shallow history")
+    print(f"Fetching tags and history for version resolution ({', '.join(reasons)}).", file=sys.stderr)
+    fetch_tags(remote)
+
+
 def get_latest_semver_tag(tags):
     for tag in tags:
         if is_semver_tag(tag):
@@ -302,6 +364,7 @@ def compact_pr(pr):
 
 
 def resolve_all(config_path, repo, token, to_ref):
+    ensure_tags_available()
     tags = get_tags()
     latest_semver_tag = get_latest_semver_tag(tags)
     from_ref = resolve_base_ref(
