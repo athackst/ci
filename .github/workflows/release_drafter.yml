@@ -27,6 +27,11 @@ on:
         type: string
         required: false
         default: ""
+      reuse-existing-draft:
+        description: Update an existing draft when no release ID or matching tag is found.
+        type: boolean
+        required: false
+        default: true
     secrets:
       token:
         description: Optional token override used to create or update draft release.
@@ -111,4 +116,5 @@ jobs:
           tag-name: ${{ inputs.tag-name || '' }}
           release-match-pattern: ${{ inputs.release-match-pattern }}
           draft-release-id: ${{ inputs.draft-release-id || '' }}
+          reuse-existing-draft: ${{ inputs.reuse-existing-draft }}
           changelog: ${{ steps.changelog.outputs.changelog }}
