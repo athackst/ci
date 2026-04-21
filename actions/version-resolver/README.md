@@ -39,6 +39,7 @@ Resolve the changelog base ref and next semantic version from merged pull reques
 
 ## Advanced
 
+- Checks the `origin` remote for missing tags and shallow history, then fetches tags/history before resolving the version when needed.
 - Uses the latest reachable `vX.Y.Z` or `X.Y.Z` tag as `from-ref`; if no semantic version tag exists, it falls back to the repository's first commit.
 - Emits resolver diagnostics in logs and outputs (`latest-semver-tag`) so callers can verify tag detection behavior.
 - Pull request discovery prefers the compare API and falls back to paginated closed pull request listing when needed.

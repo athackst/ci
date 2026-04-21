@@ -42,6 +42,67 @@ class VersionResolverTests(unittest.TestCase):
         self.assertEqual(resolver.get_latest_semver_tag(tags), "2.0.0")
         self.assertIsNone(resolver.get_latest_semver_tag(["ci-test-123", "dev-tag"]))
 
+    def test_get_remote_tags(self):
+        completed = mock.Mock(
+            returncode=0,
+            stdout=(
+                "abc123\trefs/tags/v1.2.3\n"
+                "def456\trefs/tags/ci-test\n"
+                "ignored\trefs/heads/main\n"
+            ),
+            stderr="",
+        )
+        with mock.patch.object(resolver.subprocess, "run", return_value=completed) as run:
+            tags = resolver.get_remote_tags()
+
+        run.assert_called_once_with(
+            ["git", "ls-remote", "--tags", "--refs", "origin"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(tags, {"v1.2.3", "ci-test"})
+
+    def test_ensure_tags_available_fetches_missing_remote_tags(self):
+        with mock.patch.object(resolver, "get_remote_tags", return_value={"v1.2.3", "v2.0.0"}), mock.patch.object(
+            resolver, "get_tags", return_value=["v1.2.3"]
+        ), mock.patch.object(resolver, "is_shallow_repository", return_value=False), mock.patch.object(
+            resolver, "fetch_tags"
+        ) as fetch:
+            resolver.ensure_tags_available()
+
+        fetch.assert_called_once_with("origin")
+
+    def test_ensure_tags_available_fetches_shallow_history(self):
+        with mock.patch.object(resolver, "get_remote_tags", return_value={"v1.2.3"}), mock.patch.object(
+            resolver, "get_tags", return_value=["v1.2.3"]
+        ), mock.patch.object(resolver, "is_shallow_repository", return_value=True), mock.patch.object(
+            resolver, "fetch_tags"
+        ) as fetch:
+            resolver.ensure_tags_available()
+
+        fetch.assert_called_once_with("origin")
+
+    def test_ensure_tags_available_fetches_shallow_history_without_remote_tags(self):
+        with mock.patch.object(resolver, "get_remote_tags", return_value=set()), mock.patch.object(
+            resolver, "get_tags", return_value=[]
+        ), mock.patch.object(resolver, "is_shallow_repository", return_value=True), mock.patch.object(
+            resolver, "fetch_tags"
+        ) as fetch:
+            resolver.ensure_tags_available()
+
+        fetch.assert_called_once_with("origin")
+
+    def test_ensure_tags_available_skips_when_complete(self):
+        with mock.patch.object(resolver, "get_remote_tags", return_value={"v1.2.3"}), mock.patch.object(
+            resolver, "get_tags", return_value=["v1.2.3"]
+        ), mock.patch.object(resolver, "is_shallow_repository", return_value=False), mock.patch.object(
+            resolver, "fetch_tags"
+        ) as fetch:
+            resolver.ensure_tags_available()
+
+        fetch.assert_not_called()
+
     def test_resolve_base_ref(self):
         self.assertEqual(resolver.resolve_base_ref(["v2.0.0"], "abc123"), "v2.0.0")
         self.assertEqual(resolver.resolve_base_ref([], "abc123"), "abc123")
@@ -198,11 +259,11 @@ version-resolver:
             {"labels": [{"name": "bug"}]},
             {"labels": [{"name": "feature"}]},
         ]
-        with mock.patch.object(resolver, "get_tags", return_value=["v1.2.3"]), mock.patch.object(
-            resolver, "get_first_commit", return_value="abc123"
-        ), mock.patch.object(resolver, "get_commit_range", return_value={"sha1"}), mock.patch.object(
-            resolver, "fetch_merged_prs", return_value=prs
-        ):
+        with mock.patch.object(resolver, "ensure_tags_available"), mock.patch.object(
+            resolver, "get_tags", return_value=["v1.2.3"]
+        ), mock.patch.object(resolver, "get_first_commit", return_value="abc123"), mock.patch.object(
+            resolver, "get_commit_range", return_value={"sha1"}
+        ), mock.patch.object(resolver, "fetch_merged_prs", return_value=prs):
             out = resolver.resolve_all(config_path, "owner/repo", "token", "HEAD")
 
         self.assertEqual(out["from_ref"], "v1.2.3")
