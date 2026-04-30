@@ -46,7 +46,8 @@ jobs:
 
 - Skips the Copier update entirely when `.copier-answers.ci.yml` is missing.
 - The `automerge` input is deprecated and currently has no effect; updater PRs are labeled automatically.
-- Creates a failure issue with updater context if the workflow fails.
+- Only changes under `.github/` and `.copier-answers.ci.yml` count toward the `changed` output, so other files do not open an update PR.
+- Creates a failure issue with updater context and a local repro command if the workflow fails.
 - Writes a final workflow summary for both the PR and direct-push paths.
 
 ## Examples

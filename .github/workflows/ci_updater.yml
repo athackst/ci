@@ -62,6 +62,8 @@ jobs:
       changed: ${{ steps.changes.outputs.changed }}
       branch: ${{ steps.pr.outputs.pull-request-branch || steps.push-branch.outputs.branch }}
       pr-url: ${{ steps.pr.outputs.pull-request-url }}
+    env:
+      ANSWERS_FILE: .copier-answers.ci.yml
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -78,25 +80,23 @@ jobs:
       - name: Apply template updates
         id: apply
         shell: bash
-        env:
-          ANSWERS_FILE: .copier-answers.ci.yml
         run: |
           set -euo pipefail
-          if [ ! -f "$ANSWERS_FILE" ]; then
-            echo "No $ANSWERS_FILE found; skipping Copier update."
+          if [ ! -f "${{ env.ANSWERS_FILE }}" ]; then
+            echo "No ${{ env.ANSWERS_FILE }} found; skipping Copier update."
             echo "ran=false" | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo "ran=true" | tee -a "$GITHUB_OUTPUT"
-          copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref HEAD --defaults
+          copier update --trust -a "${{ env.ANSWERS_FILE }}" -A --vcs-ref HEAD --defaults
 
       - name: Detect changes
         id: changes
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "$(git status --porcelain)" ]; then
+          if [ -n "$(git status --porcelain -- .github ${{ env.ANSWERS_FILE }})" ]; then
             echo "changed=true" | tee -a "$GITHUB_OUTPUT"
           else
             echo "changed=false" | tee -a "$GITHUB_OUTPUT"
@@ -126,7 +126,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH_NAME"
-          git add -A
+          git add -A -- .github ${{ env.ANSWERS_FILE }}
           git commit -m "${{ inputs.commit-message }}"
           git push --force-with-lease origin "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" | tee -a "$GITHUB_OUTPUT"
@@ -144,6 +144,11 @@ jobs:
               `- Run: ${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
               `- Target branch input: \`${process.env.PR_BRANCH}\``,
               `- PR title input: \`${process.env.PR_TITLE}\``,
+              '',
+              'You may need to run copier locally',
+              '```bash',
+              'copier update --trust -a ${{ env.ANSWERS_FILE }} -A --vcs-ref HEAD --defaults',
+              '```',
             ].join('\n')
             await github.rest.issues.create({
               owner: context.repo.owner,
@@ -180,7 +185,7 @@ jobs:
             echo "### Copier PR summary"
 
             if [ "${APPLY_RAN}" != "true" ]; then
-              echo ":grey_exclamation: No update attempted (missing \`.copier-answers.ci.yml\`)."
+              echo ":grey_exclamation: No update attempted (missing \`${{ env.ANSWERS_FILE }}\`)."
             elif [ "${CHANGED}" != "true" ]; then
               echo ":white_check_mark: Copier ran, but no file changes were produced."
             elif [ -n "${PR_URL}" ]; then
