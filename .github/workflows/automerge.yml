@@ -55,15 +55,20 @@ jobs:
           echo "token-source=$([ "$HAS_CALLER_TOKEN" = "true" ] && echo caller-secret || echo github-token-fallback)"
           echo "gh-viewer-login=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')"
 
-      - name: Enable auto-merge for labeled PR
+      - name: Enable/disable auto-merge for labeled PR
         id: native-merge
-        if: ${{ steps.automerge-mode.outputs.mode == 'native' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
+        if: ${{ steps.automerge-mode.outputs.mode == 'native' && github.event.pull_request.draft == false }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token || github.token }}
         run: |
-          gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
-
+          if [ "${{ steps.automerge-label.outputs.has-automerge }}" = "true" ]; then
+             echo "Enabling native automerge for PR #${{ github.event.pull_request.number }}."
+             gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
+          else
+             echo "Disabling native automerge for PR #${{ github.event.pull_request.number }}."
+             gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --disable-auto
+          fi
       - name: GitHub Checks
         id: checks
         if: ${{ steps.automerge-mode.outputs.mode == 'poll' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
