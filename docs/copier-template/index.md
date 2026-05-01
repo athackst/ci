@@ -16,8 +16,9 @@ Some workflows are conditional:
 - [`release_draft.yml`](./release_draft.md) is generated when `do_releases` is enabled.
 - [`site.yml`](./site.md) is generated when `site_generator` is `mkdocs` or `jekyll`.
 
-The template also writes `.github/ci-config.yml`, `.copier-answers.ci.yml`, and,
-when releases are enabled, `.github/release_template.md`.
+The template also writes `.copier-answers.ci.yml`. It writes
+`.github/ci-config.yml` and, when releases are enabled,
+`.github/release_template.md` only when those files do not already exist.
 
 ## Token
 
