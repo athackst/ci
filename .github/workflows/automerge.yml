@@ -1,6 +1,12 @@
 name: Automerge
 on:
   workflow_call:
+    inputs:
+      automerge-mode:
+        description: Merge strategy for PRs labeled automerge.
+        type: string
+        required: false
+        default: poll
     secrets:
       token:
         description: Optional token override for labeling, version resolution, and automerge.
@@ -14,16 +20,6 @@ jobs:
       checks: read
     runs-on: ubuntu-latest
     steps:
-      - name: GitHub Checks
-        id: checks
-        uses: poseidon/wait-for-status-checks@v0.6.0
-        continue-on-error: true
-        with:
-          token: ${{ github.token }}
-          interval: 30s
-          delay: 10s
-          ignore_pattern: .*automerge.*
-
       - name: Check automerge label
         id: automerge-label
         shell: bash
@@ -33,6 +29,20 @@ jobs:
           set -euo pipefail
           HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
           echo "has-automerge=$HAS_AUTOMERGE" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Check automerge mode
+        id: automerge-mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ inputs.automerge-mode }}" in
+            poll|native|disabled) ;;
+            *)
+              echo "Unsupported automerge mode: ${{ inputs.automerge-mode }}"
+              exit 1
+              ;;
+          esac
+          echo "mode=${{ inputs.automerge-mode }}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Debug gh auth identity
         id: auth
@@ -46,37 +56,67 @@ jobs:
           echo "gh-viewer-login=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')"
 
       - name: Enable auto-merge for labeled PR
-        id: merge
-        if: ${{ steps.checks.outcome == 'success' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
+        id: native-merge
+        if: ${{ steps.automerge-mode.outputs.mode == 'native' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token || github.token }}
         run: |
           gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
 
+      - name: GitHub Checks
+        id: checks
+        if: ${{ steps.automerge-mode.outputs.mode == 'poll' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
+        uses: poseidon/wait-for-status-checks@v0.6.0
+        continue-on-error: true
+        with:
+          token: ${{ github.token }}
+          interval: 30s
+          delay: 10s
+          ignore_pattern: .*automerge.*
+
+      - name: Merge labeled PR after checks pass
+        id: poll-merge
+        if: ${{ steps.automerge-mode.outputs.mode == 'poll' && steps.checks.outcome == 'success' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.token || github.token }}
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --squash
+
       - name: Workflow summary
         if: ${{ always() }}
         shell: bash
         env:
+          AUTOMERGE_MODE: ${{ steps.automerge-mode.outputs.mode || inputs.automerge-mode }}
           CHECKS_OUTCOME: ${{ steps.checks.outcome || 'skipped' }}
           HAS_AUTOMERGE: ${{ steps.automerge-label.outputs.has-automerge || 'false' }}
           IS_DRAFT: ${{ github.event.pull_request.draft }}
-          MERGE_OUTCOME: ${{ steps.merge.outcome || 'skipped' }}
+          NATIVE_MERGE_OUTCOME: ${{ steps.native-merge.outcome || 'skipped' }}
+          POLL_MERGE_OUTCOME: ${{ steps.poll-merge.outcome || 'skipped' }}
         run: |
           set -euo pipefail
           {
             echo "### Automerge"
             echo ""
-            if [ "${HAS_AUTOMERGE}" != "true" ]; then
+            echo "mode: \`${AUTOMERGE_MODE}\`"
+            echo ""
+            if [ "${AUTOMERGE_MODE}" = "disabled" ]; then
+              echo "Skipped: automerge mode is \`disabled\`."
+            elif [ "${HAS_AUTOMERGE}" != "true" ]; then
               echo "Skipped: missing \`automerge\` label."
-            elif [ "${CHECKS_OUTCOME}" != "success" ]; then
-              echo "Skipped: required checks are not passing yet."
             elif [ "${IS_DRAFT}" = "true" ]; then
               echo "Skipped: PR is draft."
-            elif [ "${MERGE_OUTCOME}" = "success" ]; then
+            elif [ "${AUTOMERGE_MODE}" = "native" ] && [ "${NATIVE_MERGE_OUTCOME}" = "success" ]; then
               echo "Enabled auto-merge (\`--auto --squash\`)."
+            elif [ "${AUTOMERGE_MODE}" = "native" ]; then
+              echo "Native automerge command did not complete successfully."
+            elif [ "${CHECKS_OUTCOME}" != "success" ]; then
+              echo "Skipped: required checks are not passing yet."
+            elif [ "${POLL_MERGE_OUTCOME}" = "success" ]; then
+              echo "Merged PR after required checks passed (\`--squash\`)."
             else
-              echo "Automerge command did not complete successfully."
+              echo "Poll merge command did not complete successfully."
             fi
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"

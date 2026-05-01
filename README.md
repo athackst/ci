@@ -56,6 +56,8 @@ Required repository permissions for the token:
 - `Pull requests: Read and write` (used in `pr_automerge.yml`, `pr_bump.yml`)
 - `Issues: Read and write` (used in `pr_labeler.yml`, `setup_labels.yml`, `pr_automerge.yml`)
 - `Actions: Read and write` (used in `ci_update.yml`)
+- `Workflows: Read and write` (used in `ci_update.yml`)
+- `Variables: Read and write` (used in `release_drafter.yml`)
 
 Set up a GitHub App for `ci_update_dispatch.yml`:
 
@@ -103,6 +105,13 @@ entrypoint workflows plus a shared CI config.
 - `none` is the default and skips site workflow generation entirely.
 - `mkdocs` matches the rest of this repo most closely.
 - `jekyll` is there for repositories that already have an established Jekyll site.
+
+`automerge_mode`
+
+- Chooses how `pr_automerge.yml` handles labeled pull requests.
+- `poll` is the default and waits for checks before merging directly, which works on private repos without GitHub native auto-merge support.
+- `native` enables GitHub auto-merge for labeled PRs and lets GitHub merge when requirements are met.
+- `disabled` keeps the workflow in place but disables automerge actions.
 
 `site_version`
 

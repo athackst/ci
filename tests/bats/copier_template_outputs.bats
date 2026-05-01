@@ -18,11 +18,13 @@ render_variant() {
   local variant="$1"
   local bump_script_path="${2:-}"
   local do_releases="${3:-true}"
+  local automerge_mode="${4:-poll}"
 
   copier copy --trust --defaults \
     --data "site_generator=${variant}" \
     --data "bump_script_path=${bump_script_path}" \
     --data "do_releases=${do_releases}" \
+    --data "automerge_mode=${automerge_mode}" \
     . "${out_dir}"
 }
 
@@ -39,6 +41,7 @@ collect_copier_managed_paths() {
         --data "site_generator=${variant}" \
         --data "bump_script_path=" \
         --data "do_releases=${do_releases}" \
+        --data "automerge_mode=poll" \
         . "${variant_dir}" >/dev/null 2>&1
 
       while IFS= read -r rel_path; do
@@ -59,6 +62,7 @@ collect_copier_managed_paths_with_bump() {
     --data "site_generator=none" \
     --data "bump_script_path=scripts/bump.sh" \
     --data "do_releases=true" \
+    --data "automerge_mode=poll" \
     . "${variant_dir}" >/dev/null 2>&1
 
   while IFS= read -r rel_path; do
@@ -83,6 +87,12 @@ collect_copier_managed_paths_with_bump() {
   [ "$status" -eq 0 ]
 
   run grep -q "site_generator: mkdocs" "${answers_file}"
+  [ "$status" -eq 0 ]
+
+  run grep -q "automerge_mode: poll" "${answers_file}"
+  [ "$status" -eq 0 ]
+
+  run grep -q "automerge-mode: poll" "${wf_dir}/pr_automerge.yml"
   [ "$status" -eq 0 ]
 
   run "$ACTIONLINT" "${wf_dir}"/*.yml
@@ -177,6 +187,21 @@ collect_copier_managed_paths_with_bump() {
   [ -f "${answers_file}" ]
 
   run grep -q "do_releases: true" "${answers_file}"
+  [ "$status" -eq 0 ]
+}
+
+@test "copier renders native automerge mode" {
+  render_variant mkdocs "" true native
+  wf_dir="${out_dir}/.github/workflows"
+  answers_file="${out_dir}/.copier-answers.ci.yml"
+
+  run grep -q "automerge_mode: native" "${answers_file}"
+  [ "$status" -eq 0 ]
+
+  run grep -q "automerge-mode: native" "${wf_dir}/pr_automerge.yml"
+  [ "$status" -eq 0 ]
+
+  run "$ACTIONLINT" "${wf_dir}"/*.yml
   [ "$status" -eq 0 ]
 }
 

@@ -25,6 +25,15 @@ site_generator:
     - jekyll
   help: Site workflow backend to use for docs publishing.
 
+automerge_mode:
+  type: str
+  default: poll
+  choices:
+    - poll
+    - native
+    - disabled
+  help: How pull requests labeled automerge should be merged.
+
 site_version:
   type: bool
   default: false
