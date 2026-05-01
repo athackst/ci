@@ -29,7 +29,8 @@ jobs:
 ## Permissions
 
 - Requires `pull-requests: write` to merge PRs directly or enable auto-merge.
-- `contents: read` is sufficient for the rest of the workflow.
+- Requires `checks: read` to poll required checks in `poll` mode.
+- Uses `contents: read` for the rest of the workflow.
 
 ## Advanced
 

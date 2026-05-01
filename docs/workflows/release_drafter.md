@@ -19,7 +19,6 @@ jobs:
 | `configuration-path` | (optional) Path to the release-drafter style config file. | `.github/ci-config.yml` |
 | `name` | (optional) Explicit release name override. | `""` |
 | `tag-name` | (optional) Explicit release tag name override. | `""` |
-| `release-match-pattern` | (optional) Deprecated compatibility input; no longer used for draft lookup. | `^v[0-9.]+$` |
 | `draft-release-id` | (optional) Explicit draft release ID to update directly before create fallback. | `""` |
 | `reuse-existing-draft` | (optional) Update an existing draft when no release ID or matching tag is found. | `true` |
 

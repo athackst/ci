@@ -2,46 +2,47 @@
 
 Central home for my reusable GitHub Actions workflows and composite actions.
 
-The main assumption of this repo is that consumer repositories adopt it via the
-Copier template first. After that, the primary entrypoints in the consumer repo
-should be the generated workflows:
+The main assumption of this repo is that consumer repositories adopt it through
+the Copier template first. After that, the primary entrypoints in the consumer
+repo are the generated workflows:
 
 - `ci_update.yml`
 - `pr_automerge.yml`
-- `pr_bump.yml`
 - `pr_labeler.yml`
-- `release_draft.yml`
 - `setup_labels.yml`
+- `pr_bump.yml` when `bump_script_path` is set
+- `release_draft.yml` when `do_releases` is enabled
 - `site.yml` when a site workflow is enabled
 
 Those workflows keep the consumer repo aligned with this central CI repo,
-handle common PR automation, create release drafts, and set up site builds.
+handle common PR automation, create release drafts, sync repository labels, and
+set up site builds.
 
 ## Usage
 
-Install Copier (pick one):
+### Quick start
 
 ```bash
-# recommended
-pipx install copier
-
-# or
-python3 -m pip install --user copier
-
-# one-shot (no install)
-uvx copier --help
+tools/init_ci_repo.sh
 ```
 
-Bootstrap a repository with my defaults:
+The helper applies the Copier template, then asks whether to set
+`CI_BOT_TOKEN` with `gh secret set`. It can infer the repository from a GitHub
+git remote or `gh repo view`; otherwise pass `--repo owner/repo`. Pass extra
+Copier options after `--`.
+
+### Manual setup
+
+Install Copier:
+
+```bash
+pipx install copier
+```
+
+Apply the template:
 
 ```bash
 copier copy --trust gh:athackst/ci .
-```
-
-Or use the helper script in this repo to apply the template and set the secret:
-
-```bash
-tools/init_ci_repo.sh --repo owner/repo
 ```
 
 Add a repository secret named `CI_BOT_TOKEN`:
@@ -52,26 +53,12 @@ Add a repository secret named `CI_BOT_TOKEN`:
 
 Required repository permissions for the token:
 
-- `Contents: Read and write` (used in `ci_update.yml`, `pr_bump.yml`)
-- `Pull requests: Read and write` (used in `pr_automerge.yml`, `pr_bump.yml`)
-- `Issues: Read and write` (used in `pr_labeler.yml`, `setup_labels.yml`, `pr_automerge.yml`)
-- `Actions: Read and write` (used in `ci_update.yml`)
-- `Workflows: Read and write` (used in `ci_update.yml`)
-- `Variables: Read and write` (used in `release_drafter.yml`)
-
-Set up a GitHub App for `ci_update_dispatch.yml`:
-
-1. Create a GitHub App owned by the same account or organization that owns this repo.
-2. Install the app on this repo and on every repository that should receive `ci-update` dispatches.
-3. In this repo, add these Actions secrets:
-   - `APP_ID`: the GitHub App ID
-   - `APP_PRIVATE_KEY`: the GitHub App private key PEM
-4. In the app repository permissions, grant `Contents: Read and write`.
-   This is needed because:
-   - the dispatcher needs to read `.copier-answers.ci.yml` from installed repositories
-   - `repository_dispatch` is sent through the repository contents API surface and requires write-level access
-   - write access also covers the read access needed for repo matching
-5. If the dispatcher stops matching or dispatching repos, first confirm the app is still installed on the target repositories and that the private key in `APP_PRIVATE_KEY` is current.
+- `Contents: Read and write` for update and bump commits.
+- `Pull requests: Read and write` for PR labels, comments, updater PRs, bump PRs, and automerge.
+- `Issues: Read and write` for repository labels, PR comments, and failure issues.
+- `Actions: Read and write` for updater PRs that modify workflow files.
+- `Workflows: Read and write` for commits that create or update workflow files.
+- `Variables: Read and write` for generated `release_draft.yml` workflows that persist `DRAFT_RELEASE_ID`.
 
 ## Mental model
 
@@ -95,16 +82,18 @@ entrypoint workflows plus a shared CI config.
 
 `bump_script_path`
 
-- Optional path to a script in the target repository.
-- If set, `pr_bump.yml` will also run `bump.yml` for trusted same-repo PRs.
+- Optional shell command to run in the target repository after version metadata is resolved.
+- If set, the template generates `pr_bump.yml`.
+- The command receives `VERSION`, `MAJOR_VERSION`, `MINOR_VERSION`, and `PATCH_VERSION`.
 - Leave it empty if the repo does not maintain a version file, changelog file, or other bumpable artifact in PRs.
 
 `site_generator`
 
 - Chooses whether to generate `site.yml`, and if so whether it uses MkDocs or Jekyll.
 - `none` is the default and skips site workflow generation entirely.
-- `mkdocs` matches the rest of this repo most closely.
-- `jekyll` is there for repositories that already have an established Jekyll site.
+- `mkdocs` uses `mkdocs_site.yml`.
+- `jekyll` uses `jekyll_site.yml`.
+- MkDocs site workflows run on `main` pushes and release publishes; Jekyll site workflows run on `main` pushes.
 
 `automerge_mode`
 
@@ -113,18 +102,20 @@ entrypoint workflows plus a shared CI config.
 - `native` enables GitHub auto-merge for labeled PRs and lets GitHub merge when requirements are met.
 - `disabled` keeps the workflow in place but disables automerge actions.
 
-`site_version`
+`do_releases`
 
-- Only shown for MkDocs sites.
-- When enabled, `site.yml` publishes versioned docs:
+- Chooses whether to generate `release_draft.yml`.
+- When enabled, `release_draft.yml` creates or updates a draft release on `main` pushes.
+- With MkDocs sites, this also publishes versioned docs:
   `main` publishes `dev`, and release events publish the release tag plus `latest`.
-- Leave it off for a simpler single-version docs site.
+- When disabled, release draft generation is skipped and MkDocs sites publish a simpler unversioned Pages site.
 
 `release_template`
 
 - Contents for `.github/release_template.md`.
 - Used by `release_draft.yml` when rendering the draft release body.
 - Supports `$CHANGES` for generated changelog content and `$VERSION` / `$RESOLVED_VERSION` for the resolved version.
+- Only asked when `do_releases` is enabled.
 
 ### Shared CI config
 
@@ -135,6 +126,7 @@ that would normally live in separate files:
 - version-resolver label rules
 - PR labeler rules
 - repository label metadata such as label descriptions and colors
+- the release body template path
 
 This is intentionally a modified combination of the upstream
 [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter)
