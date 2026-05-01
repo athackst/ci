@@ -78,16 +78,11 @@ jobs:
           MINOR_VERSION: ${{ steps.version.outputs.minor-version }}
           PATCH_VERSION: ${{ steps.version.outputs.patch-version }}
           PR_INFO_PATH: ${{ steps.version.outputs.pr-info-path }}
+          BUMP_SCRIPT: ${{ inputs.bump-script }}
         run: |
           set -euo pipefail
 
-          SCRIPT_PATH="${{ inputs.bump-script }}"
-          if [ ! -f "$SCRIPT_PATH" ]; then
-            echo "Bump script not found: $SCRIPT_PATH"
-            exit 1
-          fi
-
-          bash "$SCRIPT_PATH"
+          bash "$BUMP_SCRIPT"
 
       - name: Commit updated files
         id: commit

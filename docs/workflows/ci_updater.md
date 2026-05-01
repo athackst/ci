@@ -17,7 +17,6 @@ jobs:
 | Name | Description | Default |
 | --- | --- | --- |
 | `create-pr` | (optional) Create or update a PR with template changes. | `true` |
-| `automerge` | (optional) Deprecated. Retained for compatibility; updater PRs are labeled automatically. | `false` |
 | `pr-branch` | (optional) Branch name used for template updates. | `ci/update-ci-template` |
 | `pr-title` | (optional) Pull request title. | `chore: update CI template` |
 | `commit-message` | (optional) Commit message for template updates. | `chore: apply CI template update` |
@@ -45,7 +44,7 @@ jobs:
 ## Advanced
 
 - Skips the Copier update entirely when `.copier-answers.ci.yml` is missing.
-- The `automerge` input is deprecated and currently has no effect; updater PRs are labeled automatically.
+- Updater PRs are labeled `automerge` and `skip-changelog` automatically.
 - Only changes under `.github/` and `.copier-answers.ci.yml` count toward the `changed` output, so other files do not open an update PR.
 - Creates a failure issue with updater context and a local repro command if the workflow fails.
 - Writes a final workflow summary for both the PR and direct-push paths.

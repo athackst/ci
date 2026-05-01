@@ -45,7 +45,7 @@ jobs:
 
 - Does nothing if `bump-script` is empty.
 - Resolves version metadata from the shared CI config before running the bump script.
-- Exposes `FROM_REF`, `VERSION`, `MAJOR_VERSION`, `MINOR_VERSION`, `PATCH_VERSION`, and `PR_INFO_PATH` to the bump script.
+- Exposes `VERSION`, `MAJOR_VERSION`, `MINOR_VERSION`, `PATCH_VERSION`, and `PR_INFO_PATH` to the bump script.
 - On `pull_request`, pushes to `push-branch` if set; otherwise it uses the PR head branch.
 - On other events, opens or updates a PR from `push-branch` if set; otherwise it uses `ci/pr-bump`.
 - Non-`pull_request` bump PRs are labeled `automerge` and `skip-changelog`.

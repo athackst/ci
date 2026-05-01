@@ -11,14 +11,27 @@ _subdirectory: template
 
 _answers_file: .copier-answers.ci.yml
 
+# Preserve the shared CI config if it already exists in a destination repo.
+_skip_if_exists:
+  - .github/ci-config.yml
+
 bump_script_path:
   type: str
   default: ""
-  help: Optional bump script path in the target repository (leave empty to disable).
+  help: |
+    Optional bump command to run in the target repository (leave empty to disable).
+
+        Available environment variables:
+          VERSION
+          MAJOR_VERSION
+          MINOR_VERSION
+          PATCH_VERSION
+  
+    bump script command:
 
 site_generator:
   type: str
-  default: mkdocs
+  default: none
   choices:
     - none
     - mkdocs
