@@ -66,7 +66,7 @@ jobs:
           cat _site/index.html
 
       - name: Build ignore URLs for htmlproofer
-        id: ignore-urls
+        id: build-ignore
         shell: bash
         run: |
           {
@@ -82,6 +82,24 @@ jobs:
             echo "EOF"
           } | tee -a "$GITHUB_OUTPUT"
 
+      - name: Build swap URLS for htmlproofer
+        id: build-swap
+        shell: bash
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          DEV_NAME: "dev"
+          LATEST_NAME: "latest"
+        run: |
+          {
+            echo "swap_urls<<EOF"
+            echo "^\/${DEV_NAME}:"
+            echo "^\/v[0-9]+\.[0-9]+\.[0-9]+:"
+            echo "^\/${LATEST_NAME}:"
+            echo "^https\:\/\/(?\:www\.)?github\.com\/${REPO_OWNER}\/${REPO_NAME}\/blob\/:file\:/${{ github.workspace }}/"
+            echo "EOF"
+          } | tee -a "$GITHUB_OUTPUT"
+
       - name: Cache HTMLProofer
         uses: actions/cache@v5
         with:
@@ -94,12 +112,8 @@ jobs:
           max_concurrency: 10
           host: ${{ inputs.host }}
           base_path: ${{ inputs.base-path }}
-          ignore_urls: ${{ steps.ignore-urls.outputs.ignore_urls }}
-          swap_urls: |
-            ^\/dev:
-            ^\/v\d+\.\d+\.\d+:
-            ^\/latest:
-            ^https\://github.com/${{ github.repository }}/blob/:file\:/${{ github.workspace }}/
+          ignore_urls: ${{ steps.build-ignore.outputs.ignore_urls }}
+          swap_urls: ${{ steps.build-swap.outputs.swap_urls }}
 
       - name: Save cache
         if: always()
