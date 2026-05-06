@@ -74,6 +74,10 @@ run_upsert() {
 }
 
 @test "draft release id updates before tag or fallback lookup" {
+  export GH_RELEASES_JSON='[
+    {"id": 303, "tag_name": "v1.0.0", "draft": true, "created_at": "2024-03-01T00:00:00Z"}
+  ]'
+
   run run_upsert "v1.0.0" "false" "303"
 
   [ "$status" -eq 0 ]
@@ -81,7 +85,23 @@ run_upsert() {
   run grep -q "PATCH repos/owner/repo/releases/303" "$GH_CALL_LOG"
   [ "$status" -eq 0 ]
   run grep -q "api repos/owner/repo/releases?per_page=100" "$GH_CALL_LOG"
+  [ "$status" -eq 0 ]
+}
+
+@test "published draft-release-id is ignored and a new draft is created when reuse is false" {
+  export GH_RELEASES_JSON='[
+    {"id": 303, "tag_name": "v1.0.0", "draft": false, "created_at": "2024-03-01T00:00:00Z"}
+  ]'
+
+  run run_upsert "v2.0.0" "false" "303"
+
+  [ "$status" -eq 0 ]
+  run grep -q '"id": 900' <<< "$output"
+  [ "$status" -eq 0 ]
+  run grep -q "PATCH repos/owner/repo/releases/303" "$GH_CALL_LOG"
   [ "$status" -ne 0 ]
+  run grep -q "POST repos/owner/repo/releases" "$GH_CALL_LOG"
+  [ "$status" -eq 0 ]
 }
 
 @test "matching tag updates matching draft release first" {

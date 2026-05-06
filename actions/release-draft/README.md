@@ -46,7 +46,7 @@ Create or update a draft GitHub release from a release-drafter style config, a r
 - Uses the bundled `release-drafter.yml` when `configuration-path` is not set.
 - Supports `name-template`, `tag-template`, and `template`, plus `template-file` for loading the release body from a file.
 - Template interpolation supports `$RESOLVED_VERSION`, `$VERSION`, `$CHANGES`, and `$CHANGELOG`.
-- When `draft-release-id` is provided, the action updates that draft release directly.
+- When `draft-release-id` is provided, the action updates that release only when it is still a draft; otherwise it is ignored.
 - Otherwise, the action updates a draft release with the resolved tag when one exists.
 - If no matching tag is found and `reuse-existing-draft` is `true`, the action updates the newest existing draft release.
 - If no release ID, matching tag, or reusable draft is available, the action creates a new draft release.
