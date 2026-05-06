@@ -32,6 +32,14 @@ load_releases() {
   fi
 }
 
+is_draft_release_id() {
+  local release_id="$1"
+  load_releases
+  jq -e --arg release_id "$release_id" '
+    any(.[]; (.id | tostring) == $release_id and .draft == true)
+  ' "$RELEASES_FILE" >/dev/null
+}
+
 find_draft_release_id_for_tag() {
   load_releases
   jq -r --arg tag_name "$TAG_NAME" '
@@ -67,7 +75,11 @@ try_patch_release() {
 }
 
 if [ -n "${DRAFT_RELEASE_ID:-}" ]; then
-  try_patch_release "$DRAFT_RELEASE_ID" "draft release id"
+  if is_draft_release_id "$DRAFT_RELEASE_ID"; then
+    try_patch_release "$DRAFT_RELEASE_ID" "draft release id"
+  else
+    echo "Ignoring draft release id '${DRAFT_RELEASE_ID}' because it is not a draft release." >&2
+  fi
 fi
 
 MATCHING_DRAFT_RELEASE_ID="$(find_draft_release_id_for_tag)"
