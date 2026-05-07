@@ -42,10 +42,10 @@ Resolve the changelog base ref and next semantic version from merged pull reques
 - Checks the `origin` remote for missing tags and shallow history, then fetches tags/history before resolving the version when needed.
 - Uses the latest reachable `vX.Y.Z` or `X.Y.Z` tag as `from-ref`; if no semantic version tag exists, it falls back to the repository's first commit.
 - Emits resolver diagnostics in logs and outputs (`latest-semver-tag`) so callers can verify tag detection behavior.
-- Pull request discovery prefers the compare API and falls back to paginated closed pull request listing when needed.
+- Pull request discovery combines GraphQL search results with paginated closed pull request listing, so temporary GitHub search gaps do not silently drop merged PRs.
 - Any configured `major` label wins over `minor`, and any configured `minor` label wins over `patch`.
 - If no merged PR labels match configured `major` or `minor` labels, the version defaults to a patch bump.
-- The action writes a compact PR metadata JSON file that can be consumed directly by `actions/changelog`.
+- The action writes the full resolver JSON file to `pr-info-path`; `actions/changelog` reads the `pr_info.pull_requests` section from that payload.
 
 ## Examples
 

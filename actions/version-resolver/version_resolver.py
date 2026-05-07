@@ -297,11 +297,30 @@ def fetch_merged_prs_from_pagination(repo, token, commit_shas):
     return prs
 
 
+def merge_pr_results(*pr_collections):
+    merged = {}
+    for prs in pr_collections:
+        for pr in prs:
+            number = pr.get("number")
+            if number is None:
+                continue
+            if number not in merged:
+                merged[number] = pr
+                continue
+
+            # Prefer the first result ordering, but fill missing fields from later sources.
+            current = merged[number]
+            for key, value in pr.items():
+                if current.get(key) in (None, "", []):
+                    current[key] = value
+
+    return list(merged.values())
+
+
 def fetch_merged_prs(repo, token, from_ref, to_ref, commit_shas):
+    graphql_prs = []
     try:
-        prs = fetch_merged_prs_from_graphql_search(repo, token, from_ref, to_ref, commit_shas)
-        if prs:
-            return prs
+        graphql_prs = fetch_merged_prs_from_graphql_search(repo, token, from_ref, to_ref, commit_shas)
     except urllib.error.HTTPError as exc:
         print(
             f"GraphQL-based PR discovery failed ({exc.code}); falling back to pagination.",
@@ -310,7 +329,8 @@ def fetch_merged_prs(repo, token, from_ref, to_ref, commit_shas):
     except Exception:
         print("GraphQL-based PR discovery failed; falling back to pagination.", file=sys.stderr)
 
-    return fetch_merged_prs_from_pagination(repo, token, commit_shas)
+    pagination_prs = fetch_merged_prs_from_pagination(repo, token, commit_shas)
+    return merge_pr_results(graphql_prs, pagination_prs)
 
 
 def get_current_pr_from_event(repo):

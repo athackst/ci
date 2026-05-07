@@ -49,6 +49,7 @@ jobs:
 
 - Resolves config first with `resolve-config`, then feeds the same config into version resolution and changelog generation.
 - Uses the resolved version and generated changelog as the default release name, tag, and body inputs.
+- Uploads a `release-draft-debug-<run_id>-<run_attempt>` artifact containing the resolver JSON and PR info JSON for inspection.
 - Supports caller overrides for release `name` and `tag-name`.
 - Supports optional direct update of a known draft release via `draft-release-id`.
 - Otherwise, updates a draft release with the resolved tag when one exists.
