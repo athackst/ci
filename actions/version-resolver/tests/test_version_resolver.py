@@ -209,6 +209,57 @@ version-resolver:
         fallback.assert_called_once()
         self.assertEqual([pr["number"] for pr in prs], [9])
 
+    def test_fetch_merged_prs_merges_graphql_and_pagination_results(self):
+        graphql_prs = [
+            {
+                "number": 12,
+                "title": "GraphQL result",
+                "html_url": "https://example/pr/12",
+                "merged_at": "2024-01-01T00:00:00Z",
+                "merge_commit_sha": "sha12",
+                "labels": [{"name": "feature"}],
+            },
+            {
+                "number": 14,
+                "title": "GraphQL result",
+                "html_url": "https://example/pr/14",
+                "merged_at": "2024-01-02T00:00:00Z",
+                "merge_commit_sha": "sha14",
+                "labels": [{"name": "bug"}],
+            },
+        ]
+        pagination_prs = [
+            {
+                "number": 14,
+                "title": "REST duplicate",
+                "html_url": "https://example/pr/14",
+                "merged_at": "2024-01-02T00:00:00Z",
+                "merge_commit_sha": "sha14",
+                "labels": [{"name": "bug"}],
+            },
+            {
+                "number": 18,
+                "title": "REST only",
+                "html_url": "https://example/pr/18",
+                "merged_at": "2024-01-03T00:00:00Z",
+                "merge_commit_sha": "sha18",
+                "labels": [{"name": "maintenance"}],
+            },
+        ]
+
+        with mock.patch.object(
+            resolver,
+            "fetch_merged_prs_from_graphql_search",
+            return_value=graphql_prs,
+        ), mock.patch.object(
+            resolver,
+            "fetch_merged_prs_from_pagination",
+            return_value=pagination_prs,
+        ):
+            prs = resolver.fetch_merged_prs("owner/repo", "token", "from", "to", {"sha12", "sha14", "sha18"})
+
+        self.assertEqual([pr["number"] for pr in prs], [12, 14, 18])
+
     def test_get_current_pr_from_event(self):
         with tempfile.NamedTemporaryFile("w", delete=False) as fh:
             json.dump(

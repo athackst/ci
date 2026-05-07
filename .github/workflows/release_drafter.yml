@@ -105,6 +105,14 @@ jobs:
           configuration-path: ${{ steps.config.outputs.config-path }}
           pr-info-path: ${{ steps.version.outputs.pr-info-path }}
 
+      - name: Upload resolver debug JSON
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-draft-debug-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          path: ${{ steps.version.outputs.pr-info-path }}
+
       - name: Create or update draft release
         id: release
         uses: athackst/ci/actions/release-draft@main
