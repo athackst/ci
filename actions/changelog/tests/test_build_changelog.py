@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -82,8 +84,6 @@ exclude-labels:
         self.assertIn("<summary>3 changes</summary>", out["changelog"])
 
     def test_load_prs_from_pr_info_payload(self):
-        import json
-
         payload = {
             "pr_info": {
                 "pull_requests": [
@@ -98,6 +98,27 @@ exclude-labels:
 
         prs = builder.load_prs(path)
         self.assertEqual(len(prs), 2)
+
+    def test_jq_filters_used_by_action_extract_outputs(self):
+        payload = json.dumps({"pull_requests": "1,2", "changelog": "## Notes"})
+
+        pull_requests = subprocess.run(
+            ["jq", "-r", '.pull_requests // ""'],
+            input=payload,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        changelog = subprocess.run(
+            ["jq", "-r", '.changelog // ""'],
+            input=payload,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+
+        self.assertEqual(pull_requests.stdout.strip(), "1,2")
+        self.assertEqual(changelog.stdout.strip(), "## Notes")
 
 
 if __name__ == "__main__":
