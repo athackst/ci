@@ -51,7 +51,7 @@ runs:
           --pr-info-path "${{ inputs.pr-info-path }}" \
           --output-format json)"
 
-        echo "pull-requests=$(jq -r '.pull_requests // \"\"' <<< "$CHANGELOG_JSON")" | tee -a "$GITHUB_OUTPUT"
+        echo "pull-requests=$(jq -r '.pull_requests // ""' <<< "$CHANGELOG_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "changelog<<EOF_CHANGELOG_CHANGES" | tee -a "$GITHUB_OUTPUT"
         jq -r '.changelog // ""' <<< "$CHANGELOG_JSON" | tee -a "$GITHUB_OUTPUT"
         echo "EOF_CHANGELOG_CHANGES" | tee -a "$GITHUB_OUTPUT"
