@@ -29,5 +29,6 @@ contract.
 
 - Only acts on open pull requests.
 - Passes the Copier `automerge_mode` answer to the reusable Automerge workflow.
+- Uses per-PR concurrency without canceling in-progress runs, so polling jobs can continue waiting for checks.
 - Uses `secrets.CI_BOT_TOKEN` as the reusable workflow `token` secret.
 - The reusable workflow never checks out or runs pull request code.
