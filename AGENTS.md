@@ -46,7 +46,6 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 - `pull_request_target` should be used for secret-requiring metadata operations.
 - `pull_request` should be used for trusted same-repo mutation operations.
-- Duplicate label/automerge runs are acceptable.
 - `pr_bump` must not run on untrusted fork code paths.
 - Dependabot/fork PRs may not have repository secrets on `pull_request`; route secret-requiring behavior through compatible event paths.
 
@@ -60,6 +59,8 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 ## Automerge Policy
 
 - Label-driven: PRs with `automerge` label are auto-merged.
+- For label-driven automerge workflows that wait on checks, prefer per-PR concurrency with `cancel-in-progress: false`.
+- Duplicate runs are acceptable if they preserve eventual merge behavior.
 
 ## Commenting Policy
 
