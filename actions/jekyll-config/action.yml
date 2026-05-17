@@ -1,0 +1,39 @@
+name: 'Configure Jekyll for GitHub Pages'
+description: 'A GitHub Action to enable Jekyll for Pages and extract various metadata about a site.'
+inputs:
+  title:
+    description: 'The title of the site.'
+    required: true
+    default: "${{ github.repository }}"
+  description:
+    description: 'A short description of the site.'
+    required: false
+    default: ''
+  image:
+    description: 'The URL of the image to use for social media previews.'
+    required: false
+    default: ''
+  edit_url:
+    description: 'The URL for editing the site content.'
+    required: false
+    default: "https://www.github.com/${{ github.repository }}/edit/main/"
+  nav_filename:
+    description: 'The name of the navigation file to create.'
+    required: false
+    default: '.nav.yml'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Jekyll config
+      id: setup
+      shell: bash
+      env:
+        TITLE: ${{ inputs.title }}
+        DESCRIPTION: ${{ inputs.description }}
+        IMAGE: ${{ inputs.image }}
+        EDIT_URL: ${{ inputs.edit_url }}
+        REPOSITORY: ${{ github.repository }}
+        NAV_FILENAME: ${{ inputs.nav_filename }}
+      run: |
+        bash "${{ github.action_path }}/setup_jekyll.sh"
