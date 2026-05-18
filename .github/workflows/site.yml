@@ -19,7 +19,7 @@ jobs:
   build-site:
     permissions:
       contents: read
-    uses: ./.github/workflows/mkdocs_site.yml
+    uses: ./.github/workflows/jekyll_site.yml
     with:
       version: ${{ github.event.release.tag_name || 'dev' }}
 
