@@ -1,0 +1,123 @@
+name: Deploy a site
+
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: "Whether to deploy via branch or action"
+        type: string
+        default: "action"
+        required: false
+      enablement:
+        description: "Try to enable Pages for the repository if it is not already enabled."
+        type: boolean
+        default: false
+        required: false
+      version:
+        description: Optional Version identifier to publish, for example 1.2.3
+        type: string
+        required: false
+        default: ""
+      artifact-name:
+        description: The name of the site artifact
+        type: string
+        required: false
+        default: "github-pages"
+      branch:
+        description: Optional deployment branch.
+        type: string
+        required: false
+        default: ""
+      dry-run:
+        description: Optional dry run
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      token:
+        description: Optional token override used by configure-pages.
+        required: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy-action:
+    # Use artifact deploy when publishing an unversioned Pages site.
+    if: ${{ inputs.dry-run != 'true' && inputs.type == 'action' && inputs.version == '' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Pages
+        if: ${{ inputs.enablement }}
+        uses: actions/configure-pages@v6
+        with:
+          token: ${{ secrets.token || github.token }}
+          enablement: ${{ inputs.enablement }}
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+  deploy-branch:
+    if: ${{ inputs.type == 'branch' && inputs.version != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Pages
+        if: ${{ inputs.enablement }}
+        uses: actions/configure-pages@v6
+        with:
+          token: ${{ secrets.token || github.token }}
+          enablement: ${{ inputs.enablement }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ./artifact
+
+      - name: Extract site
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          if [ -f ./artifact/artifact.tar ]; then
+            tar --directory _site -xvf ./artifact/artifact.tar
+          else
+            TAR_FILE="$(find ./artifact -maxdepth 2 -type f -name '*.tar' | head -n1)"
+            if [ -n "$TAR_FILE" ]; then
+              tar --directory _site -xvf "$TAR_FILE"
+            else
+              cp -R ./artifact/. _site/
+            fi
+          fi
+
+      - name: Settings
+        id: settings
+        shell: bash
+        run: |
+          version="${{ inputs.version }}"
+          echo "version=${version#v}" | tee -a "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.release.tag_name }}" != "" ]; then
+            alias="latest"
+          fi
+          echo "alias=${alias}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Deploy to branch with versite
+        uses: PrimerPages/versite@main
+        with:
+          version: ${{ steps.settings.outputs.version }}
+          aliases: ${{ steps.settings.outputs.alias }}
+          branch: ${{ inputs.branch }}
+          site-dir: _site
+          push: ${{ !inputs.dry-run }}

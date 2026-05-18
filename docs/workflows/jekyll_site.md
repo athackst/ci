@@ -1,6 +1,6 @@
 # Jekyll Site
 
-Build a Jekyll site, run HTMLProofer checks, and optionally deploy to GitHub Pages.
+Build a Jekyll site and upload a Pages-compatible artifact for downstream testing or deployment.
 
 ## Usage
 
@@ -9,55 +9,44 @@ jobs:
   site:
     uses: athackst/ci/.github/workflows/jekyll_site.yml@main
     with:
-      pages: true
-      path: docs
-    secrets:
-      token: ${{ secrets.CI_BOT_TOKEN }}
+      version: dev
 ```
 
 ## Inputs
 
 | Name | Description | Default |
 | --- | --- | --- |
-| `pages` | (optional) Deploy to GitHub Pages after build and test. | `true` |
-| `enablement` | (optional) Try to enable Pages for the repository if needed. | `false` |
-| `htmlproofer-ignore-urls` | (optional) Newline-delimited URLs or regexes for HTMLProofer to ignore. | `""` |
-| `path` | (optional) Path to the Jekyll project directory. | `.` |
+| `version` | (optional) Version path to append to the site base path, for example `dev` or `1.2.3`. | `""` |
+| `semiliterate` | (optional) Extract docs with semiliterate before building. | `true` |
 | `artifact-name` | (optional) Artifact name for the built site. | `github-pages` |
-
-## Secrets
-
-| Name | Description | Default |
-| --- | --- | --- |
-| `token` | (optional) Token override used by `configure-pages`. | `${{ github.token }}` |
 
 ## Permissions
 
-- Build/test only needs read access.
-- Deployment needs `contents: write`, `pages: write`, and `id-token: write` in the caller job.
-- If `enablement: true`, the token must be able to enable Pages for the repository.
+- Build only needs `contents: read` in the caller job.
 
 ## Advanced
 
-- Builds the site from the configured `path` with Bundler cache enabled.
-- Reuses [`htmlproofer_site.yml`](./htmlproofer_site.md) for post-build link checking.
-- Deploys only when `pages: true` and the ref is `refs/heads/main`.
-- Exposes `host` and `base-path` internally so HTMLProofer can validate Pages-style links correctly.
+- Uses the bundled `jekyll-config` action before building the site.
+- Optionally extracts source content with `PrimerPages/semiliterate`.
+- Exposes `host`, `base-path`, `version`, and `artifact-name` outputs for downstream workflows such as HTMLProofer and site deploy.
+- This workflow only builds and uploads the site artifact. HTMLProofer and deployment are handled by separate reusable workflows.
 
 ## Examples
 
-Testing on a PR:
-
-site.yml is no longer automatically tested on PRs.  If you want to test on a PR add the following to your test workflow
+Build site:
 
 ```yaml
 jobs:
-  test-site:
-    if: ${{ github.event_name == 'pull_request' }}
-    permissions:
-      contents: read
+  site:
+    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
+```
+
+Build versioned docs:
+
+```yaml
+jobs:
+  site:
     uses: athackst/ci/.github/workflows/jekyll_site.yml@main
     with:
-      pages: false
-    secrets: inherit
+      version: dev
 ```

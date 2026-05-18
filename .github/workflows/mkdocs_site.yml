@@ -2,18 +2,8 @@ name: MkDocs Site
 on:
   workflow_call:
     inputs:
-      pages:
-        description: "Whether to deploy to GitHub Pages. If false, the workflow will build the site and run htmlproofer tests, but not deploy. Default: true."
-        type: boolean
-        default: true
-        required: false
-      enablement:
-        description: "Try to enable Pages for the repository if it is not already enabled. This option requires a token other than `GITHUB_TOKEN` to be provided. In the context of a Personal Access Token, the `repo` scope or Pages write permission is required. In the context of a GitHub App, the `administration:write` and `pages:write` permissions are required."
-        type: boolean
-        default: false
-        required: false
-      htmlproofer-ignore-urls:
-        description: "Optional newline-delimited URLs or regexes for htmlproofer to ignore."
+      version:
+        description: "Optional version of deployment."
         type: string
         required: false
         default: ""
@@ -22,46 +12,60 @@ on:
         type: string
         required: false
         default: "github-pages"
+    outputs:
+      host:
+        description: The host name for the site
+        value: ${{ jobs.build-site.outputs.host }}
+      base-path:
+        description: The base-path for the site
+        value: ${{ jobs.build-site.outputs.base-path }}
+      base-url:
+        description: The base url for the site
+        value: ${{ jobs.build-site.outputs.base-url }}
       version:
-        description: "Optional version of deployment."
-        type: string
-        required: false
-        default: ""
-      release-tag:
-        description: "Optional release tag for release-mode version publish."
-        type: string
-        required: false
-        default: ""
-    secrets:
-      token:
-        description: Optional token override used by configure-pages.
-        required: false
+        description: The version number
+        value: ${{ jobs.build-site.outputs.version }}
+      artifact-name:
+        description: The name of the site artifact
+        value: ${{ jobs.build-site.outputs.artifact-name }}
 
 jobs:
-  build-docs:
+  build-site:
     runs-on: ubuntu-latest
     outputs:
-      host: ${{ steps.pages.outputs.host || steps.defaults.outputs.host }}
-      base-path: ${{ steps.pages.outputs.base_path || steps.defaults.outputs.base_path }}
-
+      host: ${{ steps.settings.outputs.host }}
+      base-path: ${{ steps.settings.outputs.base_path }}
+      base-url: ${{ steps.settings.outputs.base_url }}
+      version: ${{ steps.settings.outputs.version }}
+      artifact-name: ${{ inputs.artifact-name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Default outputs
-        id: defaults
-        run: |
-          echo "host=${{ github.repository_owner }}.github.io" | tee -a "$GITHUB_OUTPUT"
-          echo "base_path=/${{ github.event.repository.name }}" | tee -a "$GITHUB_OUTPUT"
-
       - name: Setup Pages
         id: pages
-        if: ${{ inputs.pages }}
         uses: actions/configure-pages@v6
-        with:
-          token: ${{ secrets.token || github.token }}
-          enablement: ${{ inputs.enablement }}
-        
+
+      - name: Settings
+        id: settings
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          version="${version#v}"
+          echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
+
+          base_path="${{ steps.pages.outputs.base_path }}"
+          base_url="${{ steps.pages.outputs.base_url }}"
+          if [ -n "$version" ]; then
+            base_path="${base_path}/${version}"
+            base_url="${base_path}/${version}"
+          fi
+          echo "base_path=${base_path}" | tee -a "$GITHUB_OUTPUT"
+          echo "base_url=${base_url}" | tee -a "$GITHUB_OUTPUT"
+
+          host="${{ steps.pages.outputs.host }}"
+          echo "host=${host}" | tee -a "$GITHUB_OUTPUT"
+
       - name: Setup mkdocs config
         uses: athackst/ci/actions/mkdocs-config@main
 
@@ -70,11 +74,11 @@ jobs:
         uses: athackst/mkdocs-simple-plugin@main
         with:
           push: false
-          site_url: ${{ steps.pages.outputs.base_url }}
+          site_url: ${{ steps.settings.outputs.base_url }}
 
       - name: Debug output
         run: |
-          tree
+          tree site
           cat mkdocs.yml
           cat site/index.html
 
@@ -83,65 +87,3 @@ jobs:
         with:
           name: ${{ inputs.artifact-name }}
           path: ./site
-
-  test-docs:
-    needs: build-docs
-    permissions:
-      contents: read
-    uses: athackst/ci/.github/workflows/htmlproofer_site.yml@main
-    with:
-      host: ${{ needs.build-docs.outputs.host }}
-      base-path: ${{ needs.build-docs.outputs.base-path }}
-      artifact-name: ${{ inputs.artifact-name }}
-      htmlproofer-ignore-urls: ${{ inputs.htmlproofer-ignore-urls }}
-
-  deploy-docs:
-    # Use artifact deploy if no version is specified and we're on the main branch.
-    if: ${{ inputs.pages && inputs.version == '' && github.ref == 'refs/heads/main' }}
-    needs: build-docs
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
-
-  deploy-version-docs:
-    # Use mkdocs mike to deploy if a version is specified
-    if: ${{ inputs.pages && inputs.version != '' && ( github.ref == 'refs/heads/main' || inputs.release-tag != '' ) }}
-    needs: build-docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Setup mkdocs config
-        uses: athackst/ci/actions/mkdocs-config@main
-      - name: Setup environment
-        id: mike-version
-        run: |
-          git fetch --tags --force
-          if git tag --list 'v*' | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            HAS_RELEASE_TAG=true
-          else
-            HAS_RELEASE_TAG=false
-          fi
-          VERSION_INPUT="${{ inputs.version }}"
-          RELEASE_TAG="${{ inputs.release-tag }}"
-
-          if [ "$HAS_RELEASE_TAG" = false ] || [ -n "$RELEASE_TAG" ]; then
-            VERSION="$RELEASE_TAG $VERSION_INPUT"
-            DEFAULT_VERSION="$VERSION_INPUT"
-          else
-            VERSION="$VERSION_INPUT"
-            DEFAULT_VERSION=""
-          fi
-
-          echo "version=$VERSION" | tee -a "$GITHUB_OUTPUT"
-          echo "default-version=$DEFAULT_VERSION" | tee -a "$GITHUB_OUTPUT"
-      - name: Publish Release docs
-        uses: athackst/mkdocs-simple-plugin@main
-        with:
-          version: ${{ steps.mike-version.outputs.version }}
-          default_version: ${{ steps.mike-version.outputs.default-version }}
