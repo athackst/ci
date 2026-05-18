@@ -20,6 +20,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/mkdocs_site.yml
+    with:
+      version: ${{ github.event.release.tag_name || 'dev' }}
 
   test-site:
     needs: build-site
@@ -32,7 +34,7 @@ jobs:
       artifact-name: ${{ needs.build-site.outputs.artifact-name }}
 
   deploy-site:
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.action == 'published') }}
+    # if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.action == 'published') }}
     needs: build-site
     permissions:
       contents: write
@@ -40,6 +42,6 @@ jobs:
       id-token: write
     uses: ./.github/workflows/deploy_site.yml
     with:
-      type: action
+      type: branch
       version: ${{ needs.build-site.outputs.version }}
     secrets: inherit
