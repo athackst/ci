@@ -68,7 +68,7 @@ jobs:
           base_url="${{ steps.pages.outputs.base_url }}"
           if [ -n "$version" ]; then
             base_path="${base_path}/${version}"
-            base_url="${base_path}/${version}"
+            base_url="${base_url}/${version}"
           fi
           echo "base_path=${base_path}" | tee -a "$GITHUB_OUTPUT"
           echo "base_url=${base_url}" | tee -a "$GITHUB_OUTPUT"
