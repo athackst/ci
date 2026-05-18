@@ -106,18 +106,32 @@ jobs:
         shell: bash
         run: |
           version="${{ inputs.version }}"
-          echo "version=${version#v}" | tee -a "$GITHUB_OUTPUT"
+          echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
           if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.release.tag_name }}" != "" ]; then
             alias="latest"
           fi
           echo "alias=${alias}" | tee -a "$GITHUB_OUTPUT"
 
+      - name: Pick default target
+        id: pick-default
+        shell: bash
+        run: |
+          git fetch origin gh-pages --depth=1
+
+          # If the latest alias exists, set it to the default
+          if git show origin/gh-pages:latest/index.html >/dev/null 2>&1; then
+            echo "value=${alias}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ steps.settings.outputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy to branch with versite
         uses: PrimerPages/versite@main
         with:
           version: ${{ steps.settings.outputs.version }}
           aliases: ${{ steps.settings.outputs.alias }}
+          default-to: ${{ steps.pick-default.outputs.value }}
           branch: ${{ inputs.branch }}
           site-dir: _site
           push: ${{ !inputs.dry-run }}
