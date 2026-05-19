@@ -27,7 +27,7 @@ on:
         description: Optional deployment branch.
         type: string
         required: false
-        default: ""
+        default: "gh-pages"
       dry-run:
         description: Optional dry run
         type: boolean
@@ -117,14 +117,20 @@ jobs:
         id: pick-default
         shell: bash
         run: |
-          git fetch origin gh-pages --depth=1
+          branch="${{ inputs.branch }}"
+          alias="${{ steps.settings.outputs.alias }}"
 
-          # If the latest alias exists, set it to the default
-          if git show origin/gh-pages:latest/index.html >/dev/null 2>&1; then
-            echo "value=${alias}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=${{ steps.settings.outputs.version }}" >> "$GITHUB_OUTPUT"
+          if [ -n "$branch" ] && git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            git fetch origin "$branch" --depth=1
+
+            # If the alias exists on the branch, use it as default-to.
+            if git show "origin/${branch}:${alias}/index.html" >/dev/null 2>&1; then
+              echo "value=${alias}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           fi
+
+          echo "value=${{ steps.settings.outputs.version }}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to branch with versite
         uses: PrimerPages/versite@main
