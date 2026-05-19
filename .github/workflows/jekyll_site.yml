@@ -95,6 +95,7 @@ jobs:
         run: |
           ls 
           tree jekyll-site
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1.306.0
         with:
@@ -109,7 +110,7 @@ jobs:
           BASEURL: ${{ steps.settings.outputs.base_path }}
           SOURCE: ${{ steps.semiliterate.outputs.out  || '.' }}
           CONFIG_FILE: "_config.yml"
-        run: bundle exec jekyll build --baseurl "${BASEURL}" --source "${SOURCE} --config ${CONFIG_FILE}"
+        run: bundle exec jekyll build --baseurl "${BASEURL}" --source "${SOURCE}" --config "${CONFIG_FILE}"
 
       - name: Debug output
         run: |
