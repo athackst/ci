@@ -401,12 +401,25 @@ jobs:
           python3 -m pip install --quiet pyyaml
 
       - name: Test jekyll config action
+        id: jekyll-config
         uses: ./actions/jekyll-config
         with:
           title: CI Test Site
           description: Test description for Jekyll config
           image: https://example.com/site-preview.png
           edit_url: https://example.com/edit/
+
+      - name: Verify jekyll config outputs
+        shell: bash
+        env:
+          GEMFILE_PATH: ${{ steps.jekyll-config.outputs.gemfile-path }}
+          CONFIG_PATH: ${{ steps.jekyll-config.outputs.config-path }}
+          SEMILITERATE_CONFIG_PATH: ${{ steps.jekyll-config.outputs.semiliterate-config-path }}
+        run: |
+          set -euo pipefail
+          [ "$GEMFILE_PATH" = "./Gemfile" ]
+          [ "$CONFIG_PATH" = "./_config.yml" ]
+          [ "$SEMILITERATE_CONFIG_PATH" = "./semiliterate.yml" ]
 
       - name: Install bats
         shell: bash
