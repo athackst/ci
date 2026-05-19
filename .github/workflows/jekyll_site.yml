@@ -85,6 +85,7 @@ jobs:
         id: semiliterate
         uses: PrimerPages/semiliterate@main
         with:
+          config: semiliterate.yml
           source: ${{ inputs.source }}
           out: jekyll-site
           verbose: true
