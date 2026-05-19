@@ -1,0 +1,1408 @@
+
+<!doctype html>
+<html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- HTML Meta Tags -->
+  <!-- Begin Jekyll SEO tag v2.9.0 -->
+<title>athackst/ci</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="athackst/ci" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:site_name" content="athackst/ci" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="athackst/ci" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","headline":"athackst/ci","name":"athackst/ci","url":"/ci/dev/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  <link href="/ci/dev/assets/css/theme.css" rel="stylesheet" type="text/css">
+  <link href="/ci/dev/assets/css/style.css" rel="stylesheet" type="text/css">
+  
+  <link rel="icon" type="image/x-icon" href="/ci/dev/assets/img/favicon.ico">
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="/ci/dev/assets/js/theme-toggle.js"></script>
+  <script src="/ci/dev/assets/js/anchor-links.js"></script>
+  <script src="/ci/dev/assets/js/topbar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="/ci/dev/assets/js/mermaid.js"></script>
+<style>
+</style>
+
+</head>
+
+
+<body class="min-height-full d-flex flex-column">
+    
+
+<header class="AppHeader position-sticky top-0 z-2 border-bottom topbar">
+    <div class="AppHeader-item d-flex flex-justify-between p-2 flex-items-center">
+        <div tabindex="-1" class="d-flex flex-1 ml-3" id="github-logo">
+            <a href="/ci/dev/" class="AppHeader-link d-flex flex-items-center no-underline mr-3 h1">
+                <span class="octicon octicon-mark-github-24"></span>
+                <span class="h4 text-semibold mx-3">athackst/ci</span>
+            </a>
+        </div>
+        <div class="AppHeader-item d-flex flex-items-center">
+            <div class="Toggle d-flex flex-items-center">
+    <button id="theme-toggle" class="btn-octicon mr-2 tooltipped tooltipped-sw" aria-label="Color mode" type="button"><span id="theme-icon"
+            class="octicon octicon-moon-24"></span></button>
+</div>
+
+            <div class="AppHeader-item hide-sm">
+                
+
+
+<div class="Repo-info">
+    <a href="https://www.github.com/athackst/ci" class="AppHeader-link no-underline tooltipped tooltipped-s" aria-label="Go to repository">
+        <div class="d-flex flex-row flex-justify-center Header-item">
+
+            <div class="mr-2 h2"><span class="octicon octicon-git-branch-24"></span></div>
+            <div>
+                <div>
+                    athackst/ci
+                </div>
+                
+            </div>
+
+        </div>
+    </a>
+</div>
+
+            </div>
+            
+            <div class="AppHeader-item mr-0">
+                <a href="https://github.com/" class="AppHeader-link d-flex flex-items-center">
+                    <img class="avatar img-cover circle" height="32" width="32" alt="athackst/ci"
+                src="/ci/dev/assets/img/user-image.jpg">
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <div class="d-flex flex-1 flex-column">
+    
+
+
+
+
+
+
+<div class="d-xl-flex">
+    <div class="Layout bgColor-default border-right d-none d-xl-block">
+        <div class="Layout-sidebar position-sticky"
+            style="top: var(--topbar-height, 150px); height: calc(100vh - var(--topbar-height, 150px));"
+            >
+            <nav>
+                
+                <div class="d-none px-4 pb-3 border-bottom d-xl-block"
+                    style="height: calc(38px + 55px);">
+                    <div class="pt-3">
+                        <a class="f6 pl-2 pr-5 ml-n1 pb-1 color-fg-default"
+                            href="/ci/dev/">
+                            <span class="octicon octicon-arrow-left-16 mr-1"></span>
+                            Documentation
+                        </a>
+                    </div>
+                    <h2 class="pt-3">
+                        <div class="d-block pl-1 mb-2 h3 color-fg-default no-underline">
+                            Docs
+                        </div>
+                    </h2>
+                </div>
+                
+                <div class="d-none d-xl-block bg-primary overflow-y-auto flex-shrink-0 pb-3"
+                    style="height: calc(100vh - var(--topbar-height, 150px) - 38px - 55px);">
+                    <div class="pt-3">
+                        
+                        
+
+
+<ul data-overflow-nav class="menu ActionList border-0 ml-3">
+  
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" >
+    <summary class="list-style-none color-fg-default">
+      
+      <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between">
+          <span>Actions</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+      </div>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/changelog/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Changelog
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Jekyll Config
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/list-repos/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      List Repos
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/mkdocs-config/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Mkdocs Config
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/pr-labeler/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Labeler
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/release-draft/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Release Draft
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/resolve-config/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Resolve Config
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/setup-labels/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Setup Labels
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/version-resolver/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Version Resolver
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" >
+    <summary class="list-style-none color-fg-default">
+      
+      <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between">
+          <span>Docs</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+      </div>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" >
+    <summary class="list-style-none color-fg-default">
+      
+      <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between">
+          <span>Workflows</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+      </div>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/automerge/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Automerge
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/bump/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Bump
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/ci_updater/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Ci Updater
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/deploy_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Deploy Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/htmlproofer_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Htmlproofer Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/jekyll_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Jekyll Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/labeler/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Labeler
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/mkdocs_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Mkdocs Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/release_drafter/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Release Drafter
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" >
+    <summary class="list-style-none color-fg-default">
+      
+      <a href="/ci/dev/docs/copier-template/" class="ActionListItem-label no-underline">
+        <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between" >
+          <span>Index</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+        </div>
+      </a>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/ci_update/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Ci Update
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/pr_automerge/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Automerge
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/pr_bump/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Bump
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/pr_labeler/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Labeler
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/release_draft/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Release Draft
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/setup_labels/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Setup Labels
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Site
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflow_status/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Workflow Status
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+</ul>
+
+
+                        
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <div class="container-xl flex-1  p-responsive pb-6">
+        <div class="py-4 d-flex">
+            <div class="d-xl-none">
+                
+                
+
+<script>
+    $(document).ready(function () {
+        const $menu = $("#awesome-nav-menu");
+        const $closeButton = $menu.find(".close-menu");
+
+        if ($menu.length && $closeButton.length) {
+            $closeButton.click(() => $menu.removeAttr("open"));
+        }
+    });
+</script>
+
+<details class="details-reset details-overlay" id="awesome-nav-menu">
+    <summary class="btn btn-invisible" aria-haspopup="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+    </summary>
+    <div class="awesome-nav-menu-drawer position-fixed top-0 left-0 right-0 bottom-0">
+        <button class="awesome-nav-menu-backdrop close-menu position-fixed top-0 left-0 right-0 bottom-0 color-bg-backdrop border-0 p-0 m-0"
+            type="button" aria-label="Close navigation menu"></button>
+        <div class="awesome-nav-menu-panel position-fixed top-0 left-0 bottom-0 color-bg-default border-right d-flex flex-column">
+            <div class="d-flex flex-justify-between flex-items-center p-3 border-bottom">
+                <div tabindex="-1" class="SelectMenu-title">
+                    <a href="/ci/dev/"
+                        class="AppHeader-link d-flex flex-items-center no-underline mr-3">
+                        <span class="h3 color-fg-default text-bold">Documentation</span>
+                    </a>
+                </div>
+                <button class="SelectMenu-closeButton close-menu" type="button">
+                    <span class="octicon octicon-x-16"></span>
+                </button>
+            </div>
+            <div class="SideNav color-bg-default flex-1 overflow-y-auto pl-1">
+                <a href="/ci/dev/" class="SideNav-item border-0" role="menuitem">
+                    Documentation
+                </a>
+                
+
+
+
+
+<div class="menu-item color-fg-muted border-0">
+  Actions
+</div>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<a href="/ci/dev/actions/changelog/" class="menu-item border-0" role="menuitem" >
+  Changelog
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
+  Jekyll Config
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/list-repos/" class="menu-item border-0" role="menuitem" >
+  List Repos
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/mkdocs-config/" class="menu-item border-0" role="menuitem" >
+  Mkdocs Config
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/pr-labeler/" class="menu-item border-0" role="menuitem" >
+  Pr Labeler
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/release-draft/" class="menu-item border-0" role="menuitem" >
+  Release Draft
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/resolve-config/" class="menu-item border-0" role="menuitem" >
+  Resolve Config
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/setup-labels/" class="menu-item border-0" role="menuitem" >
+  Setup Labels
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/version-resolver/" class="menu-item border-0" role="menuitem" >
+  Version Resolver
+</a>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+<div class="menu-item color-fg-muted border-0">
+  Docs
+</div>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<div class="menu-item color-fg-muted border-0">
+  Workflows
+</div>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<a href="/ci/dev/docs/workflows/automerge/" class="menu-item border-0" role="menuitem" >
+  Automerge
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/bump/" class="menu-item border-0" role="menuitem" >
+  Bump
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/ci_updater/" class="menu-item border-0" role="menuitem" >
+  Ci Updater
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/deploy_site/" class="menu-item border-0" role="menuitem" >
+  Deploy Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/htmlproofer_site/" class="menu-item border-0" role="menuitem" >
+  Htmlproofer Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/jekyll_site/" class="menu-item border-0" role="menuitem" >
+  Jekyll Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/labeler/" class="menu-item border-0" role="menuitem" >
+  Labeler
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/mkdocs_site/" class="menu-item border-0" role="menuitem" >
+  Mkdocs Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/release_drafter/" class="menu-item border-0" role="menuitem" >
+  Release Drafter
+</a>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/" class="menu-item border-0" role="menuitem" >
+  Index
+</a>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<a href="/ci/dev/docs/copier-template/ci_update/" class="menu-item border-0" role="menuitem" >
+  Ci Update
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/pr_automerge/" class="menu-item border-0" role="menuitem" >
+  Pr Automerge
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/pr_bump/" class="menu-item border-0" role="menuitem" >
+  Pr Bump
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/pr_labeler/" class="menu-item border-0" role="menuitem" >
+  Pr Labeler
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/release_draft/" class="menu-item border-0" role="menuitem" >
+  Release Draft
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/setup_labels/" class="menu-item border-0" role="menuitem" >
+  Setup Labels
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/site/" class="menu-item border-0" role="menuitem" >
+  Site
+</a>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflow_status/" class="menu-item border-0" role="menuitem" >
+  Workflow Status
+</a>
+
+
+
+
+
+</div>
+
+
+
+            </div>
+        </div>
+    </div>
+</details>
+
+                
+            </div>
+            
+            <div class="Breadcrumb d-flex flex-items-center">
+  <nav aria-label="Breadcrumb" class="f5">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="/ci/dev/">home</a>
+      </li>
+      
+        
+          
+            <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
+              README
+            </li>
+          
+        
+      
+    </ol>
+  </nav>
+</div>
+
+            
+        </div>
+        <div class="pb-5 p-responsive">
+            <h1 class="border-bottom-0"></h1>
+            <h3 class="f3 color-fg-muted pb-3"></h3>
+        </div>
+        <div class="d-flex flex-wrap-reverse">
+            <div class="col-12 col-md-8 markdown-body p-responsive">
+                <h1 id="ci">ci</h1>
+
+<p>Central home for my reusable GitHub Actions workflows and composite actions.</p>
+
+<p>The main assumption of this repo is that consumer repositories adopt it through
+the Copier template first. After that, the primary entrypoints in the consumer
+repo are the generated workflows:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">ci_update.yml</code></li>
+  <li><code class="language-plaintext highlighter-rouge">pr_automerge.yml</code></li>
+  <li><code class="language-plaintext highlighter-rouge">pr_labeler.yml</code></li>
+  <li><code class="language-plaintext highlighter-rouge">setup_labels.yml</code></li>
+  <li><code class="language-plaintext highlighter-rouge">pr_bump.yml</code> when <code class="language-plaintext highlighter-rouge">bump_script_path</code> is set</li>
+  <li><code class="language-plaintext highlighter-rouge">release_draft.yml</code> when <code class="language-plaintext highlighter-rouge">do_releases</code> is enabled</li>
+  <li><code class="language-plaintext highlighter-rouge">site.yml</code> when a site workflow is enabled</li>
+</ul>
+
+<p>Those workflows keep the consumer repo aligned with this central CI repo,
+handle common PR automation, create release drafts, sync repository labels, and
+set up site builds.</p>
+
+<h2 id="usage">Usage</h2>
+
+<h3 id="quick-start">Quick start</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tools/init_ci_repo.sh
+</code></pre></div></div>
+
+<p>The helper applies the Copier template, then asks whether to set
+<code class="language-plaintext highlighter-rouge">CI_BOT_TOKEN</code> with <code class="language-plaintext highlighter-rouge">gh secret set</code>. It can infer the repository from a GitHub
+git remote or <code class="language-plaintext highlighter-rouge">gh repo view</code>; otherwise pass <code class="language-plaintext highlighter-rouge">--repo owner/repo</code>. Pass extra
+Copier options after <code class="language-plaintext highlighter-rouge">--</code>.</p>
+
+<h3 id="manual-setup">Manual setup</h3>
+
+<p>Install Copier:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pipx <span class="nb">install </span>copier
+</code></pre></div></div>
+
+<p>Apply the template:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>copier copy <span class="nt">--trust</span> gh:athackst/ci <span class="nb">.</span>
+</code></pre></div></div>
+
+<p>Add a repository secret named <code class="language-plaintext highlighter-rouge">CI_BOT_TOKEN</code>:</p>
+
+<ol>
+  <li>Create a Fine-grained personal access token for the target repository.</li>
+  <li>In the repository, go to <code class="language-plaintext highlighter-rouge">Settings -&gt; Secrets and variables -&gt; Actions</code>.</li>
+  <li>Add a new repository secret named <code class="language-plaintext highlighter-rouge">CI_BOT_TOKEN</code> with that token value.</li>
+</ol>
+
+<p>Required repository permissions for the token:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Contents: Read and write</code> for update and bump commits.</li>
+  <li><code class="language-plaintext highlighter-rouge">Pull requests: Read and write</code> for PR labels, comments, updater PRs, bump PRs, and automerge.</li>
+  <li><code class="language-plaintext highlighter-rouge">Issues: Read and write</code> for repository labels, PR comments, and failure issues.</li>
+  <li><code class="language-plaintext highlighter-rouge">Actions: Read and write</code> for updater PRs that modify workflow files.</li>
+  <li><code class="language-plaintext highlighter-rouge">Workflows: Read and write</code> for commits that create or update workflow files.</li>
+  <li><code class="language-plaintext highlighter-rouge">Variables: Read and write</code> for generated <code class="language-plaintext highlighter-rouge">release_draft.yml</code> workflows that persist <code class="language-plaintext highlighter-rouge">DRAFT_RELEASE_ID</code>.</li>
+</ul>
+
+<h2 id="mental-model">Mental model</h2>
+
+<p>This repo is opinionated around one shared CI config file, <code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code>,
+which drives:</p>
+
+<ul>
+  <li>PR labels</li>
+  <li>release notes categories</li>
+  <li>semantic version resolution</li>
+  <li>repository label metadata</li>
+</ul>
+
+<p>The workflows are meant to compose around that config instead of each repository
+re-declaring the same rules in multiple places.</p>
+
+<h2 id="configuration">Configuration</h2>
+
+<p>Copier asks a small number of questions and uses the answers to generate the
+entrypoint workflows plus a shared CI config.</p>
+
+<h3 id="copier-questions">Copier questions</h3>
+
+<p><code class="language-plaintext highlighter-rouge">bump_script_path</code></p>
+
+<ul>
+  <li>Optional shell command to run in the target repository after version metadata is resolved.</li>
+  <li>If set, the template generates <code class="language-plaintext highlighter-rouge">pr_bump.yml</code>.</li>
+  <li>The command receives <code class="language-plaintext highlighter-rouge">VERSION</code>, <code class="language-plaintext highlighter-rouge">MAJOR_VERSION</code>, <code class="language-plaintext highlighter-rouge">MINOR_VERSION</code>, and <code class="language-plaintext highlighter-rouge">PATCH_VERSION</code>.</li>
+  <li>Leave it empty if the repo does not maintain a version file, changelog file, or other bumpable artifact in PRs.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">site_generator</code></p>
+
+<ul>
+  <li>Chooses whether to generate <code class="language-plaintext highlighter-rouge">site.yml</code>, and if so whether it uses MkDocs or Jekyll.</li>
+  <li><code class="language-plaintext highlighter-rouge">none</code> is the default and skips site workflow generation entirely.</li>
+  <li><code class="language-plaintext highlighter-rouge">mkdocs</code> uses <code class="language-plaintext highlighter-rouge">mkdocs_site.yml</code>.</li>
+  <li><code class="language-plaintext highlighter-rouge">jekyll</code> uses <code class="language-plaintext highlighter-rouge">jekyll_site.yml</code>.</li>
+  <li>MkDocs site workflows run on <code class="language-plaintext highlighter-rouge">main</code> pushes and release publishes; Jekyll site workflows run on <code class="language-plaintext highlighter-rouge">main</code> pushes.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">automerge_mode</code></p>
+
+<ul>
+  <li>Chooses how <code class="language-plaintext highlighter-rouge">pr_automerge.yml</code> handles labeled pull requests.</li>
+  <li><code class="language-plaintext highlighter-rouge">poll</code> is the default and waits for checks before merging directly, which works on private repos without GitHub native auto-merge support.</li>
+  <li><code class="language-plaintext highlighter-rouge">native</code> enables GitHub auto-merge for labeled PRs and lets GitHub merge when requirements are met.</li>
+  <li><code class="language-plaintext highlighter-rouge">disabled</code> keeps the workflow in place but disables automerge actions.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">do_releases</code></p>
+
+<ul>
+  <li>Chooses whether to generate <code class="language-plaintext highlighter-rouge">release_draft.yml</code>.</li>
+  <li>When enabled, <code class="language-plaintext highlighter-rouge">release_draft.yml</code> creates or updates a draft release on <code class="language-plaintext highlighter-rouge">main</code> pushes.</li>
+  <li>With MkDocs sites, this also publishes versioned docs:
+<code class="language-plaintext highlighter-rouge">main</code> publishes <code class="language-plaintext highlighter-rouge">dev</code>, and release events publish the release tag plus <code class="language-plaintext highlighter-rouge">latest</code>.</li>
+  <li>When disabled, release draft generation is skipped and MkDocs sites publish a simpler unversioned Pages site.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">release_template</code></p>
+
+<ul>
+  <li>Contents for <code class="language-plaintext highlighter-rouge">.github/release_template.md</code>.</li>
+  <li>Used by <code class="language-plaintext highlighter-rouge">release_draft.yml</code> when rendering the draft release body.</li>
+  <li>Supports <code class="language-plaintext highlighter-rouge">$CHANGES</code> for generated changelog content and <code class="language-plaintext highlighter-rouge">$VERSION</code> / <code class="language-plaintext highlighter-rouge">$RESOLVED_VERSION</code> for the resolved version.</li>
+  <li>Only asked when <code class="language-plaintext highlighter-rouge">do_releases</code> is enabled.</li>
+</ul>
+
+<h3 id="shared-ci-config">Shared CI config</h3>
+
+<p><code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code> is the center of the convention. It combines concepts
+that would normally live in separate files:</p>
+
+<ul>
+  <li>release-drafter categories and templates</li>
+  <li>version-resolver label rules</li>
+  <li>PR labeler rules</li>
+  <li>repository label metadata such as label descriptions and colors</li>
+  <li>the release body template path</li>
+</ul>
+
+<p>This is intentionally a modified combination of the upstream
+<a href="https://github.com/release-drafter/release-drafter">release-drafter/release-drafter</a>
+and <a href="https://github.com/actions/labeler">actions/labeler</a> config formats.</p>
+
+<p><strong>Modifications to <code class="language-plaintext highlighter-rouge">release-drafter.yml</code></strong></p>
+
+<ul>
+  <li>Adds <code class="language-plaintext highlighter-rouge">template-file</code> so the release body can live in <code class="language-plaintext highlighter-rouge">.github/release_template.md</code> instead of being embedded in YAML.</li>
+</ul>
+
+<p><strong>Modifications to <code class="language-plaintext highlighter-rouge">labeler.yml</code></strong></p>
+
+<ul>
+  <li>Adds <code class="language-plaintext highlighter-rouge">color</code> and <code class="language-plaintext highlighter-rouge">description</code> metadata to labels so the same config can also drive repository label setup.</li>
+</ul>
+
+<p>Colors are set according to the following label palette:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Label</th>
+      <th>Color</th>
+      <th>Preview</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">breaking</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#7f1d1d</code></td>
+      <td><img src="https://img.shields.io/badge/breaking-7f1d1d?style=flat-square" alt="breaking" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bug</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#d73a4a</code></td>
+      <td><img src="https://img.shields.io/badge/bug-d73a4a?style=flat-square" alt="bug" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">enhancement</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#0f766e</code></td>
+      <td><img src="https://img.shields.io/badge/enhancement-0f766e?style=flat-square" alt="enhancement" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">maintenance</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#0ea5e9</code></td>
+      <td><img src="https://img.shields.io/badge/maintenance-0ea5e9?style=flat-square" alt="maintenance" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">dependencies</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#1d4ed8</code></td>
+      <td><img src="https://img.shields.io/badge/dependencies-1d4ed8?style=flat-square" alt="dependencies" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">documentation</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#64748b</code></td>
+      <td><img src="https://img.shields.io/badge/documentation-64748b?style=flat-square" alt="documentation" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">automerge</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#eab308</code></td>
+      <td><img src="https://img.shields.io/badge/automerge-eab308?style=flat-square" alt="automerge" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">good first issue</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#c4b5fd</code></td>
+      <td><img src="https://img.shields.io/badge/good%20first%20issue-c4b5fd?style=flat-square" alt="good first issue" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">help wanted</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#db2777</code></td>
+      <td><img src="https://img.shields.io/badge/help%20wanted-db2777?style=flat-square" alt="help wanted" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">question</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#7e22ce</code></td>
+      <td><img src="https://img.shields.io/badge/question-7e22ce?style=flat-square" alt="question" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">duplicate</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#cbd5e1</code></td>
+      <td><img src="https://img.shields.io/badge/duplicate-cbd5e1?style=flat-square" alt="duplicate" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">invalid</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#a3a3a3</code></td>
+      <td><img src="https://img.shields.io/badge/invalid-a3a3a3?style=flat-square" alt="invalid" /></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">wontfix</code></td>
+      <td><code class="language-plaintext highlighter-rouge">#78716c</code></td>
+      <td><img src="https://img.shields.io/badge/wontfix-78716c?style=flat-square" alt="wontfix" /></td>
+    </tr>
+  </tbody>
+</table>
+
+
+                <!-- Pagination links -->
+                <div class="paginate-container py-3">
+                    <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
+                        
+                        
+                        <span class="previous_page disabled" aria-disabled="true">Previous</span>
+                        
+
+                        
+                        <a class="next_page" rel="next" href="/ci/dev/actions/changelog/"
+                            aria-disabled="false">Changelog</a>
+                        
+                        
+                    </div>
+                </div>
+
+                <!-- Edit link -->
+                
+                <div class="doc-footer border-top my-8 py-5">
+                    <a href="https://www.github.com/athackst/ci/edit/main//README.md">
+                        <span class="octicon octicon-pencil-16"></span>
+                        Edit this page</a>
+                </div>
+                
+            </div>
+            <div class="col-12 col-md-4 markdown-body">
+                
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#ci">ci</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#mental-model">Mental model</a></li>
+<li class="toc-entry toc-h2"><a href="#configuration">Configuration</a></li>
+</ul>
+</li>
+</ul>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div><footer>
+   <div class="footer py-3 color-bg-subtle border-top">
+        <div class="container-xl p-responsive-blog f6 py-4 d-sm-flex flex-justify-between flex-row-reverse flex-items-center">
+            <div class="flex-1"></div>
+            <div class="flex-0 mx-auto px-4">
+                <div>Made with <a href="https://primerpages.github.io/jekyll-theme-profile/">jekyll theme profile</a></div>
+            </div>
+        </div>
+   </div>
+</footer>
+
+</body>
+
+</html>

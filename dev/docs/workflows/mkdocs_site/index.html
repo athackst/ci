@@ -1,0 +1,1257 @@
+
+<!doctype html>
+<html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- HTML Meta Tags -->
+  <!-- Begin Jekyll SEO tag v2.9.0 -->
+<title>athackst/ci</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="athackst/ci" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:site_name" content="athackst/ci" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="athackst/ci" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/docs/workflows/mkdocs_site/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  <link href="/ci/dev/assets/css/theme.css" rel="stylesheet" type="text/css">
+  <link href="/ci/dev/assets/css/style.css" rel="stylesheet" type="text/css">
+  
+  <link rel="icon" type="image/x-icon" href="/ci/dev/assets/img/favicon.ico">
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="/ci/dev/assets/js/theme-toggle.js"></script>
+  <script src="/ci/dev/assets/js/anchor-links.js"></script>
+  <script src="/ci/dev/assets/js/topbar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="/ci/dev/assets/js/mermaid.js"></script>
+<style>
+</style>
+
+</head>
+
+
+<body class="min-height-full d-flex flex-column">
+    
+
+<header class="AppHeader position-sticky top-0 z-2 border-bottom topbar">
+    <div class="AppHeader-item d-flex flex-justify-between p-2 flex-items-center">
+        <div tabindex="-1" class="d-flex flex-1 ml-3" id="github-logo">
+            <a href="/ci/dev/" class="AppHeader-link d-flex flex-items-center no-underline mr-3 h1">
+                <span class="octicon octicon-mark-github-24"></span>
+                <span class="h4 text-semibold mx-3">athackst/ci</span>
+            </a>
+        </div>
+        <div class="AppHeader-item d-flex flex-items-center">
+            <div class="Toggle d-flex flex-items-center">
+    <button id="theme-toggle" class="btn-octicon mr-2 tooltipped tooltipped-sw" aria-label="Color mode" type="button"><span id="theme-icon"
+            class="octicon octicon-moon-24"></span></button>
+</div>
+
+            <div class="AppHeader-item hide-sm">
+                
+
+
+<div class="Repo-info">
+    <a href="https://www.github.com/athackst/ci" class="AppHeader-link no-underline tooltipped tooltipped-s" aria-label="Go to repository">
+        <div class="d-flex flex-row flex-justify-center Header-item">
+
+            <div class="mr-2 h2"><span class="octicon octicon-git-branch-24"></span></div>
+            <div>
+                <div>
+                    athackst/ci
+                </div>
+                
+            </div>
+
+        </div>
+    </a>
+</div>
+
+            </div>
+            
+            <div class="AppHeader-item mr-0">
+                <a href="https://github.com/" class="AppHeader-link d-flex flex-items-center">
+                    <img class="avatar img-cover circle" height="32" width="32" alt="athackst/ci"
+                src="/ci/dev/assets/img/user-image.jpg">
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <div class="d-flex flex-1 flex-column">
+    
+
+
+
+
+
+
+<div class="d-xl-flex">
+    <div class="Layout bgColor-default border-right d-none d-xl-block">
+        <div class="Layout-sidebar position-sticky"
+            style="top: var(--topbar-height, 150px); height: calc(100vh - var(--topbar-height, 150px));"
+            >
+            <nav>
+                
+                <div class="d-none px-4 pb-3 border-bottom d-xl-block"
+                    style="height: calc(38px + 55px);">
+                    <div class="pt-3">
+                        <a class="f6 pl-2 pr-5 ml-n1 pb-1 color-fg-default"
+                            href="/ci/dev/">
+                            <span class="octicon octicon-arrow-left-16 mr-1"></span>
+                            Documentation
+                        </a>
+                    </div>
+                    <h2 class="pt-3">
+                        <div class="d-block pl-1 mb-2 h3 color-fg-default no-underline">
+                            Docs
+                        </div>
+                    </h2>
+                </div>
+                
+                <div class="d-none d-xl-block bg-primary overflow-y-auto flex-shrink-0 pb-3"
+                    style="height: calc(100vh - var(--topbar-height, 150px) - 38px - 55px);">
+                    <div class="pt-3">
+                        
+                        
+
+
+<ul data-overflow-nav class="menu ActionList border-0 ml-3">
+  
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" >
+    <summary class="list-style-none color-fg-default">
+      
+      <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between">
+          <span>Actions</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+      </div>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/changelog/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Changelog
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Jekyll Config
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/list-repos/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      List Repos
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/mkdocs-config/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Mkdocs Config
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/pr-labeler/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Labeler
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/release-draft/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Release Draft
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/resolve-config/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Resolve Config
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/setup-labels/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Setup Labels
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/actions/version-resolver/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Version Resolver
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" open>
+    <summary class="list-style-none color-fg-default">
+      
+      <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between">
+          <span>Docs</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+      </div>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" open>
+    <summary class="list-style-none color-fg-default">
+      
+      <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between">
+          <span>Workflows</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+      </div>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/automerge/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Automerge
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/bump/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Bump
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/ci_updater/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Ci Updater
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/deploy_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Deploy Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/htmlproofer_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Htmlproofer Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/jekyll_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Jekyll Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/labeler/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Labeler
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/mkdocs_site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" aria-current="page">
+      Mkdocs Site
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflows/release_drafter/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Release Drafter
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <details class="details-reset" >
+    <summary class="list-style-none color-fg-default">
+      
+      <a href="/ci/dev/docs/copier-template/" class="ActionListItem-label no-underline">
+        <div class="menu-item ActionList-item border-0 d-flex flex-items-center flex-justify-between" >
+          <span>Index</span>
+          <span class="awesome-nav-chevron color-fg-muted d-flex flex-items-center" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 1 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"></path>
+            </svg>
+          </span>
+        </div>
+      </a>
+      
+    </summary>
+    <ul class="ml-3">
+      
+      
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/ci_update/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Ci Update
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/pr_automerge/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Automerge
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/pr_bump/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Bump
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/pr_labeler/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Pr Labeler
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/release_draft/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Release Draft
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/setup_labels/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Setup Labels
+    </div>
+  </a>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/copier-template/site/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Site
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+
+
+
+
+
+
+<li class="list-style-none">
+  <a href="/ci/dev/docs/workflow_status/" class="ActionListItem-label no-underline">
+    <div class="menu-item ActionList-item border-0" >
+      Workflow Status
+    </div>
+  </a>
+</li>
+
+
+
+    </ul>
+  </details>
+</li>
+
+
+
+</ul>
+
+
+                        
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <div class="container-xl flex-1  p-responsive pb-6">
+        <div class="py-4 d-flex">
+            <div class="d-xl-none">
+                
+                
+
+<script>
+    $(document).ready(function () {
+        const $menu = $("#awesome-nav-menu");
+        const $closeButton = $menu.find(".close-menu");
+
+        if ($menu.length && $closeButton.length) {
+            $closeButton.click(() => $menu.removeAttr("open"));
+        }
+    });
+</script>
+
+<details class="details-reset details-overlay" id="awesome-nav-menu">
+    <summary class="btn btn-invisible" aria-haspopup="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+    </summary>
+    <div class="awesome-nav-menu-drawer position-fixed top-0 left-0 right-0 bottom-0">
+        <button class="awesome-nav-menu-backdrop close-menu position-fixed top-0 left-0 right-0 bottom-0 color-bg-backdrop border-0 p-0 m-0"
+            type="button" aria-label="Close navigation menu"></button>
+        <div class="awesome-nav-menu-panel position-fixed top-0 left-0 bottom-0 color-bg-default border-right d-flex flex-column">
+            <div class="d-flex flex-justify-between flex-items-center p-3 border-bottom">
+                <div tabindex="-1" class="SelectMenu-title">
+                    <a href="/ci/dev/"
+                        class="AppHeader-link d-flex flex-items-center no-underline mr-3">
+                        <span class="h3 color-fg-default text-bold">Documentation</span>
+                    </a>
+                </div>
+                <button class="SelectMenu-closeButton close-menu" type="button">
+                    <span class="octicon octicon-x-16"></span>
+                </button>
+            </div>
+            <div class="SideNav color-bg-default flex-1 overflow-y-auto pl-1">
+                <a href="/ci/dev/" class="SideNav-item border-0" role="menuitem">
+                    Documentation
+                </a>
+                
+
+
+
+
+<div class="menu-item color-fg-muted border-0">
+  Actions
+</div>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<a href="/ci/dev/actions/changelog/" class="menu-item border-0" role="menuitem" >
+  Changelog
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
+  Jekyll Config
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/list-repos/" class="menu-item border-0" role="menuitem" >
+  List Repos
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/mkdocs-config/" class="menu-item border-0" role="menuitem" >
+  Mkdocs Config
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/pr-labeler/" class="menu-item border-0" role="menuitem" >
+  Pr Labeler
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/release-draft/" class="menu-item border-0" role="menuitem" >
+  Release Draft
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/resolve-config/" class="menu-item border-0" role="menuitem" >
+  Resolve Config
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/setup-labels/" class="menu-item border-0" role="menuitem" >
+  Setup Labels
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/actions/version-resolver/" class="menu-item border-0" role="menuitem" >
+  Version Resolver
+</a>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+<div class="menu-item color-fg-muted border-0">
+  Docs
+</div>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<div class="menu-item color-fg-muted border-0">
+  Workflows
+</div>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<a href="/ci/dev/docs/workflows/automerge/" class="menu-item border-0" role="menuitem" >
+  Automerge
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/bump/" class="menu-item border-0" role="menuitem" >
+  Bump
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/ci_updater/" class="menu-item border-0" role="menuitem" >
+  Ci Updater
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/deploy_site/" class="menu-item border-0" role="menuitem" >
+  Deploy Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/htmlproofer_site/" class="menu-item border-0" role="menuitem" >
+  Htmlproofer Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/jekyll_site/" class="menu-item border-0" role="menuitem" >
+  Jekyll Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/labeler/" class="menu-item border-0" role="menuitem" >
+  Labeler
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/mkdocs_site/" class="menu-item border-0" role="menuitem" aria-current="page">
+  Mkdocs Site
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflows/release_drafter/" class="menu-item border-0" role="menuitem" >
+  Release Drafter
+</a>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/" class="menu-item border-0" role="menuitem" >
+  Index
+</a>
+
+
+
+<div class="ml-3">
+  
+
+
+
+
+<a href="/ci/dev/docs/copier-template/ci_update/" class="menu-item border-0" role="menuitem" >
+  Ci Update
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/pr_automerge/" class="menu-item border-0" role="menuitem" >
+  Pr Automerge
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/pr_bump/" class="menu-item border-0" role="menuitem" >
+  Pr Bump
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/pr_labeler/" class="menu-item border-0" role="menuitem" >
+  Pr Labeler
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/release_draft/" class="menu-item border-0" role="menuitem" >
+  Release Draft
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/setup_labels/" class="menu-item border-0" role="menuitem" >
+  Setup Labels
+</a>
+
+
+
+
+
+
+
+
+<a href="/ci/dev/docs/copier-template/site/" class="menu-item border-0" role="menuitem" >
+  Site
+</a>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+<a href="/ci/dev/docs/workflow_status/" class="menu-item border-0" role="menuitem" >
+  Workflow Status
+</a>
+
+
+
+
+
+</div>
+
+
+
+            </div>
+        </div>
+    </div>
+</details>
+
+                
+            </div>
+            
+            <div class="Breadcrumb d-flex flex-items-center">
+  <nav aria-label="Breadcrumb" class="f5">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="/ci/dev/">home</a>
+      </li>
+      
+        
+          
+            <li class="breadcrumb-item">
+              <a href="/ci/dev/">README</a>
+            </li>
+          
+        
+          
+            <li class="breadcrumb-item">
+              Docs
+            </li>
+          
+        
+          
+            <li class="breadcrumb-item">
+              Workflows
+            </li>
+          
+        
+          
+            <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
+              Mkdocs Site
+            </li>
+          
+        
+      
+    </ol>
+  </nav>
+</div>
+
+            
+        </div>
+        <div class="pb-5 p-responsive">
+            <h1 class="border-bottom-0"></h1>
+            <h3 class="f3 color-fg-muted pb-3"></h3>
+        </div>
+        <div class="d-flex flex-wrap-reverse">
+            <div class="col-12 col-md-8 markdown-body p-responsive">
+                <h1 id="mkdocs-site">MkDocs Site</h1>
+
+<p>Build a MkDocs site and upload a Pages-compatible artifact for downstream testing or deployment.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">site</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/mkdocs_site.yml@main</span>
+    <span class="na">with</span><span class="pi">:</span>
+      <span class="na">version</span><span class="pi">:</span> <span class="s">dev</span>
+</code></pre></div></div>
+
+<h2 id="inputs">Inputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">artifact-name</code></td>
+      <td>(optional) Artifact name for the built site.</td>
+      <td><code class="language-plaintext highlighter-rouge">github-pages</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">version</code></td>
+      <td>(optional) Version path to append to the site base path, for example <code class="language-plaintext highlighter-rouge">dev</code> or <code class="language-plaintext highlighter-rouge">1.2.3</code>.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li>Build only needs <code class="language-plaintext highlighter-rouge">contents: read</code> in the caller job.</li>
+</ul>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Uses the bundled <code class="language-plaintext highlighter-rouge">mkdocs-config</code> action before building the site.</li>
+  <li>Exposes <code class="language-plaintext highlighter-rouge">host</code>, <code class="language-plaintext highlighter-rouge">base-path</code>, <code class="language-plaintext highlighter-rouge">version</code>, and <code class="language-plaintext highlighter-rouge">artifact-name</code> outputs for downstream workflows such as HTMLProofer and site deploy.</li>
+  <li>When <code class="language-plaintext highlighter-rouge">version</code> is non-empty, the build output is prepared under a versioned base path such as <code class="language-plaintext highlighter-rouge">/repo/dev</code> or <code class="language-plaintext highlighter-rouge">/repo/1.2.3</code>.</li>
+  <li>This workflow only builds and uploads the site artifact. HTMLProofer and deployment are handled by separate reusable workflows.</li>
+</ul>
+
+<h2 id="examples">Examples</h2>
+
+<p>Build site:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">site</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/mkdocs_site.yml@main</span>
+</code></pre></div></div>
+
+<p>Build versioned docs:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">site</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/mkdocs_site.yml@main</span>
+    <span class="na">with</span><span class="pi">:</span>
+      <span class="na">version</span><span class="pi">:</span> <span class="s">dev</span>
+</code></pre></div></div>
+
+
+                <!-- Pagination links -->
+                <div class="paginate-container py-3">
+                    <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
+                        
+                        
+                        <a class="previous_page" rel="prev" href="/ci/dev/docs/workflows/labeler/"
+                            aria-disabled="false">Labeler</a>
+                        
+
+                        
+                        <a class="next_page" rel="next" href="/ci/dev/docs/workflows/release_drafter/"
+                            aria-disabled="false">Release Drafter</a>
+                        
+                        
+                    </div>
+                </div>
+
+                <!-- Edit link -->
+                
+                <div class="doc-footer border-top my-8 py-5">
+                    <a href="https://www.github.com/athackst/ci/edit/main//docs/workflows/mkdocs_site.md">
+                        <span class="octicon octicon-pencil-16"></span>
+                        Edit this page</a>
+                </div>
+                
+            </div>
+            <div class="col-12 col-md-4 markdown-body">
+                
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#mkdocs-site">MkDocs Site</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#inputs">Inputs</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+<li class="toc-entry toc-h2"><a href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div><footer>
+   <div class="footer py-3 color-bg-subtle border-top">
+        <div class="container-xl p-responsive-blog f6 py-4 d-sm-flex flex-justify-between flex-row-reverse flex-items-center">
+            <div class="flex-1"></div>
+            <div class="flex-0 mx-auto px-4">
+                <div>Made with <a href="https://primerpages.github.io/jekyll-theme-profile/">jekyll theme profile</a></div>
+            </div>
+        </div>
+   </div>
+</footer>
+
+</body>
+
+</html>
