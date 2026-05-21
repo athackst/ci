@@ -48,6 +48,7 @@
   REPOSITORY="athackst/ci" \
   VERSIONS_ENABLED="true" \
   VERSIONS_CONFIG="docs/versions.json" \
+  PREFIX="/ci" \
   python3 "$repo_root/actions/jekyll-config/merge_jekyll_config.py" \
     "$repo_root/actions/jekyll-config/_config.yml" \
     "$temp_config"

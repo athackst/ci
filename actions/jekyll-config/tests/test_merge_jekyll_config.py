@@ -28,6 +28,7 @@ class MergeJekyllConfigTests(unittest.TestCase):
                 "REPOSITORY": "athackst/ci",
                 "VERSIONS_ENABLED": "true" if versions_config else "false",
                 "VERSIONS_CONFIG": versions_config,
+                "PREFIX": "/ci",
             },
             clear=False,
         ):
@@ -56,6 +57,7 @@ class MergeJekyllConfigTests(unittest.TestCase):
                 "REPOSITORY": "athackst/ci",
                 "VERSIONS_ENABLED": "true",
                 "VERSIONS_CONFIG": "docs/versions.json",
+                "PREFIX": "/ci",
             },
             clear=False,
         ):
