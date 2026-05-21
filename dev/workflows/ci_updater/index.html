@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/workflows/ci_updater/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -532,7 +532,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/workflows/ci_updater/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Ci Updater
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -957,7 +957,7 @@
 
 
 
-<a href="/ci/dev/workflows/ci_updater/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/workflows/ci_updater/" class="menu-item border-0" role="menuitem" aria-current="page">
   Ci Updater
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Ci Updater
             </li>
           
         
@@ -1084,7 +1084,131 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="ci-updater">CI Updater</h1>
+
+<p>Run <code class="language-plaintext highlighter-rouge">copier update</code> and open or update a template-sync PR.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">ci-update</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/ci_updater.yml@main</span>
+    <span class="na">secrets</span><span class="pi">:</span>
+      <span class="na">token</span><span class="pi">:</span> <span class="s">$</span>
+</code></pre></div></div>
+
+<h2 id="inputs">Inputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">create-pr</code></td>
+      <td>(optional) Create or update a PR with template changes.</td>
+      <td><code class="language-plaintext highlighter-rouge">true</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pr-branch</code></td>
+      <td>(optional) Branch name used for template updates.</td>
+      <td><code class="language-plaintext highlighter-rouge">ci/update-ci-template</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pr-title</code></td>
+      <td>(optional) Pull request title.</td>
+      <td><code class="language-plaintext highlighter-rouge">chore: update CI template</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">commit-message</code></td>
+      <td>(optional) Commit message for template updates.</td>
+      <td><code class="language-plaintext highlighter-rouge">chore: apply CI template update</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">checkout-ref</code></td>
+      <td>(optional) Git ref to check out before applying template updates.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="secrets">Secrets</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">token</code></td>
+      <td>(optional) Token used for checkout, push, PR operations, issue creation, and label setup.</td>
+      <td><code class="language-plaintext highlighter-rouge">$</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="outputs">Outputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">changed</code></td>
+      <td>Whether template changes were produced by Copier.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">branch</code></td>
+      <td>Branch name used for the update, whether a PR was created or changes were pushed directly.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pr-url</code></td>
+      <td>URL for the updater PR, if one was created or updated.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li>Requires <code class="language-plaintext highlighter-rouge">contents: write</code>, <code class="language-plaintext highlighter-rouge">pull-requests: write</code>, <code class="language-plaintext highlighter-rouge">issues: write</code>, and <code class="language-plaintext highlighter-rouge">actions: write</code>.</li>
+  <li><code class="language-plaintext highlighter-rouge">actions: write</code> is needed in this environment when template updates modify <code class="language-plaintext highlighter-rouge">.github/workflows/*</code>.</li>
+</ul>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Skips the Copier update entirely when <code class="language-plaintext highlighter-rouge">.copier-answers.ci.yml</code> is missing.</li>
+  <li>Updater PRs are labeled <code class="language-plaintext highlighter-rouge">automerge</code> and <code class="language-plaintext highlighter-rouge">skip-changelog</code> automatically.</li>
+  <li>Only changes under <code class="language-plaintext highlighter-rouge">.github/</code> and <code class="language-plaintext highlighter-rouge">.copier-answers.ci.yml</code> count toward the <code class="language-plaintext highlighter-rouge">changed</code> output, so other files do not open an update PR.</li>
+  <li>Creates a failure issue with updater context and a local repro command if the workflow fails.</li>
+  <li>Writes a final workflow summary for both the PR and direct-push paths.</li>
+</ul>
+
+<h2 id="examples">Examples</h2>
+
+<p>Disable PR creation and just validate the update path:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">ci-update</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/ci_updater.yml@main</span>
+    <span class="na">with</span><span class="pi">:</span>
+      <span class="na">create-pr</span><span class="pi">:</span> <span class="kc">false</span>
+    <span class="na">secrets</span><span class="pi">:</span>
+      <span class="na">token</span><span class="pi">:</span> <span class="s">$</span>
+</code></pre></div></div>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1216,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/workflows/bump/"
+                            aria-disabled="false">Bump</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/workflows/deploy_site/"
+                            aria-disabled="false">Deploy Site</a>
                         
                         
                     </div>
@@ -1107,7 +1231,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//workflows/ci_updater.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1239,23 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#ci-updater">CI Updater</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#inputs">Inputs</a></li>
+<li class="toc-entry toc-h2"><a href="#secrets">Secrets</a></li>
+<li class="toc-entry toc-h2"><a href="#outputs">Outputs</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+<li class="toc-entry toc-h2"><a href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

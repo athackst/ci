@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/copier/ci_update/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -358,7 +358,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/copier/ci_update/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Ci Update
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -842,7 +842,7 @@
 
 
 
-<a href="/ci/dev/copier/ci_update/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/copier/ci_update/" class="menu-item border-0" role="menuitem" aria-current="page">
   Ci Update
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Ci Update
             </li>
           
         
@@ -1084,7 +1084,46 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="ci-update">CI Update</h1>
+
+<p><code class="language-plaintext highlighter-rouge">ci_update.yml</code> keeps a consumer repository aligned with this CI template.</p>
+
+<h2 id="generated-when">Generated When</h2>
+
+<p>Always generated.</p>
+
+<h2 id="runs-on">Runs On</h2>
+
+<ul>
+  <li>Daily schedule at <code class="language-plaintext highlighter-rouge">0 15 * * *</code></li>
+  <li>Manual <code class="language-plaintext highlighter-rouge">workflow_dispatch</code></li>
+</ul>
+
+<h2 id="calls">Calls</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/ci_updater.yml@main</span>
+</code></pre></div></div>
+
+<p>See <a href="/ci/dev/workflows/ci_updater/"><code class="language-plaintext highlighter-rouge">ci_updater.yml</code></a> for the reusable workflow
+contract.</p>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">contents: write</code> to commit template updates.</li>
+  <li><code class="language-plaintext highlighter-rouge">pull-requests: write</code> to open or update the template-sync PR.</li>
+  <li><code class="language-plaintext highlighter-rouge">issues: write</code> to create a failure issue.</li>
+  <li><code class="language-plaintext highlighter-rouge">actions: write</code> so updater PRs can modify <code class="language-plaintext highlighter-rouge">.github/workflows/*</code>.</li>
+</ul>
+
+<h2 id="behavior">Behavior</h2>
+
+<ul>
+  <li>Runs <code class="language-plaintext highlighter-rouge">copier update</code> through the reusable CI Updater workflow.</li>
+  <li>Opens or updates a PR from <code class="language-plaintext highlighter-rouge">ci/update-ci-template</code>.</li>
+  <li>Labels updater PRs automatically for automerge and changelog skipping.</li>
+  <li>Uses <code class="language-plaintext highlighter-rouge">secrets.CI_BOT_TOKEN</code> as the reusable workflow <code class="language-plaintext highlighter-rouge">token</code> secret.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1131,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/actions/version-resolver/"
+                            aria-disabled="false">Version Resolver</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/copier/pr_automerge/"
+                            aria-disabled="false">Pr Automerge</a>
                         
                         
                     </div>
@@ -1107,7 +1146,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//copier/ci_update.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1154,21 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#ci-update">CI Update</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#generated-when">Generated When</a></li>
+<li class="toc-entry toc-h2"><a href="#runs-on">Runs On</a></li>
+<li class="toc-entry toc-h2"><a href="#calls">Calls</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#behavior">Behavior</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

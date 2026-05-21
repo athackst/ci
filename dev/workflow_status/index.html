@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/workflow_status/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -650,7 +650,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/workflow_status/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Workflow Status
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -1038,7 +1038,7 @@
 
 
 
-<a href="/ci/dev/workflow_status/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/workflow_status/" class="menu-item border-0" role="menuitem" aria-current="page">
   Workflow Status
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Workflow Status
             </li>
           
         
@@ -1084,7 +1084,85 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="workflow-status">Workflow Status</h1>
+
+<p>Public repositories using this CI template, with live status badges for the managed workflows listed in <code class="language-plaintext highlighter-rouge">copier_update_paths.txt</code>.</p>
+
+<ul>
+  <li>Repositories shown: 5</li>
+  <li>Managed workflows shown: 7</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Repository</th>
+      <th>ci_update</th>
+      <th>pr_automerge</th>
+      <th>pr_bump</th>
+      <th>pr_labeler</th>
+      <th>release_draft</th>
+      <th>setup_labels</th>
+      <th>site</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/athackst/dockerfiles"><code class="language-plaintext highlighter-rouge">athackst/dockerfiles</code></a></td>
+      <td><a href="https://github.com/athackst/dockerfiles/actions/workflows/ci_update.yml"><img src="https://github.com/athackst/dockerfiles/actions/workflows/ci_update.yml/badge.svg" alt="ci_update" /></a></td>
+      <td><a href="https://github.com/athackst/dockerfiles/actions/workflows/pr_automerge.yml"><img src="https://github.com/athackst/dockerfiles/actions/workflows/pr_automerge.yml/badge.svg" alt="pr_automerge" /></a></td>
+      <td>-</td>
+      <td><a href="https://github.com/athackst/dockerfiles/actions/workflows/pr_labeler.yml"><img src="https://github.com/athackst/dockerfiles/actions/workflows/pr_labeler.yml/badge.svg" alt="pr_labeler" /></a></td>
+      <td>-</td>
+      <td><a href="https://github.com/athackst/dockerfiles/actions/workflows/setup_labels.yml"><img src="https://github.com/athackst/dockerfiles/actions/workflows/setup_labels.yml/badge.svg" alt="setup_labels" /></a></td>
+      <td><a href="https://github.com/athackst/dockerfiles/actions/workflows/site.yml"><img src="https://github.com/athackst/dockerfiles/actions/workflows/site.yml/badge.svg" alt="site" /></a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/athackst/htmlproofer-action"><code class="language-plaintext highlighter-rouge">athackst/htmlproofer-action</code></a></td>
+      <td><a href="https://github.com/athackst/htmlproofer-action/actions/workflows/ci_update.yml"><img src="https://github.com/athackst/htmlproofer-action/actions/workflows/ci_update.yml/badge.svg" alt="ci_update" /></a></td>
+      <td><a href="https://github.com/athackst/htmlproofer-action/actions/workflows/pr_automerge.yml"><img src="https://github.com/athackst/htmlproofer-action/actions/workflows/pr_automerge.yml/badge.svg" alt="pr_automerge" /></a></td>
+      <td>-</td>
+      <td><a href="https://github.com/athackst/htmlproofer-action/actions/workflows/pr_labeler.yml"><img src="https://github.com/athackst/htmlproofer-action/actions/workflows/pr_labeler.yml/badge.svg" alt="pr_labeler" /></a></td>
+      <td><a href="https://github.com/athackst/htmlproofer-action/actions/workflows/release_draft.yml"><img src="https://github.com/athackst/htmlproofer-action/actions/workflows/release_draft.yml/badge.svg" alt="release_draft" /></a></td>
+      <td><a href="https://github.com/athackst/htmlproofer-action/actions/workflows/setup_labels.yml"><img src="https://github.com/athackst/htmlproofer-action/actions/workflows/setup_labels.yml/badge.svg" alt="setup_labels" /></a></td>
+      <td><a href="https://github.com/athackst/htmlproofer-action/actions/workflows/site.yml"><img src="https://github.com/athackst/htmlproofer-action/actions/workflows/site.yml/badge.svg" alt="site" /></a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin"><code class="language-plaintext highlighter-rouge">athackst/mkdocs-simple-plugin</code></a></td>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/ci_update.yml"><img src="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/ci_update.yml/badge.svg" alt="ci_update" /></a></td>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/pr_automerge.yml"><img src="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/pr_automerge.yml/badge.svg" alt="pr_automerge" /></a></td>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/pr_bump.yml"><img src="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/pr_bump.yml/badge.svg" alt="pr_bump" /></a></td>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/pr_labeler.yml"><img src="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/pr_labeler.yml/badge.svg" alt="pr_labeler" /></a></td>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/release_draft.yml"><img src="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/release_draft.yml/badge.svg" alt="release_draft" /></a></td>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/setup_labels.yml"><img src="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/setup_labels.yml/badge.svg" alt="setup_labels" /></a></td>
+      <td><a href="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/site.yml"><img src="https://github.com/athackst/mkdocs-simple-plugin/actions/workflows/site.yml/badge.svg" alt="site" /></a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider"><code class="language-plaintext highlighter-rouge">athackst/vscode-ament-task-provider</code></a></td>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/ci_update.yml"><img src="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/ci_update.yml/badge.svg" alt="ci_update" /></a></td>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/pr_automerge.yml"><img src="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/pr_automerge.yml/badge.svg" alt="pr_automerge" /></a></td>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/pr_bump.yml"><img src="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/pr_bump.yml/badge.svg" alt="pr_bump" /></a></td>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/pr_labeler.yml"><img src="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/pr_labeler.yml/badge.svg" alt="pr_labeler" /></a></td>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/release_draft.yml"><img src="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/release_draft.yml/badge.svg" alt="release_draft" /></a></td>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/setup_labels.yml"><img src="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/setup_labels.yml/badge.svg" alt="setup_labels" /></a></td>
+      <td><a href="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/site.yml"><img src="https://github.com/athackst/vscode-ament-task-provider/actions/workflows/site.yml/badge.svg" alt="site" /></a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/athackst/workstation_setup"><code class="language-plaintext highlighter-rouge">athackst/workstation_setup</code></a></td>
+      <td><a href="https://github.com/athackst/workstation_setup/actions/workflows/ci_update.yml"><img src="https://github.com/athackst/workstation_setup/actions/workflows/ci_update.yml/badge.svg" alt="ci_update" /></a></td>
+      <td><a href="https://github.com/athackst/workstation_setup/actions/workflows/pr_automerge.yml"><img src="https://github.com/athackst/workstation_setup/actions/workflows/pr_automerge.yml/badge.svg" alt="pr_automerge" /></a></td>
+      <td>-</td>
+      <td><a href="https://github.com/athackst/workstation_setup/actions/workflows/pr_labeler.yml"><img src="https://github.com/athackst/workstation_setup/actions/workflows/pr_labeler.yml/badge.svg" alt="pr_labeler" /></a></td>
+      <td>-</td>
+      <td><a href="https://github.com/athackst/workstation_setup/actions/workflows/setup_labels.yml"><img src="https://github.com/athackst/workstation_setup/actions/workflows/setup_labels.yml/badge.svg" alt="setup_labels" /></a></td>
+      <td><a href="https://github.com/athackst/workstation_setup/actions/workflows/site.yml"><img src="https://github.com/athackst/workstation_setup/actions/workflows/site.yml/badge.svg" alt="site" /></a></td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p>Badges may appear as missing if a workflow has not been added to a repository yet or has never run on <code class="language-plaintext highlighter-rouge">main</code>.</p>
+</blockquote>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1170,12 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/workflows/release_drafter/"
+                            aria-disabled="false">Release Drafter</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <span class="next_page disabled" aria-disabled="true">Next</span>
                         
                         
                     </div>
@@ -1107,7 +1184,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//workflow_status.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1192,13 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#workflow-status">Workflow Status</a></li>
+</ul>
+                </div>
                 
             </div>
         </div>

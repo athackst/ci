@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/copier/pr_bump/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -390,7 +390,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/copier/pr_bump/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Pr Bump
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -864,7 +864,7 @@
 
 
 
-<a href="/ci/dev/copier/pr_bump/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/copier/pr_bump/" class="menu-item border-0" role="menuitem" aria-current="page">
   Pr Bump
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Pr Bump
             </li>
           
         
@@ -1084,7 +1084,47 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="pr-bump">PR Bump</h1>
+
+<p><code class="language-plaintext highlighter-rouge">pr_bump.yml</code> runs a repository-specific bump command after version metadata is
+resolved.</p>
+
+<h2 id="generated-when">Generated When</h2>
+
+<p>Generated only when <code class="language-plaintext highlighter-rouge">bump_script_path</code> is set.</p>
+
+<h2 id="runs-on">Runs On</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">pull_request</code> when labels are added or removed</li>
+</ul>
+
+<p>The job only runs for open, trusted same-repository pull requests and skips
+Dependabot.</p>
+
+<h2 id="calls">Calls</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/bump.yml@main</span>
+</code></pre></div></div>
+
+<p>See <a href="/ci/dev/workflows/bump/"><code class="language-plaintext highlighter-rouge">bump.yml</code></a> for the reusable workflow contract.</p>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">contents: write</code> to push bump commits.</li>
+  <li><code class="language-plaintext highlighter-rouge">pull-requests: write</code> to update the bump PR comment.</li>
+</ul>
+
+<h2 id="behavior">Behavior</h2>
+
+<ul>
+  <li>Passes <code class="language-plaintext highlighter-rouge">bump_script_path</code> to the reusable Bump workflow as <code class="language-plaintext highlighter-rouge">bump-script</code>.</li>
+  <li>Resolves semantic version metadata from <code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code>.</li>
+  <li>Runs the configured bump command with version environment variables.</li>
+  <li>Pushes any resulting commit back to the PR branch.</li>
+  <li>Maintains a single PR comment describing bump results.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1132,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/copier/pr_automerge/"
+                            aria-disabled="false">Pr Automerge</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/copier/pr_labeler/"
+                            aria-disabled="false">Pr Labeler</a>
                         
                         
                     </div>
@@ -1107,7 +1147,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//copier/pr_bump.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1155,21 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#pr-bump">PR Bump</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#generated-when">Generated When</a></li>
+<li class="toc-entry toc-h2"><a href="#runs-on">Runs On</a></li>
+<li class="toc-entry toc-h2"><a href="#calls">Calls</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#behavior">Behavior</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

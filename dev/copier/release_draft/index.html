@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/copier/release_draft/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -422,7 +422,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/copier/release_draft/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Release Draft
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -886,7 +886,7 @@
 
 
 
-<a href="/ci/dev/copier/release_draft/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/copier/release_draft/" class="menu-item border-0" role="menuitem" aria-current="page">
   Release Draft
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Release Draft
             </li>
           
         
@@ -1084,7 +1084,54 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="release-draft">Release Draft</h1>
+
+<p><code class="language-plaintext highlighter-rouge">release_draft.yml</code> creates or updates a draft GitHub release from merged pull
+request metadata and <code class="language-plaintext highlighter-rouge">.github/release_template.md</code>.</p>
+
+<h2 id="generated-when">Generated When</h2>
+
+<p>Generated only when <code class="language-plaintext highlighter-rouge">do_releases</code> is enabled.</p>
+
+<h2 id="runs-on">Runs On</h2>
+
+<ul>
+  <li>Pushes to <code class="language-plaintext highlighter-rouge">main</code></li>
+  <li>Manual <code class="language-plaintext highlighter-rouge">workflow_dispatch</code></li>
+</ul>
+
+<h2 id="calls">Calls</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/release_drafter.yml@main</span>
+</code></pre></div></div>
+
+<p>See <a href="/ci/dev/workflows/release_drafter/"><code class="language-plaintext highlighter-rouge">release_drafter.yml</code></a> for the reusable
+workflow contract.</p>
+
+<h2 id="permissions">Permissions</h2>
+
+<p>The release draft job needs:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">contents: write</code> to create or update draft releases.</li>
+  <li><code class="language-plaintext highlighter-rouge">pull-requests: read</code> to resolve changelog and version metadata.</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">persist-draft-id</code> job needs:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">actions: write</code> to persist <code class="language-plaintext highlighter-rouge">DRAFT_RELEASE_ID</code> as a repository variable.</li>
+</ul>
+
+<h2 id="behavior">Behavior</h2>
+
+<ul>
+  <li>Passes <code class="language-plaintext highlighter-rouge">vars.DRAFT_RELEASE_ID</code> into the reusable Release Draft workflow.</li>
+  <li>Creates or updates a draft release from resolved version and changelog data.</li>
+  <li>Stores the resulting release ID in the <code class="language-plaintext highlighter-rouge">DRAFT_RELEASE_ID</code> repository variable
+for the next run.</li>
+  <li>Uses <code class="language-plaintext highlighter-rouge">secrets.CI_BOT_TOKEN</code> for release and variable writes.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1139,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/copier/pr_labeler/"
+                            aria-disabled="false">Pr Labeler</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/copier/setup_labels/"
+                            aria-disabled="false">Setup Labels</a>
                         
                         
                     </div>
@@ -1107,7 +1154,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//copier/release_draft.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1162,21 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#release-draft">Release Draft</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#generated-when">Generated When</a></li>
+<li class="toc-entry toc-h2"><a href="#runs-on">Runs On</a></li>
+<li class="toc-entry toc-h2"><a href="#calls">Calls</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#behavior">Behavior</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/workflows/bump/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -516,7 +516,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/workflows/bump/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Bump
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -946,7 +946,7 @@
 
 
 
-<a href="/ci/dev/workflows/bump/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/workflows/bump/" class="menu-item border-0" role="menuitem" aria-current="page">
   Bump
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Bump
             </li>
           
         
@@ -1084,7 +1084,112 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="bump">Bump</h1>
+
+<p>Resolve version metadata and optionally run a repository-specific bump script that either pushes changes back to a PR branch or opens a bump PR.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">pr-bump</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/bump.yml@main</span>
+    <span class="na">with</span><span class="pi">:</span>
+      <span class="na">bump-script</span><span class="pi">:</span> <span class="s">scripts/bump_version.sh</span>
+    <span class="na">secrets</span><span class="pi">:</span>
+      <span class="na">token</span><span class="pi">:</span> <span class="s">$</span>
+</code></pre></div></div>
+
+<h2 id="inputs">Inputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">configuration-path</code></td>
+      <td>(optional) Path to the unified CI config file.</td>
+      <td><code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bump-script</code></td>
+      <td>(optional) Script path to run after version resolution.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">push-branch</code></td>
+      <td>(optional) Branch override for pushing bump commits or opening bump PRs.</td>
+      <td>PR head branch for <code class="language-plaintext highlighter-rouge">pull_request</code>; otherwise <code class="language-plaintext highlighter-rouge">ci/pr-bump</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="secrets">Secrets</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">token</code></td>
+      <td>(optional) Token used for checkout, version resolution, comment updates, and pushing bump commits.</td>
+      <td><code class="language-plaintext highlighter-rouge">$</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="outputs">Outputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">changed</code></td>
+      <td>Whether the bump script produced changes that were prepared for push or a bump PR.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">version</code></td>
+      <td>Resolved semantic version, if any.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">branch</code></td>
+      <td>Branch that received the bump commit or was used for the bump PR, if any.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li>Requires <code class="language-plaintext highlighter-rouge">contents: write</code> to push bump commits.</li>
+  <li>Requires <code class="language-plaintext highlighter-rouge">pull-requests: write</code> to update the PR comment or open/update a bump PR.</li>
+</ul>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Does nothing if <code class="language-plaintext highlighter-rouge">bump-script</code> is empty.</li>
+  <li>Resolves version metadata from the shared CI config before running the bump script.</li>
+  <li>Exposes <code class="language-plaintext highlighter-rouge">VERSION</code>, <code class="language-plaintext highlighter-rouge">MAJOR_VERSION</code>, <code class="language-plaintext highlighter-rouge">MINOR_VERSION</code>, <code class="language-plaintext highlighter-rouge">PATCH_VERSION</code>, and <code class="language-plaintext highlighter-rouge">PR_INFO_PATH</code> to the bump script.</li>
+  <li>On <code class="language-plaintext highlighter-rouge">pull_request</code>, pushes to <code class="language-plaintext highlighter-rouge">push-branch</code> if set; otherwise it uses the PR head branch.</li>
+  <li>On other events, opens or updates a PR from <code class="language-plaintext highlighter-rouge">push-branch</code> if set; otherwise it uses <code class="language-plaintext highlighter-rouge">ci/pr-bump</code>.</li>
+  <li>Non-<code class="language-plaintext highlighter-rouge">pull_request</code> bump PRs are labeled <code class="language-plaintext highlighter-rouge">automerge</code> and <code class="language-plaintext highlighter-rouge">skip-changelog</code>.</li>
+  <li>Maintains a single updatable PR comment for bump results.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1197,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/workflows/automerge/"
+                            aria-disabled="false">Automerge</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/workflows/ci_updater/"
+                            aria-disabled="false">Ci Updater</a>
                         
                         
                     </div>
@@ -1107,7 +1212,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//workflows/bump.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1220,22 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#bump">Bump</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#inputs">Inputs</a></li>
+<li class="toc-entry toc-h2"><a href="#secrets">Secrets</a></li>
+<li class="toc-entry toc-h2"><a href="#outputs">Outputs</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

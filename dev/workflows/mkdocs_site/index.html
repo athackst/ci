@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/workflows/mkdocs_site/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -612,7 +612,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/workflows/mkdocs_site/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Mkdocs Site
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -1012,7 +1012,7 @@
 
 
 
-<a href="/ci/dev/workflows/mkdocs_site/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/workflows/mkdocs_site/" class="menu-item border-0" role="menuitem" aria-current="page">
   Mkdocs Site
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Mkdocs Site
             </li>
           
         
@@ -1084,7 +1084,75 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="mkdocs-site">MkDocs Site</h1>
+
+<p>Build a MkDocs site and upload a Pages-compatible artifact for downstream testing or deployment.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">site</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/mkdocs_site.yml@main</span>
+    <span class="na">with</span><span class="pi">:</span>
+      <span class="na">version</span><span class="pi">:</span> <span class="s">dev</span>
+</code></pre></div></div>
+
+<h2 id="inputs">Inputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">artifact-name</code></td>
+      <td>(optional) Artifact name for the built site.</td>
+      <td><code class="language-plaintext highlighter-rouge">github-pages</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">version</code></td>
+      <td>(optional) Version path to append to the site base path, for example <code class="language-plaintext highlighter-rouge">dev</code> or <code class="language-plaintext highlighter-rouge">1.2.3</code>.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li>Build only needs <code class="language-plaintext highlighter-rouge">contents: read</code> in the caller job.</li>
+</ul>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Uses the bundled <code class="language-plaintext highlighter-rouge">mkdocs-config</code> action before building the site.</li>
+  <li>Exposes <code class="language-plaintext highlighter-rouge">host</code>, <code class="language-plaintext highlighter-rouge">base-path</code>, <code class="language-plaintext highlighter-rouge">version</code>, and <code class="language-plaintext highlighter-rouge">artifact-name</code> outputs for downstream workflows such as HTMLProofer and site deploy.</li>
+  <li>When <code class="language-plaintext highlighter-rouge">version</code> is non-empty, the build output is prepared under a versioned base path such as <code class="language-plaintext highlighter-rouge">/repo/dev</code> or <code class="language-plaintext highlighter-rouge">/repo/1.2.3</code>.</li>
+  <li>This workflow only builds and uploads the site artifact. HTMLProofer and deployment are handled by separate reusable workflows.</li>
+</ul>
+
+<h2 id="examples">Examples</h2>
+
+<p>Build site:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">site</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/mkdocs_site.yml@main</span>
+</code></pre></div></div>
+
+<p>Build versioned docs:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">site</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/mkdocs_site.yml@main</span>
+    <span class="na">with</span><span class="pi">:</span>
+      <span class="na">version</span><span class="pi">:</span> <span class="s">dev</span>
+</code></pre></div></div>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1160,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/workflows/labeler/"
+                            aria-disabled="false">Labeler</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/workflows/release_drafter/"
+                            aria-disabled="false">Release Drafter</a>
                         
                         
                     </div>
@@ -1107,7 +1175,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//workflows/mkdocs_site.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1183,21 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#mkdocs-site">MkDocs Site</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#inputs">Inputs</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+<li class="toc-entry toc-h2"><a href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

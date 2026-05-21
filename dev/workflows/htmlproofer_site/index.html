@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/workflows/htmlproofer_site/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -564,7 +564,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/workflows/htmlproofer_site/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Htmlproofer Site
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -979,7 +979,7 @@
 
 
 
-<a href="/ci/dev/workflows/htmlproofer_site/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/workflows/htmlproofer_site/" class="menu-item border-0" role="menuitem" aria-current="page">
   Htmlproofer Site
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Htmlproofer Site
             </li>
           
         
@@ -1084,7 +1084,69 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="htmlproofer-site">HTMLProofer Site</h1>
+
+<p>Test a built site artifact with HTMLProofer.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">test-site</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/htmlproofer_site.yml@main</span>
+    <span class="na">with</span><span class="pi">:</span>
+      <span class="na">artifact-name</span><span class="pi">:</span> <span class="s">github-pages</span>
+      <span class="na">host</span><span class="pi">:</span> <span class="s">my-org.github.io</span>
+      <span class="na">base-path</span><span class="pi">:</span> <span class="s">/my-repo</span>
+</code></pre></div></div>
+
+<h2 id="inputs">Inputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">host</code></td>
+      <td>(optional) Site host used for htmlproofer URL swapping.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">base-path</code></td>
+      <td>(optional) Site base path used for htmlproofer URL swapping.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">htmlproofer-ignore-urls</code></td>
+      <td>(optional) Newline-delimited URLs or regexes to ignore.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">artifact-name</code></td>
+      <td>(optional) Artifact name containing built site content.</td>
+      <td><code class="language-plaintext highlighter-rouge">github-pages</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li>Requires only <code class="language-plaintext highlighter-rouge">contents: read</code>.</li>
+</ul>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Accepts either the Pages artifact tarball layout or a plain uploaded site directory.</li>
+  <li>Adds a built-in ignore list for common external assets such as Twitter/X and Google Fonts.</li>
+  <li>Caches HTMLProofer output under <code class="language-plaintext highlighter-rouge">tmp/.htmlproofer</code>.</li>
+  <li>Always tests the extracted site under <code class="language-plaintext highlighter-rouge">_site/</code>.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1154,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/workflows/deploy_site/"
+                            aria-disabled="false">Deploy Site</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/workflows/jekyll_site/"
+                            aria-disabled="false">Jekyll Site</a>
                         
                         
                     </div>
@@ -1107,7 +1169,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//workflows/htmlproofer_site.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1177,20 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#htmlproofer-site">HTMLProofer Site</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#inputs">Inputs</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

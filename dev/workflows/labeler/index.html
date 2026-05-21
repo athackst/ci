@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/workflows/labeler/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -596,7 +596,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/workflows/labeler/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Labeler
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -1001,7 +1001,7 @@
 
 
 
-<a href="/ci/dev/workflows/labeler/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/workflows/labeler/" class="menu-item border-0" role="menuitem" aria-current="page">
   Labeler
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Labeler
             </li>
           
         
@@ -1084,7 +1084,52 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="labeler">Labeler</h1>
+
+<p>Apply pull request labels from the shared CI config.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">pr-labels</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/labeler.yml@main</span>
+    <span class="na">secrets</span><span class="pi">:</span>
+      <span class="na">token</span><span class="pi">:</span> <span class="s">$</span>
+</code></pre></div></div>
+
+<h2 id="secrets">Secrets</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Required</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">token</code></td>
+      <td>Token used to resolve config and apply PR labels.</td>
+      <td>No</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li>Requires <code class="language-plaintext highlighter-rouge">pull-requests: write</code> to add labels.</li>
+  <li>Uses <code class="language-plaintext highlighter-rouge">contents: read</code> to resolve the shared config.</li>
+</ul>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Resolves <code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code> first and tolerates missing config resolution with <code class="language-plaintext highlighter-rouge">continue-on-error</code>.</li>
+  <li>Delegates the actual labeling logic to the <code class="language-plaintext highlighter-rouge">pr-labeler</code> composite action.</li>
+  <li>Adds a workflow summary only when labels were actually added.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1137,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/workflows/jekyll_site/"
+                            aria-disabled="false">Jekyll Site</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/workflows/mkdocs_site/"
+                            aria-disabled="false">Mkdocs Site</a>
                         
                         
                     </div>
@@ -1107,7 +1152,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//workflows/labeler.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1160,20 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#labeler">Labeler</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#secrets">Secrets</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

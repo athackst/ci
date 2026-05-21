@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/copier/setup_labels/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -438,7 +438,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/copier/setup_labels/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Setup Labels
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -897,7 +897,7 @@
 
 
 
-<a href="/ci/dev/copier/setup_labels/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/copier/setup_labels/" class="menu-item border-0" role="menuitem" aria-current="page">
   Setup Labels
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Setup Labels
             </li>
           
         
@@ -1084,7 +1084,45 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="setup-labels">Setup Labels</h1>
+
+<p><code class="language-plaintext highlighter-rouge">setup_labels.yml</code> creates or updates repository label metadata from
+<code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code>.</p>
+
+<h2 id="generated-when">Generated When</h2>
+
+<p>Always generated.</p>
+
+<h2 id="runs-on">Runs On</h2>
+
+<ul>
+  <li>Pushes to <code class="language-plaintext highlighter-rouge">main</code> that change <code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code></li>
+  <li>Manual <code class="language-plaintext highlighter-rouge">workflow_dispatch</code></li>
+</ul>
+
+<h2 id="calls">Calls</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/actions/setup-labels@main</span>
+</code></pre></div></div>
+
+<p>See <a href="../../actions/setup-labels/README.md"><code class="language-plaintext highlighter-rouge">setup-labels</code></a> for the composite
+action contract.</p>
+
+<h2 id="permissions">Permissions</h2>
+
+<p>The generated workflow does not declare an explicit <code class="language-plaintext highlighter-rouge">permissions</code> block. It
+uses <code class="language-plaintext highlighter-rouge">secrets.CI_BOT_TOKEN</code> when available, falling back to <code class="language-plaintext highlighter-rouge">github.token</code>.</p>
+
+<p>The token must be able to create and update repository labels. <code class="language-plaintext highlighter-rouge">issues: write</code>
+is typically sufficient for that operation.</p>
+
+<h2 id="behavior">Behavior</h2>
+
+<ul>
+  <li>Checks out the repository.</li>
+  <li>Reads <code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code>.</li>
+  <li>Creates, updates, skips, or leaves labels unchanged based on label metadata.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1130,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/copier/release_draft/"
+                            aria-disabled="false">Release Draft</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/copier/site/"
+                            aria-disabled="false">Site</a>
                         
                         
                     </div>
@@ -1107,7 +1145,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//copier/setup_labels.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1153,21 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#setup-labels">Setup Labels</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#generated-when">Generated When</a></li>
+<li class="toc-entry toc-h2"><a href="#runs-on">Runs On</a></li>
+<li class="toc-entry toc-h2"><a href="#calls">Calls</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#behavior">Behavior</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

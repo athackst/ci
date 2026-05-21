@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/copier/site/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -454,7 +454,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/copier/site/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Site
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -908,7 +908,7 @@
 
 
 
-<a href="/ci/dev/copier/site/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/copier/site/" class="menu-item border-0" role="menuitem" aria-current="page">
   Site
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Site
             </li>
           
         
@@ -1084,7 +1084,65 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="site">Site</h1>
+
+<p><code class="language-plaintext highlighter-rouge">site.yml</code> builds and optionally deploys documentation sites.</p>
+
+<h2 id="generated-when">Generated When</h2>
+
+<p>Generated when <code class="language-plaintext highlighter-rouge">site_generator</code> is <code class="language-plaintext highlighter-rouge">mkdocs</code> or <code class="language-plaintext highlighter-rouge">jekyll</code>.</p>
+
+<p>No site workflow is generated when <code class="language-plaintext highlighter-rouge">site_generator</code> is <code class="language-plaintext highlighter-rouge">none</code>.</p>
+
+<h2 id="runs-on">Runs On</h2>
+
+<ul>
+  <li>Pushes to <code class="language-plaintext highlighter-rouge">main</code></li>
+  <li>Pull requests</li>
+  <li>Release <code class="language-plaintext highlighter-rouge">published</code> events for the MkDocs release job</li>
+</ul>
+
+<h2 id="calls">Calls</h2>
+
+<p>For MkDocs:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/mkdocs_site.yml@main</span>
+</code></pre></div></div>
+
+<p>See <a href="/ci/dev/workflows/mkdocs_site/"><code class="language-plaintext highlighter-rouge">mkdocs_site.yml</code></a> for the reusable workflow
+contract.</p>
+
+<p>For Jekyll:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/jekyll_site.yml@main</span>
+</code></pre></div></div>
+
+<p>See <a href="/ci/dev/workflows/jekyll_site/"><code class="language-plaintext highlighter-rouge">jekyll_site.yml</code></a> for the reusable workflow
+contract.</p>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">build-site</code>: <code class="language-plaintext highlighter-rouge">contents: read</code></li>
+  <li><code class="language-plaintext highlighter-rouge">test-site</code>: <code class="language-plaintext highlighter-rouge">contents: read</code></li>
+  <li><code class="language-plaintext highlighter-rouge">deploy-site</code>: <code class="language-plaintext highlighter-rouge">contents: write</code>, <code class="language-plaintext highlighter-rouge">pages: write</code>, <code class="language-plaintext highlighter-rouge">id-token: write</code></li>
+</ul>
+
+<h2 id="behavior">Behavior</h2>
+
+<ul>
+  <li>On pull requests, builds the configured site and runs HTMLProofer without deploying.</li>
+  <li>On <code class="language-plaintext highlighter-rouge">main</code> pushes, builds and deploys the configured site.</li>
+  <li><code class="language-plaintext highlighter-rouge">build-site</code> is responsible for building the site artifact and exposing the site metadata used by <code class="language-plaintext highlighter-rouge">test-site</code> and <code class="language-plaintext highlighter-rouge">deploy-site</code>.</li>
+  <li><code class="language-plaintext highlighter-rouge">test-site</code> runs HTMLProofer against the built artifact and reports link failures without blocking deployment.</li>
+  <li><code class="language-plaintext highlighter-rouge">deploy-site</code> handles the publish step:
+    <ul>
+      <li>non-versioned sites deploy the built artifact with GitHub Pages actions</li>
+      <li>versioned MkDocs sites publish with <code class="language-plaintext highlighter-rouge">PrimerPages/versite</code> via branch</li>
+      <li><code class="language-plaintext highlighter-rouge">dry-run</code> disables the publish step for either deployment mode</li>
+    </ul>
+  </li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1150,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/copier/setup_labels/"
+                            aria-disabled="false">Setup Labels</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/workflows/automerge/"
+                            aria-disabled="false">Automerge</a>
                         
                         
                     </div>
@@ -1107,7 +1165,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//copier/site.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1173,21 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#site">Site</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#generated-when">Generated When</a></li>
+<li class="toc-entry toc-h2"><a href="#runs-on">Runs On</a></li>
+<li class="toc-entry toc-h2"><a href="#calls">Calls</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#behavior">Behavior</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>

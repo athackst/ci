@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="athackst/ci" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/actions/jekyll-config/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"athackst/ci","url":"/ci/dev/workflows/release_drafter/"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -200,7 +200,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/actions/jekyll-config/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" aria-current="page">
+    <div class="menu-item ActionList-item border-0" >
       Jekyll Config
     </div>
   </a>
@@ -628,7 +628,7 @@
 
 <li class="list-style-none">
   <a href="/ci/dev/workflows/release_drafter/" class="ActionListItem-label no-underline">
-    <div class="menu-item ActionList-item border-0" >
+    <div class="menu-item ActionList-item border-0" aria-current="page">
       Release Drafter
     </div>
   </a>
@@ -738,7 +738,7 @@
 
 
 
-<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" aria-current="page">
+<a href="/ci/dev/actions/jekyll-config/" class="menu-item border-0" role="menuitem" >
   Jekyll Config
 </a>
 
@@ -1023,7 +1023,7 @@
 
 
 
-<a href="/ci/dev/workflows/release_drafter/" class="menu-item border-0" role="menuitem" >
+<a href="/ci/dev/workflows/release_drafter/" class="menu-item border-0" role="menuitem" aria-current="page">
   Release Drafter
 </a>
 
@@ -1067,7 +1067,7 @@
         
           
             <li class="breadcrumb-item breadcrumb-item-selected" aria-current="page">
-              Jekyll Config
+              Release Drafter
             </li>
           
         
@@ -1084,7 +1084,138 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="release-draft">Release Draft</h1>
+
+<p>Resolve version metadata, build a changelog, and create or update a draft GitHub release.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">release</span><span class="pi">:</span>
+    <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/.github/workflows/release_drafter.yml@main</span>
+    <span class="na">secrets</span><span class="pi">:</span>
+      <span class="na">token</span><span class="pi">:</span> <span class="s">$</span>
+</code></pre></div></div>
+
+<h2 id="inputs">Inputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">configuration-path</code></td>
+      <td>(optional) Path to the release-drafter style config file.</td>
+      <td><code class="language-plaintext highlighter-rouge">.github/ci-config.yml</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>(optional) Explicit release name override.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tag-name</code></td>
+      <td>(optional) Explicit release tag name override.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">draft-release-id</code></td>
+      <td>(optional) Explicit draft release ID to update directly before create fallback.</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">reuse-existing-draft</code></td>
+      <td>(optional) Update an existing draft when no release ID or matching tag is found.</td>
+      <td><code class="language-plaintext highlighter-rouge">true</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="secrets">Secrets</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">token</code></td>
+      <td>(optional) Token used to create or update the draft release.</td>
+      <td><code class="language-plaintext highlighter-rouge">$</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="outputs">Outputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">id</code></td>
+      <td>Draft release ID.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>Draft release name.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tag-name</code></td>
+      <td>Draft release tag name.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">html-url</code></td>
+      <td>Draft release HTML URL.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">upload-url</code></td>
+      <td>Draft release upload URL.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">resolved-version</code></td>
+      <td>Resolved semantic version used for defaults.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">changelog</code></td>
+      <td>Generated changelog markdown body.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="permissions">Permissions</h2>
+
+<ul>
+  <li>Requires <code class="language-plaintext highlighter-rouge">contents: write</code> to create or update releases.</li>
+  <li>Requires <code class="language-plaintext highlighter-rouge">pull-requests: read</code> for version/changelog resolution.</li>
+</ul>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Resolves config first with <code class="language-plaintext highlighter-rouge">resolve-config</code>, then feeds the same config into version resolution and changelog generation.</li>
+  <li>Uses the resolved version and generated changelog as the default release name, tag, and body inputs.</li>
+  <li>Uploads a <code class="language-plaintext highlighter-rouge">release-draft-debug-&lt;run_id&gt;-&lt;run_attempt&gt;</code> artifact containing the resolver JSON and PR info JSON for inspection.</li>
+  <li>Supports caller overrides for release <code class="language-plaintext highlighter-rouge">name</code> and <code class="language-plaintext highlighter-rouge">tag-name</code>.</li>
+  <li>Supports optional direct update of a known draft release via <code class="language-plaintext highlighter-rouge">draft-release-id</code>.</li>
+  <li>Otherwise, updates a draft release with the resolved tag when one exists.</li>
+  <li>If no matching tag is found and <code class="language-plaintext highlighter-rouge">reuse-existing-draft</code> is <code class="language-plaintext highlighter-rouge">true</code>, updates the newest existing draft release.</li>
+  <li>If no release ID, matching tag, or reusable draft is available, creates a new draft release.</li>
+  <li>Checks out tags with full history so semantic version resolution can compare against prior tags.</li>
+</ul>
 
 
                 <!-- Pagination links -->
@@ -1092,13 +1223,13 @@
                     <div role="navigation" aria-label="Pagination" class="d-inline-block pagination">
                         
                         
-                        <a class="previous_page" rel="prev" href="/ci/dev/actions/changelog/"
-                            aria-disabled="false">Changelog</a>
+                        <a class="previous_page" rel="prev" href="/ci/dev/workflows/mkdocs_site/"
+                            aria-disabled="false">Mkdocs Site</a>
                         
 
                         
-                        <a class="next_page" rel="next" href="/ci/dev/actions/list-repos/"
-                            aria-disabled="false">List Repos</a>
+                        <a class="next_page" rel="next" href="/ci/dev/workflow_status/"
+                            aria-disabled="false">Workflow Status</a>
                         
                         
                     </div>
@@ -1107,7 +1238,7 @@
                 <!-- Edit link -->
                 
                 <div class="doc-footer border-top my-8 py-5">
-                    <a href="https://www.github.com/athackst/ci/edit/main//actions/jekyll-config/README.md">
+                    <a href="https://www.github.com/athackst/ci/edit/main//workflows/release_drafter.md">
                         <span class="octicon octicon-pencil-16"></span>
                         Edit this page</a>
                 </div>
@@ -1115,6 +1246,22 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#release-draft">Release Draft</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#inputs">Inputs</a></li>
+<li class="toc-entry toc-h2"><a href="#secrets">Secrets</a></li>
+<li class="toc-entry toc-h2"><a href="#outputs">Outputs</a></li>
+<li class="toc-entry toc-h2"><a href="#permissions">Permissions</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>
