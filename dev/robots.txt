@@ -1,1 +1,1 @@
-Sitemap: /ci/dev/sitemap.xml
+Sitemap: /sitemap.xml
