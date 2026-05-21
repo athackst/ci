@@ -1,6 +1,6 @@
 
 <!doctype html>
-<html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark" data-baseurl="/ci/dev" data-versioning-enabled="true" data-versions-json="/versions.json" data-versioning-prefix="ci">
+<html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark" data-baseurl="/ci/dev" data-versioning-enabled="true" data-versions-json="/ci/versions.json" data-versioning-prefix="">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -1084,7 +1084,80 @@
         </div>
         <div class="d-flex flex-wrap-reverse">
             <div class="col-12 col-md-8 markdown-body p-responsive">
-                
+                <h1 id="configure-jekyll-for-github-pages">Configure Jekyll for GitHub Pages</h1>
+
+<p>Create the baseline Jekyll files used by this CI setup and render the bundled site config into the workspace.</p>
+
+<h2 id="usage">Usage</h2>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Configure Jekyll</span>
+  <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/actions/jekyll-config@main</span>
+</code></pre></div></div>
+
+<h2 id="inputs">Inputs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">title</code></td>
+      <td>The title of the site.</td>
+      <td><code class="language-plaintext highlighter-rouge">$</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">description</code></td>
+      <td>The site description. (optional)</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">image</code></td>
+      <td>The social preview image URL. (optional)</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">edit_url</code></td>
+      <td>The URL used for edit links. (optional)</td>
+      <td><code class="language-plaintext highlighter-rouge">https://www.github.com/$/edit/main/</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">nav_filename</code></td>
+      <td>The navigation file name. (optional)</td>
+      <td><code class="language-plaintext highlighter-rouge">.nav.yml</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">versions_config</code></td>
+      <td>The versions config path written into <code class="language-plaintext highlighter-rouge">versions.config</code>. When empty, versioning stays disabled. (optional)</td>
+      <td><code class="language-plaintext highlighter-rouge">""</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="advanced">Advanced</h2>
+
+<ul>
+  <li>Creates <code class="language-plaintext highlighter-rouge">_config.yml</code>, <code class="language-plaintext highlighter-rouge">Gemfile</code>, and <code class="language-plaintext highlighter-rouge">semiliterate.yml</code> only when they do not already exist.</li>
+  <li>Renders the bundled <code class="language-plaintext highlighter-rouge">_config.yml</code> template with the provided metadata and GitHub repository context.</li>
+  <li>Sets <code class="language-plaintext highlighter-rouge">versions.enabled</code> automatically based on whether <code class="language-plaintext highlighter-rouge">versions_config</code> is empty.</li>
+  <li>Writes the provided <code class="language-plaintext highlighter-rouge">versions_config</code> value directly to <code class="language-plaintext highlighter-rouge">versions.config</code>.</li>
+</ul>
+
+<h2 id="examples">Examples</h2>
+
+<p>Enable versioned docs with a repository-root versions file:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Configure Jekyll</span>
+  <span class="na">uses</span><span class="pi">:</span> <span class="s">athackst/ci/actions/jekyll-config@main</span>
+  <span class="na">with</span><span class="pi">:</span>
+    <span class="na">title</span><span class="pi">:</span> <span class="s">My Docs</span>
+    <span class="na">description</span><span class="pi">:</span> <span class="s">Project documentation</span>
+    <span class="na">versions_config</span><span class="pi">:</span> <span class="s">ci/versions.json</span>
+</code></pre></div></div>
 
 
                 <!-- Pagination links -->
@@ -1115,6 +1188,20 @@
             </div>
             <div class="col-12 col-md-4 markdown-body">
                 
+                
+                <div class="position-sticky top-12 ml-5 pb-5">
+                    <h4 class="ml-3 mb-1">In this article</h4>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#configure-jekyll-for-github-pages">Configure Jekyll for GitHub Pages</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#inputs">Inputs</a></li>
+<li class="toc-entry toc-h2"><a href="#advanced">Advanced</a></li>
+<li class="toc-entry toc-h2"><a href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+                </div>
                 
             </div>
         </div>
