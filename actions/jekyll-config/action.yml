@@ -25,6 +25,10 @@ inputs:
     description: 'Whether versions should be enabled.'
     required: false
     default: 'false'
+  prefix:
+    description: 'The prefix for the versions file (the repo name).'
+    required: false
+    default: "${{ github.event.repository.name }}"
 
 runs:
   using: 'composite'
@@ -40,5 +44,6 @@ runs:
         REPOSITORY: ${{ github.repository }}
         NAV_FILENAME: ${{ inputs.nav_filename }}
         VERSIONS_ENABLED: ${{ inputs.versions }}
+        PREFIX: ${{ inputs.prefix }}
       run: |
         bash "${{ github.action_path }}/setup_jekyll.sh"

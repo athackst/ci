@@ -17,7 +17,7 @@ import merge_jekyll_config  # noqa: E402
 
 
 class MergeJekyllConfigTests(unittest.TestCase):
-    def render_versions_enabled(self, versions_enabled: str) -> bool:
+    def render_versions_config(self, versions_enabled: str, prefix: str = "ci") -> dict[str, object]:
         with mock.patch.dict(
             os.environ,
             {
@@ -27,20 +27,25 @@ class MergeJekyllConfigTests(unittest.TestCase):
                 "EDIT_URL": "https://example.com/edit/",
                 "REPOSITORY": "athackst/ci",
                 "VERSIONS_ENABLED": versions_enabled,
+                "PREFIX": prefix,
             },
             clear=False,
         ):
             rendered = merge_jekyll_config.render_yaml_template(ACTION_DIR / "_config.yml")
 
-        return rendered["versions"]["enabled"]
+        return rendered["versions"]
 
     def test_render_yaml_template_versions_disabled_is_boolean_false(self):
-        self.assertIs(self.render_versions_enabled("false"), False)
+        versions = self.render_versions_config("false")
+        self.assertIs(versions["enabled"], False)
+        self.assertEqual(versions["prefix"], "ci")
 
     def test_render_yaml_template_versions_enabled_is_boolean_true(self):
-        self.assertIs(self.render_versions_enabled("true"), True)
+        versions = self.render_versions_config("true", prefix="docs")
+        self.assertIs(versions["enabled"], True)
+        self.assertEqual(versions["prefix"], "docs")
 
-    def test_main_writes_boolean_versions_flag(self):
+    def test_main_writes_versions_flag_and_prefix(self):
         with tempfile.TemporaryDirectory() as temp_dir, mock.patch.dict(
             os.environ,
             {
@@ -50,6 +55,7 @@ class MergeJekyllConfigTests(unittest.TestCase):
                 "EDIT_URL": "https://example.com/edit/",
                 "REPOSITORY": "athackst/ci",
                 "VERSIONS_ENABLED": "true",
+                "PREFIX": "ci",
             },
             clear=False,
         ):
@@ -63,3 +69,4 @@ class MergeJekyllConfigTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             merged = yaml.safe_load(local_config.read_text(encoding="utf-8"))
             self.assertIs(merged["versions"]["enabled"], True)
+            self.assertEqual(merged["versions"]["prefix"], "ci")
