@@ -32,6 +32,9 @@
 
   run grep -F "  enabled: false" _config.yml
   [ "$status" -eq 0 ]
+
+  run grep -F "  prefix: ci" _config.yml
+  [ "$status" -eq 0 ]
 }
 
 @test "merge_jekyll_config writes versions.enabled as boolean true when enabled" {
@@ -44,6 +47,7 @@
   EDIT_URL="https://example.com/edit/" \
   REPOSITORY="athackst/ci" \
   VERSIONS_ENABLED="true" \
+  PREFIX="docs" \
   python3 "$repo_root/actions/jekyll-config/merge_jekyll_config.py" \
     "$repo_root/actions/jekyll-config/_config.yml" \
     "$temp_config"
@@ -52,6 +56,9 @@
   [ "$status" -eq 0 ]
 
   run grep -F "  enabled: true" "$temp_config"
+  [ "$status" -eq 0 ]
+
+  run grep -F "  prefix: docs" "$temp_config"
   [ "$status" -eq 0 ]
 
   rm -f "$temp_config"
