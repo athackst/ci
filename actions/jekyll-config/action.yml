@@ -21,14 +21,10 @@ inputs:
     description: 'The name of the navigation file to create.'
     required: false
     default: '.nav.yml'
-  versions:
-    description: 'Whether versions should be enabled.'
+  versions_config:
+    description: 'The location of the versions config file.'
     required: false
-    default: 'false'
-  prefix:
-    description: 'The prefix for the versions file (the repo name).'
-    required: false
-    default: "${{ github.event.repository.name }}"
+    default: ""
 
 runs:
   using: 'composite'
@@ -43,7 +39,7 @@ runs:
         EDIT_URL: ${{ inputs.edit_url }}
         REPOSITORY: ${{ github.repository }}
         NAV_FILENAME: ${{ inputs.nav_filename }}
-        VERSIONS_ENABLED: ${{ inputs.versions }}
-        PREFIX: ${{ inputs.prefix }}
+        VERSIONS_ENABLED: ${{ inputs.versions_config != '' }}
+        VERSIONS_CONFIG: ${{ inputs.versions_config }}
       run: |
         bash "${{ github.action_path }}/setup_jekyll.sh"

@@ -17,7 +17,7 @@ import merge_jekyll_config  # noqa: E402
 
 
 class MergeJekyllConfigTests(unittest.TestCase):
-    def render_versions_config(self, versions_enabled: str, prefix: str = "ci") -> dict[str, object]:
+    def render_versions_config(self, versions_config: str = "") -> dict[str, object]:
         with mock.patch.dict(
             os.environ,
             {
@@ -26,8 +26,8 @@ class MergeJekyllConfigTests(unittest.TestCase):
                 "IMAGE": "",
                 "EDIT_URL": "https://example.com/edit/",
                 "REPOSITORY": "athackst/ci",
-                "VERSIONS_ENABLED": versions_enabled,
-                "PREFIX": prefix,
+                "VERSIONS_ENABLED": "true" if versions_config else "false",
+                "VERSIONS_CONFIG": versions_config,
             },
             clear=False,
         ):
@@ -35,17 +35,17 @@ class MergeJekyllConfigTests(unittest.TestCase):
 
         return rendered["versions"]
 
-    def test_render_yaml_template_versions_disabled_is_boolean_false(self):
-        versions = self.render_versions_config("false")
+    def test_render_yaml_template_versions_disabled_by_default(self):
+        versions = self.render_versions_config()
         self.assertIs(versions["enabled"], False)
-        self.assertEqual(versions["prefix"], "ci")
+        self.assertEqual(versions["config"], "")
 
-    def test_render_yaml_template_versions_enabled_is_boolean_true(self):
-        versions = self.render_versions_config("true", prefix="docs")
+    def test_render_yaml_template_versions_enabled_with_custom_config(self):
+        versions = self.render_versions_config("ci/versions.json")
         self.assertIs(versions["enabled"], True)
-        self.assertEqual(versions["prefix"], "docs")
+        self.assertEqual(versions["config"], "ci/versions.json")
 
-    def test_main_writes_versions_flag_and_prefix(self):
+    def test_main_writes_versions_flag_and_config_path(self):
         with tempfile.TemporaryDirectory() as temp_dir, mock.patch.dict(
             os.environ,
             {
@@ -55,7 +55,7 @@ class MergeJekyllConfigTests(unittest.TestCase):
                 "EDIT_URL": "https://example.com/edit/",
                 "REPOSITORY": "athackst/ci",
                 "VERSIONS_ENABLED": "true",
-                "PREFIX": "ci",
+                "VERSIONS_CONFIG": "docs/versions.json",
             },
             clear=False,
         ):
@@ -69,4 +69,4 @@ class MergeJekyllConfigTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             merged = yaml.safe_load(local_config.read_text(encoding="utf-8"))
             self.assertIs(merged["versions"]["enabled"], True)
-            self.assertEqual(merged["versions"]["prefix"], "ci")
+            self.assertEqual(merged["versions"]["config"], "docs/versions.json")

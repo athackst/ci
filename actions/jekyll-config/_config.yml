@@ -53,7 +53,7 @@ relative_links:
 
 versions:
   enabled: ${versions}
-  prefix: ${prefix}
+  config: ${versions_config}
 
 exclude:
   - Gemfile
