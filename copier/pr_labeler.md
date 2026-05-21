@@ -30,4 +30,4 @@ contract.
 - Routes secret-requiring label writes through `pull_request_target`.
 - Uses `secrets.CI_BOT_TOKEN` as the reusable workflow `token` secret.
 - The reusable workflow resolves configuration and delegates matching to the
-  [`pr-labeler`](../../actions/pr-labeler/README.md) composite action.
+  [`pr-labeler`](../actions/pr-labeler/README.md) composite action.

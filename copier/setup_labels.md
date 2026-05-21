@@ -18,7 +18,7 @@ Always generated.
 uses: athackst/ci/actions/setup-labels@main
 ```
 
-See [`setup-labels`](../../actions/setup-labels/README.md) for the composite
+See [`setup-labels`](../actions/setup-labels/README.md) for the composite
 action contract.
 
 ## Permissions

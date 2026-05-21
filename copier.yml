@@ -7,7 +7,7 @@ _envops:
   block_start_string: "[%"
   block_end_string: "%]"
 
-_subdirectory: template
+_subdirectory: copier/template
 
 _answers_file: .copier-answers.ci.yml
 
