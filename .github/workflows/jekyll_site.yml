@@ -44,10 +44,11 @@ jobs:
   build-site:
     runs-on: ubuntu-latest
     outputs:
-      host: ${{ steps.settings.outputs.host }}
-      base-path: ${{ steps.settings.outputs.base_path }}
-      base-url: ${{ steps.settings.outputs.base_url }}
+      host: ${{ steps.pages.outputs.host }}
+      base-path: ${{ steps.pages.outputs.base_path }}
+      base-url: ${{ steps.pages.outputs.base_url }}
       version: ${{ steps.settings.outputs.version }}
+      version_config: ${{ steps.settings.outputs.version_config }}
       artifact-name: ${{ inputs.artifact-name }}
     steps:
       - name: Checkout
@@ -64,23 +65,22 @@ jobs:
           version="${{ inputs.version }}"
           echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
 
-          base_path="${{ steps.pages.outputs.base_path }}"
-          base_url="${{ steps.pages.outputs.base_url }}"
+          versions_path=""
+          versions_config=""
           if [ -n "$version" ]; then
-            base_path="${base_path}/${version}"
-            base_url="${base_url}/${version}"
+            versions_path="/${version}"
+            versions_config="${{ steps.pages.outputs.base_path }}/versions.json"
           fi
-          echo "base_path=${base_path}" | tee -a "$GITHUB_OUTPUT"
-          echo "base_url=${base_url}" | tee -a "$GITHUB_OUTPUT"
 
-          host="${{ steps.pages.outputs.host }}"
-          echo "host=${host}" | tee -a "$GITHUB_OUTPUT"
+          echo "versions_path=${versions_path}" | tee -a "$GITHUB_OUTPUT"
+          echo "versions_config=${versions_config}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Configure Jekyll site
         id: config
         uses: athackst/ci/actions/jekyll-config@main
         with:
-          versions: ${{ inputs.version != '' }}
+          versions_config: ${{ steps.settings.outputs.versions_config }}
+          base_path: ${{ steps.pages.outputs.base_path }}
 
       - name: Extract with semiliterate
         if: ${{ inputs.semiliterate }}
@@ -109,7 +109,7 @@ jobs:
         env:
           JEKYLL_ENV: production
           JEKYLL_GITHUB_TOKEN: ${{ github.token }}
-          BASEURL: ${{ steps.settings.outputs.base_path }}
+          BASEURL: ${{ steps.pages.outputs.base_path }}${{ steps.settings.outputs.versions_path }}
           SOURCE: ${{ steps.semiliterate.outputs.out  || '.' }}
           CONFIG_FILE: "_config.yml"
         run: bundle exec jekyll build --baseurl "${BASEURL}" --source "${SOURCE}" --config "${CONFIG_FILE}"
