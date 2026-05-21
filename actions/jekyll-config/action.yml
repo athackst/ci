@@ -25,6 +25,10 @@ inputs:
     description: 'The location of the versions config file.'
     required: false
     default: ""
+  base_path:
+    description: 'The base path for the site.'
+    required: false
+    default: ""
 
 runs:
   using: 'composite'
@@ -41,5 +45,6 @@ runs:
         NAV_FILENAME: ${{ inputs.nav_filename }}
         VERSIONS_ENABLED: ${{ inputs.versions_config != '' }}
         VERSIONS_CONFIG: ${{ inputs.versions_config }}
+        PREFIX: ${{ inputs.base_path }}
       run: |
         bash "${{ github.action_path }}/setup_jekyll.sh"

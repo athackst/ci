@@ -32,6 +32,7 @@ def render_yaml_template(path: Path) -> object:
         repository=json.dumps(os.environ["REPOSITORY"]),
         versions="true" if os.environ["VERSIONS_ENABLED"].lower() == "true" else "false",
         versions_config=json.dumps(os.environ["VERSIONS_CONFIG"]),
+        prefix=json.dumps(os.environ["PREFIX"])
     )
     return yaml.safe_load(rendered) or {}
 
