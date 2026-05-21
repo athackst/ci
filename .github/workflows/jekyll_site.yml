@@ -79,6 +79,8 @@ jobs:
       - name: Configure Jekyll site
         id: config
         uses: athackst/ci/actions/jekyll-config@main
+        with:
+          versions: ${{ inputs.version != '' }}
 
       - name: Extract with semiliterate
         if: ${{ inputs.semiliterate }}
