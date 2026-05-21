@@ -51,6 +51,9 @@ relative_links:
   enabled:     true
   collections: true
 
+versions:
+  enabled: ${versions}
+
 exclude:
   - Gemfile
   - Gemfile.lock

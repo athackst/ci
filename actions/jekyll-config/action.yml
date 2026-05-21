@@ -21,6 +21,10 @@ inputs:
     description: 'The name of the navigation file to create.'
     required: false
     default: '.nav.yml'
+  versions:
+    description: 'Whether versions should be enabled.'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -35,5 +39,6 @@ runs:
         EDIT_URL: ${{ inputs.edit_url }}
         REPOSITORY: ${{ github.repository }}
         NAV_FILENAME: ${{ inputs.nav_filename }}
+        VERSIONS_ENABLED: ${{ inputs.versions }}
       run: |
         bash "${{ github.action_path }}/setup_jekyll.sh"

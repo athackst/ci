@@ -30,6 +30,7 @@ def render_yaml_template(path: Path) -> object:
         image="null" if not os.environ["IMAGE"] else json.dumps(os.environ["IMAGE"]),
         edit_url=json.dumps(os.environ["EDIT_URL"]),
         repository=json.dumps(os.environ["REPOSITORY"]),
+        versions="true" if os.environ["VERSIONS_ENABLED"].lower() == "true" else "false",
     )
     return yaml.safe_load(rendered) or {}
 
