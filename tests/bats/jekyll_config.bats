@@ -26,18 +26,18 @@
   [ "$status" -eq 0 ]
 }
 
-@test "_config.yml keeps versions.enabled as a boolean false by default" {
+@test "_config.yml keeps versions disabled with no config by default" {
   run grep -F "versions:" _config.yml
   [ "$status" -eq 0 ]
 
   run grep -F "  enabled: false" _config.yml
   [ "$status" -eq 0 ]
 
-  run grep -F "  prefix: ci" _config.yml
+  run grep -F "  config: ''" _config.yml
   [ "$status" -eq 0 ]
 }
 
-@test "merge_jekyll_config writes versions.enabled as boolean true when enabled" {
+@test "merge_jekyll_config writes versions config when provided" {
   temp_config="$(mktemp)"
   repo_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 
@@ -47,7 +47,7 @@
   EDIT_URL="https://example.com/edit/" \
   REPOSITORY="athackst/ci" \
   VERSIONS_ENABLED="true" \
-  PREFIX="docs" \
+  VERSIONS_CONFIG="docs/versions.json" \
   python3 "$repo_root/actions/jekyll-config/merge_jekyll_config.py" \
     "$repo_root/actions/jekyll-config/_config.yml" \
     "$temp_config"
@@ -58,7 +58,7 @@
   run grep -F "  enabled: true" "$temp_config"
   [ "$status" -eq 0 ]
 
-  run grep -F "  prefix: docs" "$temp_config"
+  run grep -F "  config: docs/versions.json" "$temp_config"
   [ "$status" -eq 0 ]
 
   rm -f "$temp_config"

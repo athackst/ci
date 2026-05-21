@@ -31,7 +31,7 @@ def render_yaml_template(path: Path) -> object:
         edit_url=json.dumps(os.environ["EDIT_URL"]),
         repository=json.dumps(os.environ["REPOSITORY"]),
         versions="true" if os.environ["VERSIONS_ENABLED"].lower() == "true" else "false",
-        prefix=json.dumps(os.environ["PREFIX"]),
+        versions_config=json.dumps(os.environ["VERSIONS_CONFIG"]),
     )
     return yaml.safe_load(rendered) or {}
 
