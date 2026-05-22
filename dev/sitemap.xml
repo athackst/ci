@@ -1,88 +1,119 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url>
-<loc>/ci/dev/copier/ci_update/</loc>
-</url>
-<url>
-<loc>/ci/dev/copier/pr_automerge/</loc>
-</url>
-<url>
-<loc>/ci/dev/copier/pr_bump/</loc>
-</url>
-<url>
-<loc>/ci/dev/copier/pr_labeler/</loc>
-</url>
-<url>
-<loc>/ci/dev/copier/release_draft/</loc>
-</url>
-<url>
-<loc>/ci/dev/copier/setup_labels/</loc>
-</url>
-<url>
-<loc>/ci/dev/copier/site/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflow_status/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/automerge/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/bump/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/ci_updater/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/deploy_site/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/htmlproofer_site/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/jekyll_site/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/labeler/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/mkdocs_site/</loc>
-</url>
-<url>
-<loc>/ci/dev/workflows/release_drafter/</loc>
-</url>
-<url>
-<loc>/ci/dev/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/changelog/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/jekyll-config/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/list-repos/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/mkdocs-config/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/pr-labeler/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/release-draft/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/resolve-config/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/setup-labels/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/version-resolver/</loc>
-</url>
-<url>
-<loc>/ci/dev/actions/mkdocs-config/overrides/main.html</loc>
-<lastmod>2026-05-22T17:00:06+00:00</lastmod>
-</url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/mkdocs-config/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/release_draft/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/ci_updater/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/jekyll-config/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/CONTRIBUTING/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/ci_update/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/LICENSE/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/jekyll_site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/mkdocs_site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/deploy_site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/release_drafter/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/automerge/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/pr_automerge/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/pr-labeler/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/release-draft/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/labeler/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/resolve-config/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflow_status/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/version-resolver/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/changelog/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/bump/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/setup-labels/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/setup_labels/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/pr_labeler/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/pr_bump/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/list-repos/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/htmlproofer_site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
 </urlset>
