@@ -116,7 +116,6 @@ jobs:
     uses: ./.github/workflows/mkdocs_site.yml
     secrets: inherit
     with:
-      pages: false
       artifact-name: github-pages-mkdocs-test
 
   workflow-mkdocs-site-verify:
