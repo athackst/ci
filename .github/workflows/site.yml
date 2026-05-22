@@ -19,7 +19,7 @@ jobs:
   build-site:
     permissions:
       contents: read
-    uses: ./.github/workflows/jekyll_site.yml
+    uses: ./.github/workflows/mkdocs_site.yml
 
   test-site:
     needs: build-site
