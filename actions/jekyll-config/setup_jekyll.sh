@@ -17,3 +17,7 @@ if [[ ! -f "./semiliterate.yml" ]]; then
     cp "${DIR}/semiliterate.yml" "./semiliterate.yml"
     echo "Created semiliterate.yml from template."
 fi
+
+echo "gemfile-path=./Gemfile" | tee -a "$GITHUB_OUTPUT"
+echo "config-path=./_config.yml" | tee -a "$GITHUB_OUTPUT"
+echo "semiliterate-config-path=./semiliterate.yml" | tee -a "$GITHUB_OUTPUT"

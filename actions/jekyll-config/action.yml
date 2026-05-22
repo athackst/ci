@@ -30,6 +30,17 @@ inputs:
     required: false
     default: ""
 
+outputs:
+  gemfile-path:
+    description: Path to the generated or existing Gemfile.
+    value: ${{ steps.setup.outputs.gemfile-path }}
+  config-path:
+    description: Path to the generated or existing _config.yml.
+    value: ${{ steps.setup.outputs.config-path }}
+  semiliterate-config-path:
+    description: Path to the generated or existing semiliterate.yml.
+    value: ${{ steps.setup.outputs.semiliterate-config-path }}
+
 runs:
   using: 'composite'
   steps:
