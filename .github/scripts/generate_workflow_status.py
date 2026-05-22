@@ -13,12 +13,12 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COPIER_PATHS = REPO_ROOT / "copier_update_paths.txt"
-OUTPUT_PATH = REPO_ROOT / "docs" / "workflow_status.md"
+OUTPUT_PATH = REPO_ROOT / "workflow_status.md"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate docs/workflow_status.md for managed CI workflows."
+        description="Generate workflow_status.md for managed CI workflows."
     )
     parser.add_argument(
         "--repos-file",

@@ -6,7 +6,7 @@
         {
             "label": "copier copy",
             "type": "shell",
-            "command": "copier copy --trust --defaults --vcs-ref HEAD . .",
+            "command": "copier copy --trust --vcs-ref HEAD . .",
             "problemMatcher": []
         },
         {
