@@ -40,6 +40,6 @@ jobs:
       id-token: write
     uses: ./.github/workflows/deploy_site.yml
     with:
-      type: branch
+      type: action
       version: ${{ needs.build-site.outputs.version }}
     secrets: inherit
