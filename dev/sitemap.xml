@@ -1,7 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>http://althack.dev/ci/dev/actions/mkdocs-config/</loc>
+         <loc>http://althack.dev/ci/dev/actions/jekyll-config/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/pr_automerge/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/LICENSE/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/pr_bump/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/labeler/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflow_status/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/automerge/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/bump/</loc>
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
@@ -9,23 +45,35 @@
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
+         <loc>http://althack.dev/ci/dev/actions/changelog/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/pr-labeler/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/copier/pr_labeler/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/htmlproofer_site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/version-resolver/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/deploy_site/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/release-draft/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
          <loc>http://althack.dev/ci/dev/workflows/ci_updater/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/actions/jekyll-config/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/CONTRIBUTING/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/copier/ci_update/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/LICENSE/</loc>
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
@@ -37,59 +85,11 @@
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
-         <loc>http://althack.dev/ci/dev/workflows/deploy_site/</loc>
+         <loc>http://althack.dev/ci/dev/actions/mkdocs-config/</loc>
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
-         <loc>http://althack.dev/ci/dev/workflows/release_drafter/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/workflows/automerge/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/copier/pr_automerge/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/actions/pr-labeler/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/actions/release-draft/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/workflows/labeler/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/actions/resolve-config/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/workflow_status/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/copier/site/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/actions/version-resolver/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/actions/changelog/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/workflows/bump/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/actions/setup-labels/</loc>
+         <loc>http://althack.dev/ci/dev/CONTRIBUTING/</loc>
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
@@ -97,15 +97,7 @@
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
-         <loc>http://althack.dev/ci/dev/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/copier/pr_labeler/</loc>
-         <lastmod>2026-05-22</lastmod>
-    </url>
-    <url>
-         <loc>http://althack.dev/ci/dev/copier/pr_bump/</loc>
+         <loc>http://althack.dev/ci/dev/actions/setup-labels/</loc>
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
@@ -113,7 +105,15 @@
          <lastmod>2026-05-22</lastmod>
     </url>
     <url>
-         <loc>http://althack.dev/ci/dev/workflows/htmlproofer_site/</loc>
+         <loc>http://althack.dev/ci/dev/copier/ci_update/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/actions/resolve-config/</loc>
+         <lastmod>2026-05-22</lastmod>
+    </url>
+    <url>
+         <loc>http://althack.dev/ci/dev/workflows/release_drafter/</loc>
          <lastmod>2026-05-22</lastmod>
     </url>
 </urlset>
