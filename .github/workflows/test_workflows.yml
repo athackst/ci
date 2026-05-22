@@ -158,11 +158,8 @@ jobs:
     uses: ./.github/workflows/jekyll_site.yml
     secrets: inherit
     with:
-      path: tests/fixtures/jekyll_site
-      pages: false
+      source: tests/fixtures/jekyll_site
       artifact-name: github-pages-jekyll-test
-      htmlproofer-ignore-urls: |
-        /^https://github.com/athackst/ci$/
 
   workflow-jekyll-site-verify:
     permissions:
