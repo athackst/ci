@@ -1,4 +1,4 @@
-# This file is generated from ./template/.github/workflows/site.yml.jinja.
+# This file is generated from athackst/ci/template/.github/workflows/site.yml.jinja.
 # Do not edit directly; update the template instead.
 
 name: Site
@@ -20,6 +20,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/mkdocs_site.yml
+    with:
+      version: ${{ github.event.release.tag_name || 'dev' }}
 
   test-site:
     needs: build-site
@@ -40,6 +42,6 @@ jobs:
       id-token: write
     uses: ./.github/workflows/deploy_site.yml
     with:
-      type: action
+      type: branch
       version: ${{ needs.build-site.outputs.version }}
     secrets: inherit
