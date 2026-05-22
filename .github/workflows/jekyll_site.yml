@@ -1,107 +1,127 @@
-name: Jekyll Site
+name: Build a Jekyll Site
 
 on:
   workflow_call:
     inputs:
-      pages:
-        description: "Whether to deploy to GitHub Pages. If false, the workflow will build the site and run htmlproofer tests, but not deploy. Default: true."
-        type: boolean
-        default: true
-        required: false
-      enablement:
-        description: "Try to enable Pages for the repository if it is not already enabled. This option requires a token other than `GITHUB_TOKEN` to be provided. In the context of a Personal Access Token, the `repo` scope or Pages write permission is required. In the context of a GitHub App, the `administration:write` and `pages:write` permissions are required."
-        type: boolean
-        default: false
-        required: false
-      htmlproofer-ignore-urls:
-        description: "Optional newline-delimited URLs or regexes for htmlproofer to ignore."
-        type: string
-        required: false
-        default: ""
-      path:
-        description: "Path to the Jekyll project directory."
+      source:
+        description: Optional source directory for the site
         type: string
         required: false
         default: "."
+      version:
+        description: Optional Version identifier to publish, for example 1.2.3
+        type: string
+        required: false
+        default: ""
+      semiliterate:
+        description: Extract docs with semiliterate
+        type: boolean
+        required: false
+        default: true
       artifact-name:
         description: "Artifact name for the built site."
         type: string
         required: false
         default: "github-pages"
-    secrets:
-      token:
-        description: Optional token override used by configure-pages.
-        required: false
+    outputs:
+      host:
+        description: The host name for the site
+        value: ${{ jobs.build-site.outputs.host }}
+      base-path:
+        description: The base-path for the site
+        value: ${{ jobs.build-site.outputs.base-path }}
+      base-url:
+        description: The base url for the site
+        value: ${{ jobs.build-site.outputs.base-url }}
+      version:
+        description: The version number
+        value: ${{ jobs.build-site.outputs.version }}
+      artifact-name:
+        description: The name of the site artifact
+        value: ${{ jobs.build-site.outputs.artifact-name }}
 
 jobs:
   build-site:
     runs-on: ubuntu-latest
     outputs:
-      host: ${{ steps.pages.outputs.host || steps.defaults.outputs.host }}
-      base-path: ${{ steps.pages.outputs.base_path || steps.defaults.outputs.base_path }}
+      host: ${{ steps.pages.outputs.host }}
+      base-path: ${{ steps.pages.outputs.base_path }}
+      base-url: ${{ steps.pages.outputs.base_url }}
+      version: ${{ steps.settings.outputs.version }}
+      version_config: ${{ steps.settings.outputs.version_config }}
+      artifact-name: ${{ inputs.artifact-name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.310.0
-        with:
-          working-directory: ${{ inputs.path }}
-          bundler-cache: true
-
-      - name: Default outputs
-        id: defaults
-        run: |
-          echo "host=${{ github.repository_owner }}.github.io" | tee -a "$GITHUB_OUTPUT"
-          echo "base_path=/${{ github.event.repository.name }}" | tee -a "$GITHUB_OUTPUT"
-
       - name: Setup Pages
         id: pages
-        if: ${{ inputs.pages }}
         uses: actions/configure-pages@v6
+
+      - name: Settings
+        id: settings
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
+
+          versions_path=""
+          versions_config=""
+          if [ -n "$version" ]; then
+            versions_path="/${version}"
+            versions_config="${{ steps.pages.outputs.base_path }}/versions.json"
+          fi
+
+          echo "versions_path=${versions_path}" | tee -a "$GITHUB_OUTPUT"
+          echo "versions_config=${versions_config}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Configure Jekyll site
+        id: config
+        uses: athackst/ci/actions/jekyll-config@main
         with:
-          token: ${{ secrets.token || github.token }}
-          enablement: ${{ inputs.enablement }}
+          versions_config: ${{ steps.settings.outputs.versions_config }}
+          base_path: ${{ steps.pages.outputs.base_path }}
+
+      - name: Extract with semiliterate
+        if: ${{ inputs.semiliterate }}
+        id: semiliterate
+        uses: PrimerPages/semiliterate@main
+        with:
+          config: semiliterate.yml
+          source: ${{ inputs.source }}
+          out: jekyll-site
+          verbose: true
+
+      - name: Debug semiliterate
+        shell: bash
+        run: |
+          ls 
+          tree jekyll-site
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.306.0
+        with:
+          ruby-version: 3.3.4
+          bundler-cache: true
 
       - name: Build with Jekyll
         # Outputs to the './_site' directory by default
-        working-directory: ${{ inputs.path }}
-        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path || steps.defaults.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
-          JEKYLL_GITHUB_TOKEN: ${{ secrets.token || github.token }}
+          JEKYLL_GITHUB_TOKEN: ${{ github.token }}
+          BASEURL: ${{ steps.pages.outputs.base_path }}${{ steps.settings.outputs.versions_path }}
+          SOURCE: ${{ steps.semiliterate.outputs.out  || '.' }}
+          CONFIG_FILE: "_config.yml"
+        run: bundle exec jekyll build --baseurl "${BASEURL}" --source "${SOURCE}" --config "${CONFIG_FILE}"
 
       - name: Debug output
         run: |
-          tree
-          cat "${{ inputs.path }}/_site/index.html"
+          tree _site
+          cat _site/index.html
 
       - name: Upload artifact
+        id: artifact
         uses: actions/upload-pages-artifact@v5
         with:
           name: ${{ inputs.artifact-name }}
-          path: ${{ inputs.path }}/_site
-
-  test-site:
-    needs: build-site
-    permissions:
-      contents: read
-    uses: athackst/ci/.github/workflows/htmlproofer_site.yml@main
-    with:
-      host: ${{ needs.build-site.outputs.host }}
-      base-path: ${{ needs.build-site.outputs.base-path }}
-      artifact-name: ${{ inputs.artifact-name }}
-      htmlproofer-ignore-urls: ${{ inputs.htmlproofer-ignore-urls }}
-
-  # Deployment job
-  deploy:
-    if: ${{ inputs.pages && github.ref == 'refs/heads/main' }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build-site
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+          path: _site
