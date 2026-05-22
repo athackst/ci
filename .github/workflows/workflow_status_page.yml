@@ -61,7 +61,7 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.CI_BOT_TOKEN }}
-          add-paths: docs/workflow_status.md
+          add-paths: workflow_status.md
           branch: docs/refresh-workflow-status
           delete-branch: true
           commit-message: "docs: refresh workflow status page"
