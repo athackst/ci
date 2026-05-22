@@ -216,6 +216,57 @@ jobs:
       htmlproofer-ignore-urls: |
         /^https:\/\/example\.com$/
 
+  workflow-deploy-site-fixture:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Upload deploy-site fixture artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-deploy-site-test
+          path: ./tests/fixtures/htmlproofer_site
+
+  workflow-deploy-site:
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    needs: [workflow-deploy-site-fixture]
+    uses: ./.github/workflows/deploy_site.yml
+    with:
+      type: branch
+      version: dev
+      artifact-name: github-pages-deploy-site-test
+      branch: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
+      dry-run: false
+
+  workflow-deploy-site-verify-and-cleanup:
+    permissions:
+      contents: write
+    needs: [workflow-deploy-site]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify and cleanup deploy-site branch
+        shell: bash
+        env:
+          TEST_BRANCH: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin "$TEST_BRANCH" --depth=1
+          test -n "$(git rev-parse --verify FETCH_HEAD)"
+          git show "FETCH_HEAD:dev/index.html" | grep -q "<html"
+
+          ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
+
   workflow-release-draft:
     permissions:
       contents: write
@@ -430,6 +481,7 @@ jobs:
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify
       - workflow-htmlproofer-site
+      - workflow-deploy-site-verify-and-cleanup
       - workflow-release-draft-verify-and-cleanup
       - workflow-ci-updater-verify
     runs-on: ubuntu-latest
