@@ -66,7 +66,7 @@ jobs:
       ANSWERS_FILE: .copier-answers.ci.yml
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
         with:
           ref: ${{ inputs.checkout-ref || github.ref }}
           fetch-depth: 0

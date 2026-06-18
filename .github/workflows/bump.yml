@@ -47,7 +47,7 @@ jobs:
       target-branch: ${{ steps.bump-commit.outputs.target-branch || steps.bump-pr.outputs.pull-request-branch || '' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
         with:
           fetch-depth: 0
           fetch-tags: true
