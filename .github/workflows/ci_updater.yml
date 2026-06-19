@@ -41,6 +41,9 @@ on:
       changed:
         description: Whether template changes were produced by Copier.
         value: ${{ jobs.update.outputs.changed }}
+      changed-files:
+        description: Newline-delimited list of Copier-managed files changed by the update.
+        value: ${{ jobs.update.outputs.changed-files }}
       branch:
         description: Branch name used for the update, whether a PR was created or changes were pushed directly.
         value: ${{ jobs.update.outputs.branch }}
@@ -60,6 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
+      changed-files: ${{ steps.changes.outputs.changed-files }}
       branch: ${{ steps.pr.outputs.pull-request-branch || steps.push-branch.outputs.branch }}
       pr-url: ${{ steps.pr.outputs.pull-request-url }}
     env:
@@ -96,11 +100,67 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "$(git status --porcelain -- .github ${{ env.ANSWERS_FILE }})" ]; then
+          STATUS_OUTPUT="$(git status --short -- .github "${{ env.ANSWERS_FILE }}")"
+
+          if [ -n "$STATUS_OUTPUT" ]; then
+            CHANGED_FILES="$(printf '%s\n' "$STATUS_OUTPUT" | sed -E 's/^.. //')"
             echo "changed=true" | tee -a "$GITHUB_OUTPUT"
+            {
+              echo "changed-files<<EOF_CHANGED_FILES"
+              printf '%s\n' "$CHANGED_FILES"
+              echo "EOF_CHANGED_FILES"
+            } | tee -a "$GITHUB_OUTPUT"
+
+            echo "Detected Copier-managed changes:"
+            printf '%s\n' "$STATUS_OUTPUT"
+            echo ""
+            echo "Diffstat:"
+            git diff --stat -- .github "${{ env.ANSWERS_FILE }}"
+            echo ""
+            echo "Diff:"
+            git diff -- .github "${{ env.ANSWERS_FILE }}"
           else
             echo "changed=false" | tee -a "$GITHUB_OUTPUT"
+            {
+              echo "changed-files<<EOF_CHANGED_FILES"
+              echo ""
+              echo "EOF_CHANGED_FILES"
+            } | tee -a "$GITHUB_OUTPUT"
+            echo "No Copier-managed changes detected under .github or ${{ env.ANSWERS_FILE }}."
           fi
+
+      - name: Fail on Copier conflicts
+        if: ${{ steps.changes.outputs.changed == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONFLICTED_FILES="$(git diff --name-only --diff-filter=U -- .github "${{ env.ANSWERS_FILE }}")"
+
+          if [ -z "$CONFLICTED_FILES" ]; then
+            exit 0
+          fi
+
+          echo "Copier update left merge conflicts in managed files:"
+          printf '%s\n' "$CONFLICTED_FILES"
+          echo ""
+          echo "Conflict index entries:"
+          git ls-files -u -- .github "${{ env.ANSWERS_FILE }}"
+          echo ""
+          echo "Managed diff:"
+          git diff -- .github "${{ env.ANSWERS_FILE }}"
+
+          {
+            echo "## CI Updater"
+            echo ""
+            echo ":x: Copier update produced merge conflicts."
+            echo ""
+            echo "conflicted-files:"
+            echo '```text'
+            printf '%s\n' "$CONFLICTED_FILES"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit 1
 
       - name: Create or update PR
         id: pr
@@ -170,6 +230,7 @@ jobs:
         env:
           APPLY_RAN: ${{ steps.apply.outputs.ran || 'false' }}
           CHANGED: ${{ steps.changes.outputs.changed || 'false' }}
+          CHANGED_FILES: ${{ steps.changes.outputs.changed-files || '' }}
           CREATE_PR_REQUESTED: ${{ inputs.create-pr }}
           PR_BRANCH_INPUT: ${{ inputs.pr-branch }}
           PR_OPERATION: ${{ steps.pr.outputs.pull-request-operation }}
@@ -203,5 +264,13 @@ jobs:
               echo ":white_check_mark: Update branch pushed without creating a PR."
               echo ""
               echo "pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
+            fi
+
+            if [ -n "${CHANGED_FILES}" ]; then
+              echo ""
+              echo "changed-files:"
+              echo '```text'
+              printf '%s\n' "${CHANGED_FILES}"
+              echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"

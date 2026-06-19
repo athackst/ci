@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "copier.yml"
-      - "template/**"
+      - "copier/template/**"
   workflow_dispatch:
 
 permissions:
