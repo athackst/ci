@@ -366,6 +366,7 @@ jobs:
         shell: bash
         env:
           CHANGED: ${{ needs.workflow-ci-updater.outputs.changed }}
+          CHANGED_FILES: ${{ needs.workflow-ci-updater.outputs.changed-files }}
           BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
           PR_URL: ${{ needs.workflow-ci-updater.outputs.pr-url }}
           EXPECTED_BRANCH: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
@@ -377,6 +378,10 @@ jobs:
             exit 1
           }
           if [ "$CHANGED" = "true" ]; then
+            [ -n "$CHANGED_FILES" ] || {
+              echo "Missing changed-files output when changed=true"
+              exit 1
+            }
             [ -n "$BRANCH" ] || {
               echo "Missing branch output when changed=true"
               exit 1
@@ -399,6 +404,7 @@ jobs:
             echo "### CI updater outputs"
             echo ""
             echo "- changed: \`$CHANGED\`"
+            echo "- changed-files: \`$CHANGED_FILES\`"
             echo "- branch: \`$BRANCH\`"
             echo "- pr-url: \`$PR_URL\`"
             echo ""
