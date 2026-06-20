@@ -320,7 +320,8 @@ jobs:
       fixture-branch: ${{ steps.branch.outputs.fixture-branch }}
     steps:
       - uses: actions/checkout@v6.0.3
-
+        with:
+          fetch-depth: 0
       - name: Create ci_updater fixture branch
         id: branch
         shell: bash
@@ -334,8 +335,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
-          git checkout -B "$FIXTURE_BRANCH" origin/main
+          git checkout -B "$FIXTURE_BRANCH"
           cp "$FIXTURE_ANSWERS_PATH" .copier-answers.ci.yml
           git add -f .copier-answers.ci.yml
           git commit -m "test: prepare ci_updater fixture"
@@ -445,7 +445,6 @@ jobs:
             echo "Fixture content was not updated"
             exit 1
           fi
-
   workflow-ci-updater-cleanup:
     if: ${{ always() }}
     needs:

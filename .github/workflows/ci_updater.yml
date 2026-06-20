@@ -80,6 +80,8 @@ jobs:
       - name: Apply template updates
         id: apply
         shell: bash
+        env:
+          VCS_REF: ${{ inputs.checkout-ref || 'HEAD'}}
         run: |
           set -euo pipefail
           if [ ! -f "${{ env.ANSWERS_FILE }}" ]; then
@@ -89,7 +91,7 @@ jobs:
           fi
 
           echo "ran=true" | tee -a "$GITHUB_OUTPUT"
-          copier update --trust -a "${{ env.ANSWERS_FILE }}" -A --vcs-ref HEAD --defaults
+          copier update --trust -a "${{ env.ANSWERS_FILE }}" -A --vcs-ref ${{ env.VCS_REF }} --defaults
 
       - name: Detect changes
         id: changes
