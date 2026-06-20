@@ -1,0 +1,91 @@
+name: Setup Labeler
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        description: Optional token override for repository label setup.
+        required: false
+    outputs:
+      created-labels:
+        description: Comma-separated labels created.
+        value: ${{ jobs.setup-labels.outputs.created-labels }}
+      updated-labels:
+        description: Comma-separated labels updated.
+        value: ${{ jobs.setup-labels.outputs.updated-labels }}
+      unchanged-labels:
+        description: Comma-separated labels already matching desired metadata.
+        value: ${{ jobs.setup-labels.outputs.unchanged-labels }}
+      skipped-labels:
+        description: Comma-separated labels skipped because required metadata was missing.
+        value: ${{ jobs.setup-labels.outputs.skipped-labels }}
+
+jobs:
+  setup-labels:
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    outputs:
+      created-labels: ${{ steps.setup-labels.outputs.created-labels }}
+      updated-labels: ${{ steps.setup-labels.outputs.updated-labels }}
+      unchanged-labels: ${{ steps.setup-labels.outputs.unchanged-labels }}
+      skipped-labels: ${{ steps.setup-labels.outputs.skipped-labels }}
+    steps:
+      - uses: actions/checkout@v6.0.3
+
+      - name: Setup labels
+        id: setup-labels
+        uses: athackst/ci/actions/setup-labels@main
+        with:
+          github-token: ${{ secrets.token || github.token }}
+          configuration-path: .github/ci-config.yml
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          CREATED_LABELS: ${{ steps.setup-labels.outputs.created-labels }}
+          UPDATED_LABELS: ${{ steps.setup-labels.outputs.updated-labels }}
+          UNCHANGED_LABELS: ${{ steps.setup-labels.outputs.unchanged-labels }}
+          SKIPPED_LABELS: ${{ steps.setup-labels.outputs.skipped-labels }}
+        run: |
+          set -euo pipefail
+
+          write_labels() {
+            local title="$1"
+            local labels="$2"
+
+            if [ -z "$labels" ]; then
+              return
+            fi
+
+            echo "### $title"
+            echo ""
+            echo '```text'
+            tr ',' '\n' <<< "$labels"
+            echo '```'
+            echo ""
+          }
+
+          {
+            echo "## Setup Labeler"
+            echo ""
+
+            if [ "${{ job.status }}" = "success" ]; then
+              echo "Repository label setup completed."
+            else
+              echo "Repository label setup did not complete successfully."
+            fi
+            echo ""
+
+            write_labels "Created labels" "$CREATED_LABELS"
+            write_labels "Updated labels" "$UPDATED_LABELS"
+            write_labels "Unchanged labels" "$UNCHANGED_LABELS"
+            write_labels "Skipped labels" "$SKIPPED_LABELS"
+
+            if [ -z "$CREATED_LABELS$UPDATED_LABELS$UNCHANGED_LABELS$SKIPPED_LABELS" ]; then
+              echo "No label results were reported."
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

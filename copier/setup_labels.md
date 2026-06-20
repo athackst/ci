@@ -15,22 +15,21 @@ Always generated.
 ## Calls
 
 ```yaml
-uses: athackst/ci/actions/setup-labels@main
+uses: athackst/ci/.github/workflows/setup_labeler.yml@main
 ```
 
-See [`setup-labels`](../actions/setup-labels/README.md) for the composite
-action contract.
+See [`setup_labeler.yml`](../workflows/setup_labeler.md) for the reusable
+workflow contract.
 
 ## Permissions
 
-The generated workflow does not declare an explicit `permissions` block. It
-uses `secrets.CI_BOT_TOKEN` when available, falling back to `github.token`.
-
-The token must be able to create and update repository labels. `issues: write`
-is typically sufficient for that operation.
+- `contents: read` to check out `.github/ci-config.yml`.
+- `issues: write` to create and update repository labels.
 
 ## Behavior
 
-- Checks out the repository.
+- Uses `secrets.CI_BOT_TOKEN` as the reusable workflow `token` secret.
 - Reads `.github/ci-config.yml`.
-- Creates, updates, skips, or leaves labels unchanged based on label metadata.
+- Creates, updates, skips, or leaves labels unchanged based on label metadata
+  through the [`setup-labels`](../actions/setup-labels/README.md) composite
+  action.
