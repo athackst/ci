@@ -1,0 +1,43 @@
+name: HTMLProofer Cache
+description: Run HTMLProofer with shared cache restore and save steps.
+inputs:
+  host:
+    description: Site host for htmlproofer URL swapping.
+    required: false
+    default: ""
+  base-path:
+    description: Site base path for htmlproofer URL swapping.
+    required: false
+    default: ""
+  ignore-urls:
+    description: Newline-delimited URLs or regexes to ignore.
+    required: false
+    default: ""
+  swap-urls:
+    description: Newline-delimited URL rewrite rules for HTMLProofer.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Cache HTMLProofer
+      uses: actions/cache@v5
+      with:
+        path: tmp/.htmlproofer
+        key: ${{ runner.os }}-htmlproofer
+
+    - name: Test with htmlproofer
+      uses: athackst/htmlproofer-action@main
+      with:
+        max_concurrency: 10
+        host: ${{ inputs.host }}
+        base_path: ${{ inputs.base-path }}
+        ignore_urls: ${{ inputs.ignore-urls }}
+        swap_urls: ${{ inputs.swap-urls }}
+
+    - name: Save cache
+      if: always()
+      uses: actions/cache/save@v5
+      with:
+        key: ${{ runner.os }}-htmlproofer
+        path: tmp/.htmlproofer
