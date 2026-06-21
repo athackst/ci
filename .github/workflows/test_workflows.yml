@@ -39,23 +39,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Verify bump workflow result
+        id: verify-bump
         shell: bash
         env:
           RESULT: ${{ needs.workflow-bump.result }}
         run: |
           set -euo pipefail
-          [ "$RESULT" = "success" ] || {
-            echo "workflow-bump result was: $RESULT"
+          if [ "$RESULT" = "success" ]; then
+            echo "summary=workflow-bump completed successfully." | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "summary=workflow-bump result was: $RESULT" | tee -a "$GITHUB_OUTPUT"
             exit 1
-          }
+          fi
 
       - name: Checkout PR head branch
+        id: checkout-bump
         uses: actions/checkout@v6.0.3
         with:
           ref: ci-test/pr-bump-pr-${{ github.event.pull_request.number }}
           fetch-depth: 1
 
       - name: Verify bump fixture output
+        id: verify-fixture
         shell: bash
         env:
           RUN_ID: ${{ github.run_id }}
@@ -64,38 +69,54 @@ jobs:
           set -euo pipefail
 
           OUT_FILE="tests/fixtures/pr_bump_output.txt"
+          STATUS="success"
+          SUMMARY="PR bump fixture output matched the expected metadata."
+          ERRORS=()
+
+          set_failure() {
+            STATUS="failure"
+            ERRORS+=("$1")
+          }
+
           [ -f "$OUT_FILE" ] || {
-            echo "Missing pr_bump fixture output: $OUT_FILE"
-            exit 1
+            set_failure "Missing pr_bump fixture output: $OUT_FILE"
           }
 
-          grep -q "^run_id=${RUN_ID}$" "$OUT_FILE"
-          grep -q "^run_attempt=${RUN_ATTEMPT}$" "$OUT_FILE"
-          grep -q '^from_ref=' "$OUT_FILE"
-          grep -q '^version=' "$OUT_FILE"
-          grep -q '^major_version=' "$OUT_FILE"
-          grep -q '^minor_version=' "$OUT_FILE"
-          grep -q '^patch_version=' "$OUT_FILE"
+          if [ -f "$OUT_FILE" ]; then
+            grep -q "^run_id=${RUN_ID}$" "$OUT_FILE" || set_failure "run_id did not match"
+            grep -q "^run_attempt=${RUN_ATTEMPT}$" "$OUT_FILE" || set_failure "run_attempt did not match"
+            grep -q '^from_ref=' "$OUT_FILE" || set_failure "from_ref was missing"
+            grep -q '^version=' "$OUT_FILE" || set_failure "version was missing"
+            grep -q '^major_version=' "$OUT_FILE" || set_failure "major_version was missing"
+            grep -q '^minor_version=' "$OUT_FILE" || set_failure "minor_version was missing"
+            grep -q '^patch_version=' "$OUT_FILE" || set_failure "patch_version was missing"
 
-          VERSION="$(sed -n 's/^version=//p' "$OUT_FILE")"
-          VERSION_PARTS="$(sed -n 's/^version_parts=//p' "$OUT_FILE")"
-          [ -n "$VERSION" ] || {
-            echo "version was empty"
-            cat "$OUT_FILE"
-            exit 1
-          }
-          [ "$VERSION" = "$VERSION_PARTS" ] || {
-            echo "version_parts did not match version"
-            cat "$OUT_FILE"
-            exit 1
-          }
+            VERSION="$(sed -n 's/^version=//p' "$OUT_FILE")"
+            VERSION_PARTS="$(sed -n 's/^version_parts=//p' "$OUT_FILE")"
+            [ -n "$VERSION" ] || set_failure "version was empty"
+            [ "$VERSION" = "$VERSION_PARTS" ] || set_failure "version_parts did not match version"
+          fi
+
+          if [ "$STATUS" != "success" ]; then
+            SUMMARY="PR bump fixture output verification failed."
+          fi
 
           {
-            echo "### PR bump fixture output"
-            echo ""
-            cat "$OUT_FILE"
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "status=$STATUS"
+            echo "summary=$SUMMARY"
+            echo "errors<<EOF_ERRORS"
+            printf '%s\n' "${ERRORS[@]}"
+            echo "EOF_ERRORS"
+            echo "details<<EOF_DETAILS"
+            if [ -f "$OUT_FILE" ]; then
+              cat "$OUT_FILE"
+            fi
+            echo "EOF_DETAILS"
+          } | tee -a "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
 
       - name: Delete pr_bump test branch
         if: ${{ always() }}
@@ -107,6 +128,66 @@ jobs:
           set -euo pipefail
           ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          BUMP_STATUS: ${{ steps.verify-bump.outcome || 'failure' }}
+          BUMP_SUMMARY: ${{ steps.verify-bump.outputs.summary || 'workflow-bump result was unavailable.' }}
+          CHECKOUT_OUTCOME: ${{ steps.checkout-bump.outcome || 'skipped' }}
+          FIXTURE_STATUS: ${{ steps.verify-fixture.outcome || 'skipped' }}
+          FIXTURE_SUMMARY: ${{ steps.verify-fixture.outputs.summary || '' }}
+          FIXTURE_ERRORS: ${{ steps.verify-fixture.outputs.errors || '' }}
+          FIXTURE_DETAILS: ${{ steps.verify-fixture.outputs.details || '' }}
+        run: |
+          set -euo pipefail
+          SUMMARY="$BUMP_SUMMARY"
+          STATUS="$BUMP_STATUS"
+
+          if [ "$BUMP_STATUS" = "success" ] && [ "$CHECKOUT_OUTCOME" != "success" ]; then
+            STATUS="failure"
+            SUMMARY="Checkout of the pr_bump test branch failed."
+          elif [ "$BUMP_STATUS" = "success" ]; then
+            STATUS="$FIXTURE_STATUS"
+            SUMMARY="$FIXTURE_SUMMARY"
+          fi
+
+          {
+            echo "### bump.yml verification"
+            echo ""
+            if [ "$STATUS" = "success" ]; then
+              echo ":white_check_mark: $SUMMARY"
+            else
+              echo ":x: $SUMMARY"
+            fi
+
+            if [ -n "$FIXTURE_ERRORS" ] || [ -n "$FIXTURE_DETAILS" ]; then
+              echo ""
+              echo "<details><summary>Details</summary>"
+              echo ""
+              if [ -n "$FIXTURE_ERRORS" ]; then
+                echo "Errors:"
+                echo '```text'
+                printf '%s\n' "$FIXTURE_ERRORS"
+                echo '```'
+                echo ""
+              fi
+              if [ -n "$FIXTURE_DETAILS" ]; then
+                echo "Fixture output:"
+                echo '```text'
+                printf '%s\n' "$FIXTURE_DETAILS"
+                echo '```'
+              fi
+              echo ""
+              echo "</details>"
+            fi
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
 
   workflow-mkdocs-site:
     permissions:
@@ -131,9 +212,19 @@ jobs:
           path: ./artifact
 
       - name: Verify mkdocs artifact contents
+        id: verify-mkdocs
         shell: bash
         run: |
           set -euo pipefail
+
+          STATUS="success"
+          SUMMARY="MkDocs artifact extracted successfully and includes site/index.html."
+          ERRORS=()
+
+          set_failure() {
+            STATUS="failure"
+            ERRORS+=("$1")
+          }
 
           mkdir -p site
           if [ -f ./artifact/artifact.tar ]; then
@@ -147,8 +238,74 @@ jobs:
             fi
           fi
 
-          test -f site/index.html
-          grep -q "<html" site/index.html
+          test -f site/index.html || set_failure "site/index.html was missing"
+          if [ -f site/index.html ]; then
+            grep -q "<html" site/index.html || set_failure "site/index.html did not contain an HTML tag"
+          fi
+
+          if [ "$STATUS" != "success" ]; then
+            SUMMARY="MkDocs artifact verification failed."
+          fi
+
+          {
+            echo "summary=$SUMMARY"
+            echo "errors<<EOF_ERRORS"
+            printf '%s\n' "${ERRORS[@]}"
+            echo "EOF_ERRORS"
+            echo "details<<EOF_DETAILS"
+            find site -maxdepth 2 -type f | sort
+            echo "EOF_DETAILS"
+          } | tee -a "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VERIFY_STATUS: ${{ steps.verify-mkdocs.outcome || 'failure' }}
+          VERIFY_SUMMARY: ${{ steps.verify-mkdocs.outputs.summary || 'MkDocs artifact verification did not run.' }}
+          VERIFY_ERRORS: ${{ steps.verify-mkdocs.outputs.errors || '' }}
+          VERIFY_DETAILS: ${{ steps.verify-mkdocs.outputs.details || '' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### mkdocs_site.yml verification"
+            echo ""
+            if [ "$VERIFY_STATUS" = "success" ]; then
+              echo ":white_check_mark: $VERIFY_SUMMARY"
+            else
+              echo ":x: $VERIFY_SUMMARY"
+            fi
+
+            if [ -n "$VERIFY_ERRORS" ] || [ -n "$VERIFY_DETAILS" ]; then
+              echo ""
+              echo "<details><summary>Details</summary>"
+              echo ""
+              if [ -n "$VERIFY_ERRORS" ]; then
+                echo "Errors:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_ERRORS"
+                echo '```'
+                echo ""
+              fi
+              if [ -n "$VERIFY_DETAILS" ]; then
+                echo "Extracted files:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_DETAILS"
+                echo '```'
+              fi
+              echo ""
+              echo "</details>"
+            fi
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$VERIFY_STATUS" != "success" ]; then
+            exit 1
+          fi
 
   workflow-jekyll-site:
     permissions:
@@ -174,9 +331,19 @@ jobs:
           path: ./artifact
 
       - name: Verify Jekyll artifact contents
+        id: verify-jekyll
         shell: bash
         run: |
           set -euo pipefail
+
+          STATUS="success"
+          SUMMARY="Jekyll artifact extracted successfully and includes the expected fixture content."
+          ERRORS=()
+
+          set_failure() {
+            STATUS="failure"
+            ERRORS+=("$1")
+          }
 
           mkdir -p _site
           if [ -f ./artifact/artifact.tar ]; then
@@ -190,8 +357,74 @@ jobs:
             fi
           fi
 
-          test -f _site/index.html
-          grep -q "Jekyll Fixture" _site/index.html
+          test -f _site/index.html || set_failure "_site/index.html was missing"
+          if [ -f _site/index.html ]; then
+            grep -q "Jekyll Fixture" _site/index.html || set_failure "_site/index.html did not contain the expected fixture content"
+          fi
+
+          if [ "$STATUS" != "success" ]; then
+            SUMMARY="Jekyll artifact verification failed."
+          fi
+
+          {
+            echo "summary=$SUMMARY"
+            echo "errors<<EOF_ERRORS"
+            printf '%s\n' "${ERRORS[@]}"
+            echo "EOF_ERRORS"
+            echo "details<<EOF_DETAILS"
+            find _site -maxdepth 2 -type f | sort
+            echo "EOF_DETAILS"
+          } | tee -a "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VERIFY_STATUS: ${{ steps.verify-jekyll.outcome || 'failure' }}
+          VERIFY_SUMMARY: ${{ steps.verify-jekyll.outputs.summary || 'Jekyll artifact verification did not run.' }}
+          VERIFY_ERRORS: ${{ steps.verify-jekyll.outputs.errors || '' }}
+          VERIFY_DETAILS: ${{ steps.verify-jekyll.outputs.details || '' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### jekyll_site.yml verification"
+            echo ""
+            if [ "$VERIFY_STATUS" = "success" ]; then
+              echo ":white_check_mark: $VERIFY_SUMMARY"
+            else
+              echo ":x: $VERIFY_SUMMARY"
+            fi
+
+            if [ -n "$VERIFY_ERRORS" ] || [ -n "$VERIFY_DETAILS" ]; then
+              echo ""
+              echo "<details><summary>Details</summary>"
+              echo ""
+              if [ -n "$VERIFY_ERRORS" ]; then
+                echo "Errors:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_ERRORS"
+                echo '```'
+                echo ""
+              fi
+              if [ -n "$VERIFY_DETAILS" ]; then
+                echo "Extracted files:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_DETAILS"
+                echo '```'
+              fi
+              echo ""
+              echo "</details>"
+            fi
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$VERIFY_STATUS" != "success" ]; then
+            exit 1
+          fi
 
   workflow-htmlproofer-site-fixture:
     permissions:
@@ -252,7 +485,49 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.3
 
-      - name: Verify and cleanup deploy-site branch
+      - name: Verify deploy-site branch
+        id: verify-deploy-site
+        shell: bash
+        env:
+          TEST_BRANCH: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+
+          STATUS="success"
+          SUMMARY="deploy_site.yml published the expected branch content."
+          ERRORS=()
+
+          set_failure() {
+            STATUS="failure"
+            ERRORS+=("$1")
+          }
+
+          git fetch origin "$TEST_BRANCH" --depth=1 || set_failure "Failed to fetch $TEST_BRANCH"
+          test -n "$(git rev-parse --verify FETCH_HEAD)" || set_failure "FETCH_HEAD was empty"
+          if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
+            git show "FETCH_HEAD:dev/index.html" | grep -q "<html" || set_failure "dev/index.html did not contain an HTML tag"
+          fi
+
+          if [ "$STATUS" != "success" ]; then
+            SUMMARY="deploy_site.yml verification failed."
+          fi
+
+          {
+            echo "summary=$SUMMARY"
+            echo "errors<<EOF_ERRORS"
+            printf '%s\n' "${ERRORS[@]}"
+            echo "EOF_ERRORS"
+            echo "details<<EOF_DETAILS"
+            echo "$TEST_BRANCH"
+            echo "EOF_DETAILS"
+          } | tee -a "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
+
+      - name: Delete deploy-site test branch
+        if: ${{ always() }}
         shell: bash
         env:
           TEST_BRANCH: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
@@ -260,12 +535,54 @@ jobs:
         run: |
           set -euo pipefail
 
-          git fetch origin "$TEST_BRANCH" --depth=1
-          test -n "$(git rev-parse --verify FETCH_HEAD)"
-          git show "FETCH_HEAD:dev/index.html" | grep -q "<html"
-
           ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VERIFY_STATUS: ${{ steps.verify-deploy-site.outcome || 'failure' }}
+          VERIFY_SUMMARY: ${{ steps.verify-deploy-site.outputs.summary || 'deploy_site.yml verification did not run.' }}
+          VERIFY_ERRORS: ${{ steps.verify-deploy-site.outputs.errors || '' }}
+          VERIFY_DETAILS: ${{ steps.verify-deploy-site.outputs.details || '' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### deploy_site.yml verification"
+            echo ""
+            if [ "$VERIFY_STATUS" = "success" ]; then
+              echo ":white_check_mark: $VERIFY_SUMMARY"
+            else
+              echo ":x: $VERIFY_SUMMARY"
+            fi
+
+            if [ -n "$VERIFY_ERRORS" ] || [ -n "$VERIFY_DETAILS" ]; then
+              echo ""
+              echo "<details><summary>Details</summary>"
+              echo ""
+              if [ -n "$VERIFY_ERRORS" ]; then
+                echo "Errors:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_ERRORS"
+                echo '```'
+                echo ""
+              fi
+              if [ -n "$VERIFY_DETAILS" ]; then
+                echo "Branch:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_DETAILS"
+                echo '```'
+              fi
+              echo ""
+              echo "</details>"
+            fi
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$VERIFY_STATUS" != "success" ]; then
+            exit 1
+          fi
 
   workflow-release-draft:
     permissions:
@@ -286,7 +603,8 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Verify and cleanup workflow release draft
+      - name: Verify workflow release draft
+        id: verify-release-draft
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -296,21 +614,119 @@ jobs:
         run: |
           set -euo pipefail
 
+          STATUS="success"
+          SUMMARY="release_drafter.yml created the expected draft release."
+          ERRORS=()
+          DETAILS=""
+
+          set_failure() {
+            STATUS="failure"
+            ERRORS+=("$1")
+          }
+
           if [ -z "${RELEASE_ID:-}" ]; then
-            echo "No release id returned; nothing to verify or clean up."
+            SUMMARY="No release id returned; nothing to verify or clean up."
+            {
+              echo "summary=$SUMMARY"
+              echo "errors<<EOF_ERRORS"
+              echo "EOF_ERRORS"
+              echo "details<<EOF_DETAILS"
+              echo "EOF_DETAILS"
+            } | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          RELEASE_JSON="$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}")"
-          ACTUAL_NAME="$(jq -r '.name' <<< "$RELEASE_JSON")"
-          ACTUAL_TAG="$(jq -r '.tag_name' <<< "$RELEASE_JSON")"
-          ACTUAL_DRAFT="$(jq -r '.draft' <<< "$RELEASE_JSON")"
+          RELEASE_JSON="$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}")" || {
+            set_failure "Failed to fetch release $RELEASE_ID"
+            RELEASE_JSON=""
+          }
 
-          [ "$ACTUAL_DRAFT" = "true" ] || { echo "Expected draft release"; exit 1; }
-          [ "$ACTUAL_NAME" = "$EXPECTED_NAME" ] || { echo "Name mismatch"; exit 1; }
-          [ "$ACTUAL_TAG" = "$EXPECTED_TAG" ] || { echo "Tag mismatch"; exit 1; }
+          if [ -n "$RELEASE_JSON" ]; then
+            ACTUAL_NAME="$(jq -r '.name' <<< "$RELEASE_JSON")"
+            ACTUAL_TAG="$(jq -r '.tag_name' <<< "$RELEASE_JSON")"
+            ACTUAL_DRAFT="$(jq -r '.draft' <<< "$RELEASE_JSON")"
 
+            [ "$ACTUAL_DRAFT" = "true" ] || set_failure "Expected draft=true, got $ACTUAL_DRAFT"
+            [ "$ACTUAL_NAME" = "$EXPECTED_NAME" ] || set_failure "Expected name '$EXPECTED_NAME', got '$ACTUAL_NAME'"
+            [ "$ACTUAL_TAG" = "$EXPECTED_TAG" ] || set_failure "Expected tag '$EXPECTED_TAG', got '$ACTUAL_TAG'"
+
+            DETAILS="$(printf 'id: %s\nname: %s\ntag: %s\ndraft: %s\n' \
+              "$RELEASE_ID" "$ACTUAL_NAME" "$ACTUAL_TAG" "$ACTUAL_DRAFT")"
+          fi
+
+          if [ "$STATUS" != "success" ]; then
+            SUMMARY="release_drafter.yml verification failed."
+          fi
+
+          {
+            echo "summary=$SUMMARY"
+            echo "errors<<EOF_ERRORS"
+            printf '%s\n' "${ERRORS[@]}"
+            echo "EOF_ERRORS"
+            echo "details<<EOF_DETAILS"
+            printf '%s\n' "$DETAILS"
+            echo "EOF_DETAILS"
+          } | tee -a "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
+
+      - name: Delete workflow release draft
+        if: ${{ always() && needs.workflow-release-draft.outputs.id != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.workflow-release-draft.outputs.id }}
+        run: |
+          set -euo pipefail
           gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VERIFY_STATUS: ${{ steps.verify-release-draft.outcome || 'failure' }}
+          VERIFY_SUMMARY: ${{ steps.verify-release-draft.outputs.summary || 'release_drafter.yml verification did not run.' }}
+          VERIFY_ERRORS: ${{ steps.verify-release-draft.outputs.errors || '' }}
+          VERIFY_DETAILS: ${{ steps.verify-release-draft.outputs.details || '' }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### release_drafter.yml verification"
+            echo ""
+            if [ "$VERIFY_STATUS" = "success" ]; then
+              echo ":white_check_mark: $VERIFY_SUMMARY"
+            else
+              echo ":x: $VERIFY_SUMMARY"
+            fi
+
+            if [ -n "$VERIFY_ERRORS" ] || [ -n "$VERIFY_DETAILS" ]; then
+              echo ""
+              echo "<details><summary>Details</summary>"
+              echo ""
+              if [ -n "$VERIFY_ERRORS" ]; then
+                echo "Errors:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_ERRORS"
+                echo '```'
+                echo ""
+              fi
+              if [ -n "$VERIFY_DETAILS" ]; then
+                echo "Release:"
+                echo '```text'
+                printf '%s\n' "$VERIFY_DETAILS"
+                echo '```'
+              fi
+              echo ""
+              echo "</details>"
+            fi
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$VERIFY_STATUS" != "success" ]; then
+            exit 1
+          fi
 
   workflow-ci-updater-fixture-branch:
     permissions:
@@ -356,13 +772,15 @@ jobs:
       pr-branch: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
       checkout-ref: ${{ needs.workflow-ci-updater-fixture-branch.outputs.fixture-branch }}
 
-  workflow-ci-updater-verify:
+  workflow-ci-updater-verify-and-cleanup:
     permissions:
       contents: write
     needs: [workflow-ci-updater]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify ci_updater outputs
+        id: verify-ci-updater-outputs
         shell: bash
         env:
           CHANGED: ${{ needs.workflow-ci-updater.outputs.changed }}
@@ -373,48 +791,47 @@ jobs:
         run: |
           set -euo pipefail
 
-          [ "$CHANGED" = "true" ] || [ "$CHANGED" = "false" ] || {
-            echo "Invalid changed output: $CHANGED"
-            exit 1
+          STATUS="success"
+          SUMMARY="ci_updater.yml returned valid outputs."
+          ERRORS=()
+
+          set_failure() {
+            STATUS="failure"
+            ERRORS+=("$1")
           }
+
+          [ "$CHANGED" = "true" ] || [ "$CHANGED" = "false" ] || set_failure "Invalid changed output: $CHANGED"
           if [ "$CHANGED" = "true" ]; then
-            [ -n "$CHANGED_FILES" ] || {
-              echo "Missing changed-files output when changed=true"
-              exit 1
-            }
-            [ -n "$BRANCH" ] || {
-              echo "Missing branch output when changed=true"
-              exit 1
-            }
-            [ "$BRANCH" != "HEAD" ] || {
-              echo "Invalid branch output: HEAD"
-              exit 1
-            }
-            [ "$BRANCH" = "$EXPECTED_BRANCH" ] || {
-              echo "Unexpected branch output: $BRANCH"
-              exit 1
-            }
-            [ -z "$PR_URL" ] || {
-              echo "Expected no pr-url when create-pr=false"
-              exit 1
-            }
+            [ -n "$CHANGED_FILES" ] || set_failure "Missing changed-files output when changed=true"
+            [ -n "$BRANCH" ] || set_failure "Missing branch output when changed=true"
+            [ "$BRANCH" != "HEAD" ] || set_failure "Invalid branch output: HEAD"
+            [ "$BRANCH" = "$EXPECTED_BRANCH" ] || set_failure "Unexpected branch output: $BRANCH"
+            [ -z "$PR_URL" ] || set_failure "Expected no pr-url when create-pr=false"
+          fi
+
+          if [ "$STATUS" != "success" ]; then
+            SUMMARY="ci_updater.yml returned invalid outputs."
           fi
 
           {
-            echo "### CI updater outputs"
-            echo ""
-            echo "- changed: \`$CHANGED\`"
-            echo "- changed-files: \`$CHANGED_FILES\`"
-            echo "- branch: \`$BRANCH\`"
-            echo "- pr-url: \`$PR_URL\`"
-            echo ""
-            if [ "$CHANGED" != "true" ]; then
-              echo "_No branch pushed (likely no template changes)._"
-              echo ""
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "summary=$SUMMARY"
+            echo "errors<<EOF_ERRORS"
+            printf '%s\n' "${ERRORS[@]}"
+            echo "EOF_ERRORS"
+            echo "details<<EOF_DETAILS"
+            echo "changed: $CHANGED"
+            echo "changed-files: $CHANGED_FILES"
+            echo "branch: $BRANCH"
+            echo "pr-url: $PR_URL"
+            echo "EOF_DETAILS"
+          } | tee -a "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
 
       - name: Verify ci_updater branch exists
+        id: verify-ci-updater-branch
         if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
         shell: bash
         env:
@@ -424,15 +841,28 @@ jobs:
           set -euo pipefail
           for sleep_seconds in 1 2 4 8 16 24; do
             if gh api "repos/${{ github.repository }}/branches/${TEST_BRANCH}" >/dev/null 2>&1; then
+              {
+                echo "summary=ci_updater.yml branch exists."
+                echo "errors<<EOF_ERRORS"
+                echo "EOF_ERRORS"
+                echo "details=branch: ${TEST_BRANCH}"
+              } | tee -a "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "Branch ${TEST_BRANCH} not visible yet; retrying in ${sleep_seconds}s..."
             sleep "${sleep_seconds}"
           done
-          echo "Branch ${TEST_BRANCH} was not found after waiting."
+          {
+            echo "summary=ci_updater.yml branch was not found after waiting."
+            echo "errors<<EOF_ERRORS"
+            echo "Branch ${TEST_BRANCH} was not found after waiting."
+            echo "EOF_ERRORS"
+            echo "details=branch: ${TEST_BRANCH}"
+          } | tee -a "$GITHUB_OUTPUT"
           exit 1
 
       - name: Verify ci_updater branch content
+        id: checkout-ci-updater-branch
         if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
         uses: actions/checkout@v6.0.3
         with:
@@ -440,26 +870,45 @@ jobs:
           fetch-depth: 1
 
       - name: Compare ci_updater fixture result
+        id: compare-ci-updater-fixture
         if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
         shell: bash
         env:
           EXPECTED_CONTENT: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          grep -q "^## What's changed" .github/release_template.md
+
+          STATUS="success"
+          SUMMARY="ci_updater.yml updated the fixture branch content."
+          ERRORS=()
+
+          if ! grep -q "^## What's changed" .github/release_template.md; then
+            STATUS="failure"
+            ERRORS+=("Missing expected release template heading.")
+          fi
           if grep -q '^outdated fixture content$' .github/release_template.md; then
-            echo "Fixture content was not updated"
+            STATUS="failure"
+            ERRORS+=("Fixture content was not updated.")
+          fi
+
+          if [ "$STATUS" != "success" ]; then
+            SUMMARY="ci_updater.yml fixture content verification failed."
+          fi
+
+          {
+            echo "summary=$SUMMARY"
+            echo "errors<<EOF_ERRORS"
+            printf '%s\n' "${ERRORS[@]}"
+            echo "EOF_ERRORS"
+            echo "details=.github/release_template.md"
+          } | tee -a "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" != "success" ]; then
             exit 1
           fi
-  workflow-ci-updater-cleanup:
-    if: ${{ always() }}
-    needs:
-      - workflow-ci-updater-verify
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Delete ci_updater test branch
+        if: ${{ always() }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -470,6 +919,7 @@ jobs:
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
 
       - name: Delete ci_updater fixture branch
+        if: ${{ always() }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -478,6 +928,96 @@ jobs:
           set -euo pipefail
           ENCODED_BRANCH="${FIXTURE_BRANCH//\//%2F}"
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          CHANGED: ${{ needs.workflow-ci-updater.outputs.changed }}
+          OUTPUTS_STATUS: ${{ steps.verify-ci-updater-outputs.outcome || 'failure' }}
+          OUTPUTS_SUMMARY: ${{ steps.verify-ci-updater-outputs.outputs.summary || 'ci_updater.yml output verification did not run.' }}
+          OUTPUTS_ERRORS: ${{ steps.verify-ci-updater-outputs.outputs.errors || '' }}
+          OUTPUTS_DETAILS: ${{ steps.verify-ci-updater-outputs.outputs.details || '' }}
+          BRANCH_STATUS: ${{ steps.verify-ci-updater-branch.outcome || 'skipped' }}
+          BRANCH_SUMMARY: ${{ steps.verify-ci-updater-branch.outputs.summary || 'ci_updater.yml branch exists.' }}
+          BRANCH_ERRORS: ${{ steps.verify-ci-updater-branch.outputs.errors || '' }}
+          BRANCH_DETAILS: ${{ steps.verify-ci-updater-branch.outputs.details || '' }}
+          CHECKOUT_STATUS: ${{ steps.checkout-ci-updater-branch.outcome || 'skipped' }}
+          COMPARE_STATUS: ${{ steps.compare-ci-updater-fixture.outcome || 'skipped' }}
+          COMPARE_SUMMARY: ${{ steps.compare-ci-updater-fixture.outputs.summary || 'ci_updater.yml fixture comparison did not run.' }}
+          COMPARE_ERRORS: ${{ steps.compare-ci-updater-fixture.outputs.errors || '' }}
+          COMPARE_DETAILS: ${{ steps.compare-ci-updater-fixture.outputs.details || '' }}
+        run: |
+          set -euo pipefail
+
+          STATUS="success"
+          SUMMARY="ci_updater.yml verification passed."
+          if [ "$OUTPUTS_STATUS" != "success" ]; then
+            STATUS="failure"
+            SUMMARY="$OUTPUTS_SUMMARY"
+          elif [ "$CHANGED" = "true" ] && [ "$BRANCH_STATUS" != "success" ]; then
+            STATUS="failure"
+            SUMMARY="$BRANCH_SUMMARY"
+          elif [ "$CHANGED" = "true" ] && [ "$CHECKOUT_STATUS" != "success" ]; then
+            STATUS="failure"
+            SUMMARY="ci_updater.yml branch checkout failed."
+          elif [ "$CHANGED" = "true" ] && [ "$COMPARE_STATUS" != "success" ]; then
+            STATUS="failure"
+            SUMMARY="$COMPARE_SUMMARY"
+          elif [ "$CHANGED" != "true" ]; then
+            SUMMARY="ci_updater.yml reported no template changes."
+          fi
+
+          {
+            echo "### ci_updater.yml verification"
+            echo ""
+            if [ "$STATUS" = "success" ]; then
+              echo ":white_check_mark: $SUMMARY"
+            else
+              echo ":x: $SUMMARY"
+            fi
+            echo ""
+            echo "<details><summary>Details</summary>"
+            echo ""
+            echo "Step outcomes:"
+            echo '```text'
+            echo "outputs: $OUTPUTS_STATUS"
+            echo "branch: $BRANCH_STATUS"
+            echo "checkout: $CHECKOUT_STATUS"
+            echo "compare: $COMPARE_STATUS"
+            echo '```'
+            echo ""
+            if [ -n "$OUTPUTS_DETAILS" ]; then
+              echo "Outputs:"
+              echo '```text'
+              printf '%s\n' "$OUTPUTS_DETAILS"
+              echo '```'
+              echo ""
+            fi
+            if [ -n "$OUTPUTS_ERRORS$BRANCH_ERRORS$COMPARE_ERRORS" ]; then
+              echo "Errors:"
+              echo '```text'
+              printf '%s\n' "$OUTPUTS_ERRORS"
+              printf '%s\n' "$BRANCH_ERRORS"
+              printf '%s\n' "$COMPARE_ERRORS"
+              echo '```'
+              echo ""
+            fi
+            if [ -n "$BRANCH_DETAILS$COMPARE_DETAILS" ]; then
+              echo "Checked:"
+              echo '```text'
+              printf '%s\n' "$BRANCH_DETAILS"
+              printf '%s\n' "$COMPARE_DETAILS"
+              echo '```'
+              echo ""
+            fi
+            echo "</details>"
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
 
   workflows-success:
     needs:
@@ -488,7 +1028,7 @@ jobs:
       - workflow-htmlproofer-site
       - workflow-deploy-site-verify-and-cleanup
       - workflow-release-draft-verify-and-cleanup
-      - workflow-ci-updater-verify
+      - workflow-ci-updater-verify-and-cleanup
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
