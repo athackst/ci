@@ -26,7 +26,7 @@ jobs:
 
 | Name | Description | Default |
 | --- | --- | --- |
-| `token` | (optional) Token used for checkout, push, PR operations, issue creation, and label setup. | `${{ github.token }}` |
+| `token` | (optional) Token used for checkout, push, PR operations, failure issue maintenance, and label setup. | `${{ github.token }}` |
 
 ## Outputs
 
@@ -49,7 +49,7 @@ jobs:
 - Only changes under `.github/` and `.copier-answers.ci.yml` count toward the `changed` output, so other files do not open an update PR.
 - Logs the managed-file status, diffstat, and diff from the `Detect changes` step and includes the changed file list in successful update summaries.
 - Fails before PR creation or branch push when Copier leaves merge conflicts in managed files, lists the conflicted files in the workflow summary, and prints index entries plus the managed diff in the log.
-- Creates a failure issue with updater context and a local repro command if the workflow fails.
+- Creates or updates one open failure issue with updater context and a local repro command if the workflow fails, then comments on and closes the issue after a later successful run.
 - Writes a final workflow summary for both the PR and direct-push paths.
 
 ## Examples
