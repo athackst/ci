@@ -196,14 +196,17 @@ jobs:
           git push --force-with-lease origin "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Create issue if failure
+      - name: Upsert failure issue
         if: ${{ failure() }}
         uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.token || github.token }}
           script: |
+            const marker = '<!-- ci-updater-failure-issue -->'
             const title = `CI Updater failed (${process.env.RUN_ID})`
             const conflictFiles = process.env.CONFLICTED_FILES || ''
             const body = [
+              marker,
               'A step failed in the CI Updater workflow.',
               '',
               `- Workflow: ${process.env.WORKFLOW}`,
@@ -225,6 +228,28 @@ jobs:
               'copier update --trust -a ${{ env.ANSWERS_FILE }} -A --vcs-ref HEAD --defaults',
               '```',
             ].join('\n')
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            })
+            const existingIssue = openIssues.find((issue) =>
+              !issue.pull_request && issue.body && issue.body.includes(marker)
+            )
+
+            if (existingIssue) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                title,
+                body,
+              })
+              return
+            }
+
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -239,6 +264,49 @@ jobs:
           PR_BRANCH: ${{ inputs.pr-branch }}
           PR_TITLE: ${{ inputs.pr-title }}
           CONFLICTED_FILES: ${{ steps.conflicts.outputs.files || '' }}
+
+      - name: Close recovered failure issue
+        if: ${{ success() }}
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.token || github.token }}
+          script: |
+            const marker = '<!-- ci-updater-failure-issue -->'
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            })
+            const failureIssues = openIssues.filter((issue) =>
+              !issue.pull_request && issue.body && issue.body.includes(marker)
+            )
+
+            for (const issue of failureIssues) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: [
+                  'CI Updater completed successfully.',
+                  '',
+                  `- Workflow: ${process.env.WORKFLOW}`,
+                  `- Run: ${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
+                ].join('\n'),
+              })
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed',
+              })
+            }
+        env:
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
 
       - name: Workflow summary
         if: ${{ always() }}
