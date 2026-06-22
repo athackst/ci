@@ -47,8 +47,8 @@ jobs:
 - Skips the Copier update entirely when `.copier-answers.ci.yml` is missing.
 - Updater PRs are labeled `automerge` and `skip-changelog` automatically.
 - Only changes under `.github/` and `.copier-answers.ci.yml` count toward the `changed` output, so other files do not open an update PR.
-- Logs the managed-file status, diffstat, and diff from the `Detect changes` step and includes the changed file list in the workflow summary.
-- Fails before PR creation or branch push when Copier leaves merge conflicts in managed files, and prints the conflicted file list plus index entries in the log.
+- Logs the managed-file status, diffstat, and diff from the `Detect changes` step and includes the changed file list in successful update summaries.
+- Fails before PR creation or branch push when Copier leaves merge conflicts in managed files, lists the conflicted files in the workflow summary, and prints index entries plus the managed diff in the log.
 - Creates a failure issue with updater context and a local repro command if the workflow fails.
 - Writes a final workflow summary for both the PR and direct-push paths.
 
