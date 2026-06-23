@@ -37,5 +37,6 @@ jobs:
 - Only acts when the PR has an `automerge` label.
 - Skips draft pull requests.
 - `poll` waits for required checks and then runs `gh pr merge --squash`.
+- `poll` treats neutral checks as passing.
 - `native` enables GitHub auto-merge with `gh pr merge --auto --squash`.
 - `disabled` leaves labeled PRs untouched.
