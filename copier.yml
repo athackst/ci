@@ -41,7 +41,7 @@ site_generator:
 
 automerge_mode:
   type: str
-  default: poll
+  default: native
   choices:
     - poll
     - native

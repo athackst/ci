@@ -72,13 +72,16 @@ jobs:
       - name: GitHub Checks
         id: checks
         if: ${{ steps.automerge-mode.outputs.mode == 'poll' && steps.automerge-label.outputs.has-automerge == 'true' && github.event.pull_request.draft == false }}
-        uses: poseidon/wait-for-status-checks@v0.6.0
+        uses: wechuli/allcheckspassed@v2
         continue-on-error: true
         with:
           token: ${{ github.token }}
-          interval: 30s
-          delay: 10s
-          ignore_pattern: .*automerge.*
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          delay: "0"
+          polling_interval: "1"
+          retries: "10"
+          checks_exclude: ".*automerge.*$"
+          treat_neutral_as_passed: "true"
 
       - name: Merge labeled PR after checks pass
         id: poll-merge
