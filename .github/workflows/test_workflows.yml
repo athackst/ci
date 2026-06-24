@@ -13,7 +13,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
 
       - name: actionlint
         uses: raven-actions/actionlint@v2
@@ -54,7 +54,7 @@ jobs:
 
       - name: Checkout PR head branch
         id: checkout-bump
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
         with:
           ref: ci-test/pr-bump-pr-${{ github.event.pull_request.number }}
           fetch-depth: 1
@@ -431,7 +431,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
 
       - name: Upload HTMLProofer fixture artifact
         uses: actions/upload-pages-artifact@v5
@@ -454,7 +454,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
 
       - name: Upload deploy-site fixture artifact
         uses: actions/upload-pages-artifact@v5
@@ -483,7 +483,7 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
 
       - name: Verify deploy-site branch
         id: verify-deploy-site
@@ -735,7 +735,7 @@ jobs:
     outputs:
       fixture-branch: ${{ steps.branch.outputs.fixture-branch }}
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
       - name: Create ci_updater fixture branch
@@ -864,7 +864,7 @@ jobs:
       - name: Verify ci_updater branch content
         id: checkout-ci-updater-branch
         if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
         with:
           ref: ${{ needs.workflow-ci-updater.outputs.branch }}
           fetch-depth: 1
