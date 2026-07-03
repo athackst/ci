@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7.0.0
 
       - name: actionlint
-        uses: raven-actions/actionlint@v2.1.2
+        uses: raven-actions/actionlint@v2.2.0
         with:
           files: ".github/workflows/*.yml"
 
