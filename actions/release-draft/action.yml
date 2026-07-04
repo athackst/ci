@@ -31,7 +31,7 @@ inputs:
     required: false
     default: ""
   reuse-existing-draft:
-    description: (optional) Update an existing draft when no release ID or matching tag is found.
+    description: (optional) Update a managed draft when no release ID or matching tag is found.
     required: false
     default: "true"
 outputs:

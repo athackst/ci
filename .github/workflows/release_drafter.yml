@@ -28,7 +28,7 @@ on:
         required: false
         default: ""
       reuse-existing-draft:
-        description: Update an existing draft when no release ID or matching tag is found.
+        description: Update a managed draft when no release ID or matching tag is found.
         type: boolean
         required: false
         default: true

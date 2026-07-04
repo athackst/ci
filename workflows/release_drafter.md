@@ -20,7 +20,7 @@ jobs:
 | `name` | (optional) Explicit release name override. | `""` |
 | `tag-name` | (optional) Explicit release tag name override. | `""` |
 | `draft-release-id` | (optional) Explicit draft release ID to update directly before create fallback. | `""` |
-| `reuse-existing-draft` | (optional) Update an existing draft when no release ID or matching tag is found. | `true` |
+| `reuse-existing-draft` | (optional) Update a managed draft when no release ID or matching tag is found. | `true` |
 
 ## Secrets
 
@@ -51,8 +51,9 @@ jobs:
 - Uses the resolved version and generated changelog as the default release name, tag, and body inputs.
 - Uploads a `release-draft-debug-<run_id>-<run_attempt>` artifact containing the resolver JSON and PR info JSON for inspection.
 - Supports caller overrides for release `name` and `tag-name`.
+- Adds a hidden `<!-- ci:release-draft -->` marker to release bodies it creates or updates.
 - Supports optional direct update of a known draft release via `draft-release-id`.
 - Otherwise, updates a draft release with the resolved tag when one exists.
-- If no matching tag is found and `reuse-existing-draft` is `true`, updates the newest existing draft release.
-- If no release ID, matching tag, or reusable draft is available, creates a new draft release.
+- If no matching tag is found and `reuse-existing-draft` is `true`, updates the newest draft release containing the hidden marker.
+- If no release ID, matching tag, or managed draft is available, creates a new draft release.
 - Checks out tags with full history so semantic version resolution can compare against prior tags.
