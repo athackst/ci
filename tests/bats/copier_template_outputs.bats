@@ -188,6 +188,9 @@ collect_copier_managed_paths_with_bump() {
 
   run grep -q "do_releases: true" "${answers_file}"
   [ "$status" -eq 0 ]
+
+  run grep -q "DRAFT_RELEASE_ID" "${wf_dir}/release_draft.yml"
+  [ "$status" -ne 0 ]
 }
 
 @test "copier renders native automerge mode" {

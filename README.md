@@ -58,7 +58,6 @@ Required repository permissions for the token:
 - `Issues: Read and write` for repository labels, PR comments, and failure issues.
 - `Actions: Read and write` for updater PRs that modify workflow files.
 - `Workflows: Read and write` for commits that create or update workflow files.
-- `Variables: Read and write` for generated `release_draft.yml` workflows that persist `DRAFT_RELEASE_ID`.
 
 ## Mental model
 

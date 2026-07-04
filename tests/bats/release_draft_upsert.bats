@@ -46,7 +46,8 @@ if [ "$method" = "PATCH" ]; then
     --argjson id "$release_id" \
     --arg name "$(jq -r '.name' "$input_file")" \
     --arg tag_name "$(jq -r '.tag_name' "$input_file")" \
-    '{id: $id, name: $name, tag_name: $tag_name, draft: true}'
+    --arg body "$(jq -r '.body' "$input_file")" \
+    '{id: $id, name: $name, tag_name: $tag_name, body: $body, draft: true}'
   exit 0
 fi
 
@@ -54,7 +55,8 @@ if [ "$method" = "POST" ] && [ "$endpoint" = "repos/owner/repo/releases" ]; then
   jq -n \
     --arg name "$(jq -r '.name' "$input_file")" \
     --arg tag_name "$(jq -r '.tag_name' "$input_file")" \
-    '{id: 900, name: $name, tag_name: $tag_name, draft: true}'
+    --arg body "$(jq -r '.body' "$input_file")" \
+    '{id: 900, name: $name, tag_name: $tag_name, body: $body, draft: true}'
   exit 0
 fi
 
@@ -118,9 +120,9 @@ run_upsert() {
   [ "$status" -eq 0 ]
 }
 
-@test "missing tag falls back to newest existing draft release" {
+@test "missing tag falls back to newest managed draft release" {
   export GH_RELEASES_JSON='[
-    {"id": 202, "tag_name": "v2.0.0", "draft": true, "created_at": "2024-02-01T00:00:00Z"}
+    {"id": 202, "tag_name": "v2.0.0", "body": "<!-- ci:release-draft -->", "draft": true, "created_at": "2024-02-01T00:00:00Z"}
   ]'
 
   run run_upsert "v1.0.0"
@@ -131,10 +133,11 @@ run_upsert() {
   [ "$status" -eq 0 ]
 }
 
-@test "unmatched tag updates newest existing draft release" {
+@test "unmatched tag updates newest managed draft release" {
   export GH_RELEASES_JSON='[
-    {"id": 101, "tag_name": "v1.0.0", "draft": true, "created_at": "2024-01-01T00:00:00Z"},
-    {"id": 202, "tag_name": "v2.0.0", "draft": true, "created_at": "2024-02-01T00:00:00Z"}
+    {"id": 101, "tag_name": "v1.0.0", "body": "<!-- ci:release-draft -->", "draft": true, "created_at": "2024-01-01T00:00:00Z"},
+    {"id": 202, "tag_name": "v2.0.0", "body": "<!-- ci:release-draft -->", "draft": true, "created_at": "2024-02-01T00:00:00Z"},
+    {"id": 303, "tag_name": "v9.0.0", "body": "unrelated draft", "draft": true, "created_at": "2024-03-01T00:00:00Z"}
   ]'
 
   run run_upsert "v3.0.0"
@@ -144,6 +147,31 @@ run_upsert() {
   [ "$(jq -r '.tag_name' <<< "$output")" = "v3.0.0" ]
   run grep -q "PATCH repos/owner/repo/releases/202" "$GH_CALL_LOG"
   [ "$status" -eq 0 ]
+}
+
+@test "unmatched tag creates release when existing drafts are unmanaged" {
+  export GH_RELEASES_JSON='[
+    {"id": 202, "tag_name": "v2.0.0", "body": "unrelated draft", "draft": true, "created_at": "2024-02-01T00:00:00Z"}
+  ]'
+
+  run run_upsert "v3.0.0"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.id' <<< "$output")" = "900" ]
+  run grep -q "POST repos/owner/repo/releases" "$GH_CALL_LOG"
+  [ "$status" -eq 0 ]
+  run grep -q "PATCH repos/owner/repo/releases/202" "$GH_CALL_LOG"
+  [ "$status" -ne 0 ]
+}
+
+@test "created and updated releases include managed draft marker" {
+  export GH_RELEASES_JSON='[]'
+
+  run run_upsert "v1.0.0"
+
+  [ "$status" -eq 0 ]
+  [[ "$(jq -r '.body' <<< "$output")" == *"Test changelog"* ]]
+  [[ "$(jq -r '.body' <<< "$output")" == *"<!-- ci:release-draft -->"* ]]
 }
 
 @test "reuse-existing-draft false creates release when tag is missing" {

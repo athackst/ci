@@ -28,14 +28,9 @@ The release draft job needs:
 - `contents: write` to create or update draft releases.
 - `pull-requests: read` to resolve changelog and version metadata.
 
-The `persist-draft-id` job needs:
-
-- `actions: write` to persist `DRAFT_RELEASE_ID` as a repository variable.
-
 ## Behavior
 
-- Passes `vars.DRAFT_RELEASE_ID` into the reusable Release Draft workflow.
 - Creates or updates a draft release from resolved version and changelog data.
-- Stores the resulting release ID in the `DRAFT_RELEASE_ID` repository variable
-  for the next run.
-- Uses `secrets.CI_BOT_TOKEN` for release and variable writes.
+- Updates a draft release with the resolved tag when one exists.
+- Otherwise updates the newest draft release containing the hidden release-draft marker.
+- Uses `secrets.CI_BOT_TOKEN` for release writes.

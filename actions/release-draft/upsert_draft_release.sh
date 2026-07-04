@@ -15,10 +15,17 @@ ERROR_FILE="$(mktemp)"
 RELEASES_FILE="$(mktemp)"
 trap 'rm -f "$PAYLOAD_FILE" "$ERROR_FILE" "$RELEASES_FILE"' EXIT
 
+RELEASE_DRAFT_MARKER="${RELEASE_DRAFT_MARKER:-<!-- ci:release-draft -->}"
+if [ -n "${CHANGELOG:-}" ]; then
+  RELEASE_BODY="${CHANGELOG}"$'\n\n'"${RELEASE_DRAFT_MARKER}"
+else
+  RELEASE_BODY="$RELEASE_DRAFT_MARKER"
+fi
+
 jq -n \
   --arg tag_name "$TAG_NAME" \
   --arg name "$RELEASE_NAME" \
-  --arg body "${CHANGELOG:-}" \
+  --arg body "$RELEASE_BODY" \
   '{tag_name: $tag_name, name: $name, body: $body, draft: true, prerelease: false}' > "$PAYLOAD_FILE"
 
 patch_release() {
@@ -50,10 +57,10 @@ find_draft_release_id_for_tag() {
   ' "$RELEASES_FILE"
 }
 
-find_existing_draft_release_id() {
+find_managed_draft_release_id() {
   load_releases
-  jq -r '
-    map(select(.draft == true))
+  jq -r --arg marker "$RELEASE_DRAFT_MARKER" '
+    map(select(.draft == true and (.body // "" | contains($marker))))
     | sort_by(.created_at)
     | reverse
     | .[0].id // ""
@@ -88,9 +95,9 @@ if [ -n "$MATCHING_DRAFT_RELEASE_ID" ]; then
 fi
 
 if [ "${REUSE_EXISTING_DRAFT:-true}" = "true" ]; then
-  EXISTING_DRAFT_RELEASE_ID="$(find_existing_draft_release_id)"
-  if [ -n "$EXISTING_DRAFT_RELEASE_ID" ]; then
-    try_patch_release "$EXISTING_DRAFT_RELEASE_ID" "existing draft release"
+  MANAGED_DRAFT_RELEASE_ID="$(find_managed_draft_release_id)"
+  if [ -n "$MANAGED_DRAFT_RELEASE_ID" ]; then
+    try_patch_release "$MANAGED_DRAFT_RELEASE_ID" "managed draft release"
   fi
 fi
 
