@@ -1,6 +1,6 @@
 # CI Updater
 
-Run `copier update` and open or update a template-sync PR.
+Run the CI template updater compatibility workflow.
 
 ## Usage
 
@@ -17,16 +17,15 @@ jobs:
 | Name | Description | Default |
 | --- | --- | --- |
 | `create-pr` | (optional) Create or update a PR with template changes. | `true` |
+| `automerge` | (optional) Deprecated. Retained for compatibility; updater PRs are labeled automatically. | `false` |
 | `pr-branch` | (optional) Branch name used for template updates. | `ci/update-ci-template` |
-| `pr-title` | (optional) Pull request title. | `chore: update CI template` |
-| `commit-message` | (optional) Commit message for template updates. | `chore: apply CI template update` |
 | `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
 
 ## Secrets
 
-| Name | Description | Default |
+| Name | Description | Required |
 | --- | --- | --- |
-| `token` | (optional) Token used for checkout, push, PR operations, failure issue maintenance, and label setup. | `${{ github.token }}` |
+| `token` | (optional) Token used for checkout, push, PR operations, failure issue maintenance, and label setup. | No |
 
 ## Outputs
 
@@ -44,12 +43,12 @@ jobs:
 
 ## Advanced
 
-- Skips the Copier update entirely when `.copier-answers.ci.yml` is missing.
-- Updater PRs are labeled `automerge` and `skip-changelog` automatically.
+- Wraps [`copier_update.yml`](copier_update.md) with CI-template defaults for existing consumers.
+- Uses `.copier-answers.ci.yml` as the Copier answers file.
 - Only changes under `.github/` and `.copier-answers.ci.yml` count toward the `changed` output, so other files do not open an update PR.
-- Logs the managed-file status, diffstat, and diff from the `Detect changes` step and includes the changed file list in successful update summaries.
-- Fails before PR creation or branch push when Copier leaves merge conflicts in managed files, lists the conflicted files in the workflow summary, and prints index entries plus the managed diff in the log.
-- Creates or updates one open failure issue with updater context and a local repro command if the workflow fails, then comments on and closes the issue after a later successful run.
+- Updater PRs use the title `chore: update CI template`, commit message `chore: apply CI template update`, and labels `automerge` and `skip-changelog`.
+- Skips the Copier update entirely when `.copier-answers.ci.yml` is missing.
+- Fails before PR creation or branch push when Copier leaves merge conflicts in managed files.
 - Writes a final workflow summary for both the PR and direct-push paths.
 
 ## Examples
