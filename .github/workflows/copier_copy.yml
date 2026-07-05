@@ -12,11 +12,11 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: copier-update-${{ github.event.pull_request.number || github.ref }}
+  group: copier-copy-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  copier-update:
+  copier-copy:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
