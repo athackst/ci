@@ -9,6 +9,10 @@ inputs:
     description: GitHub user or organization owner whose repositories should be listed.
     required: false
     default: ""
+  users:
+    description: Newline-delimited GitHub users or organization owners whose repositories should be listed.
+    required: false
+    default: ""
   public:
     description: Include public repositories when true. Set to false to exclude them.
     required: false
@@ -48,8 +52,7 @@ runs:
         OUTPUT_PATH: ${{ inputs.output-path }}
       run: |
         set -euo pipefail
-        ARGS=(
-          --user "${{ inputs.user || github.repository_owner }}"
+        COMMON_ARGS=(
           --public "${{ inputs.public }}"
           --private "${{ inputs.private }}"
           --fork "${{ inputs.fork }}"
@@ -57,12 +60,32 @@ runs:
         )
         while IFS= read -r filter_path; do
           if [ -n "$filter_path" ]; then
-            ARGS+=(--filter-path "$filter_path")
+            COMMON_ARGS+=(--filter-path "$filter_path")
           fi
         done <<'EOF'
         ${{ inputs.filter-paths }}
         EOF
-        REPOSITORIES="$(python3 "${{ github.action_path }}/list_repos.py" "${ARGS[@]}")"
+
+        OWNERS=()
+        while IFS= read -r owner; do
+          if [ -n "$owner" ]; then
+            OWNERS+=("$owner")
+          fi
+        done <<'EOF'
+        ${{ inputs.users }}
+        EOF
+        if [ "${#OWNERS[@]}" -eq 0 ]; then
+          OWNERS=("${{ inputs.user || github.repository_owner }}")
+        fi
+
+        TMP_DIR="$(mktemp -d)"
+        for owner in "${OWNERS[@]}"; do
+          python3 "${{ github.action_path }}/list_repos.py" \
+            --user "$owner" \
+            "${COMMON_ARGS[@]}" > "${TMP_DIR}/${owner}.json"
+        done
+
+        REPOSITORIES="$(python3 "${{ github.action_path }}/merge_repo_lists.py" "${TMP_DIR}"/*.json)"
         mkdir -p "$(dirname "$OUTPUT_PATH")"
         printf '%s\n' "$REPOSITORIES" > "$OUTPUT_PATH"
         echo "repository-file=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"

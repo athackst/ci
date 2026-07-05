@@ -19,6 +19,7 @@ List repositories for a GitHub user or organization owner and write a filtered J
 | --- | --- | --- |
 | `github-token` | (optional) GitHub token used for GitHub API access. | `${{ github.token }}` |
 | `user` | (optional) GitHub user or organization owner whose repositories should be listed. | `${{ github.repository_owner }}` |
+| `users` | (optional) Newline-delimited GitHub users or organization owners whose repositories should be listed. When set, `user` is ignored. | `""` |
 | `public` | (optional) Include public repositories when `true`. Set to `false` to exclude them. | `"true"` |
 | `private` | (optional) Include private repositories when `true`. Set to `false` to exclude them. | `"true"` |
 | `fork` | (optional) Include fork repositories when `true`. Set to `false` to exclude them. | `"true"` |
@@ -40,6 +41,7 @@ List repositories for a GitHub user or organization owner and write a filtered J
 ## Advanced
 
 - Supports both GitHub users and organizations.
+- `users` can list repositories from multiple owners in one action invocation; duplicate repositories are returned once.
 - When `private: true`, the action uses authenticated repo listing so private repositories can be included; with GitHub App tokens it falls back to installation repositories.
 - `public`, `private`, `fork`, and `archived` are inclusive toggles. The default `true` value includes that category, and `false` removes it from the results.
 - `filter-paths` checks each listed path with the GitHub contents API and returns the repository only when any path exists.
