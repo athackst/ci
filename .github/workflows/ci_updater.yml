@@ -60,4 +60,5 @@ jobs:
       checkout-ref: ${{ inputs.checkout-ref }}
       answers-file: ".copier-answers.ci.yml"
       managed-paths: ".github"
-    secrets: inherit
+    secrets:
+      token: ${{ secrets.token }}
