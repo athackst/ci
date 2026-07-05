@@ -81,7 +81,10 @@ def load_matching_repositories(repos_file: Path) -> list[dict[str, Any]]:
         if not repository["private"] and not repository["fork"] and not repository["archived"]
     ]
 
-    return sorted(public_repositories, key=lambda repository: repository["name"].lower())
+    return sorted(
+        public_repositories,
+        key=lambda repository: (repository["owner"].lower(), repository["name"].lower()),
+    )
 
 
 def _retry_delay_seconds(headers: Any, body_text: str) -> int | None:
