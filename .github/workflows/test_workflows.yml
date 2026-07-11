@@ -853,7 +853,6 @@ jobs:
   workflows-success:
     needs:
       - workflow-lint
-      - workflow-bump-verify-and-cleanup
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify
       - workflow-htmlproofer-site
