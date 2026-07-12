@@ -46,7 +46,6 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 - `pull_request_target` should be used for secret-requiring metadata operations.
 - `pull_request` should be used for trusted same-repo mutation operations.
-- `pr_bump` must not run on untrusted fork code paths.
 - Dependabot/fork PRs may not have repository secrets on `pull_request`; route secret-requiring behavior through compatible event paths.
 
 ## Token Strategy
@@ -64,7 +63,6 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 ## Commenting Policy
 
-- `pr_bump`: maintain a single updatable PR comment.
 - `copier_update`: append-style comments are acceptable per commit-producing run.
 - Do not comment on no-op runs.
 

@@ -16,20 +16,6 @@ _skip_if_exists:
   - .github/ci-config.yml
   - .github/release_template.md
 
-bump_script_path:
-  type: str
-  default: ""
-  help: |
-    Optional bump command to run in the target repository (leave empty to disable).
-
-        Available environment variables:
-          VERSION
-          MAJOR_VERSION
-          MINOR_VERSION
-          PATCH_VERSION
-  
-    bump script command:
-
 site_generator:
   type: str
   default: none

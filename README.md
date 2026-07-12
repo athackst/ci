@@ -10,7 +10,6 @@ repo are the generated workflows:
 - `pr_automerge.yml`
 - `pr_labeler.yml`
 - `setup_labels.yml`
-- `pr_bump.yml` when `bump_script_path` is set
 - `release_draft.yml` when `do_releases` is enabled
 - `site.yml` when a site workflow is enabled
 
@@ -53,8 +52,8 @@ Add a repository secret named `CI_BOT_TOKEN`:
 
 Required repository permissions for the token:
 
-- `Contents: Read and write` for update and bump commits.
-- `Pull requests: Read and write` for PR labels, comments, updater PRs, bump PRs, and automerge.
+- `Contents: Read and write` for update commits.
+- `Pull requests: Read and write` for PR labels, comments, updater PRs, and automerge.
 - `Issues: Read and write` for repository labels, PR comments, and failure issues.
 - `Actions: Read and write` for updater PRs that modify workflow files.
 - `Workflows: Read and write` for commits that create or update workflow files.
@@ -78,13 +77,6 @@ Copier asks a small number of questions and uses the answers to generate the
 entrypoint workflows plus a shared CI config.
 
 ### Copier questions
-
-`bump_script_path`
-
-- Optional shell command to run in the target repository after version metadata is resolved.
-- If set, the template generates `pr_bump.yml`.
-- The command receives `VERSION`, `MAJOR_VERSION`, `MINOR_VERSION`, and `PATCH_VERSION`.
-- Leave it empty if the repo does not maintain a version file, changelog file, or other bumpable artifact in PRs.
 
 `site_generator`
 

@@ -2,7 +2,6 @@
 _commit: f7bd500
 _src_path: .
 automerge_mode: poll
-bump_script_path: ''
 do_releases: true
 release_template: '## What''s changed
 

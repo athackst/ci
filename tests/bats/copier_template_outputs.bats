@@ -16,13 +16,11 @@ teardown() {
 
 render_variant() {
   local variant="$1"
-  local bump_script_path="${2:-}"
-  local do_releases="${3:-true}"
-  local automerge_mode="${4:-poll}"
+  local do_releases="${2:-true}"
+  local automerge_mode="${3:-poll}"
 
   copier copy --trust --defaults \
     --data "site_generator=${variant}" \
-    --data "bump_script_path=${bump_script_path}" \
     --data "do_releases=${do_releases}" \
     --data "automerge_mode=${automerge_mode}" \
     . "${out_dir}"
@@ -39,7 +37,6 @@ collect_copier_managed_paths() {
       variant_dir="$(mktemp -d "${out_dir}/render-${variant}-${do_releases}.XXXXXX")"
       copier copy --trust --defaults \
         --data "site_generator=${variant}" \
-        --data "bump_script_path=" \
         --data "do_releases=${do_releases}" \
         --data "automerge_mode=poll" \
         . "${variant_dir}" >/dev/null 2>&1
@@ -53,25 +50,8 @@ collect_copier_managed_paths() {
   printf '%s\n' "${all_paths[@]}" | sort -u
 }
 
-collect_copier_managed_paths_with_bump() {
-  local variant_dir
-  local rel_path
-
-  variant_dir="$(mktemp -d "${out_dir}/render-bump.XXXXXX")"
-  copier copy --trust --defaults \
-    --data "site_generator=none" \
-    --data "bump_script_path=scripts/bump.sh" \
-    --data "do_releases=true" \
-    --data "automerge_mode=poll" \
-    . "${variant_dir}" >/dev/null 2>&1
-
-  while IFS= read -r rel_path; do
-    printf '%s\n' "${rel_path}"
-  done < <(cd "${variant_dir}" && find .github -type f | sort)
-}
-
 @test "copier renders mkdocs variant" {
-  render_variant mkdocs "" true
+  render_variant mkdocs true
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -103,7 +83,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier skips site workflow when disabled" {
-  render_variant none "" true
+  render_variant none true
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -123,7 +103,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier renders jekyll variant" {
-  render_variant jekyll "" true
+  render_variant jekyll true
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -145,21 +125,8 @@ collect_copier_managed_paths_with_bump() {
   [ "$status" -eq 0 ]
 }
 
-@test "copier renders bump workflow when configured" {
-  render_variant none "scripts/bump.sh" true
-  wf_dir="${out_dir}/.github/workflows"
-
-  [ -f "${wf_dir}/pr_bump.yml" ]
-
-  run grep -q "bump-script: scripts/bump.sh" "${wf_dir}/pr_bump.yml"
-  [ "$status" -eq 0 ]
-
-  run "$ACTIONLINT" "${wf_dir}"/*.yml
-  [ "$status" -eq 0 ]
-}
-
 @test "copier skips release draft workflow when do_releases is false" {
-  render_variant mkdocs "" false
+  render_variant mkdocs false
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -179,7 +146,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier renders release draft workflow when do_releases is true" {
-  render_variant mkdocs "" true
+  render_variant mkdocs true
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -194,7 +161,7 @@ collect_copier_managed_paths_with_bump() {
 }
 
 @test "copier renders native automerge mode" {
-  render_variant mkdocs "" true native
+  render_variant mkdocs true native
   wf_dir="${out_dir}/.github/workflows"
   answers_file="${out_dir}/.copier-answers.ci.yml"
 
@@ -212,10 +179,7 @@ collect_copier_managed_paths_with_bump() {
   expected="$(cat "${manifest_path}")"
 
   actual="$(
-    {
-      collect_copier_managed_paths none mkdocs jekyll
-      collect_copier_managed_paths_with_bump
-    } | sed '/^$/d' | sort -u
+    collect_copier_managed_paths none mkdocs jekyll | sed '/^$/d' | sort -u
   )"
   [ "$?" -eq 0 ]
 
