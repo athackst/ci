@@ -19,7 +19,7 @@ render_variant() {
   local do_releases="${2:-true}"
   local automerge_mode="${3:-poll}"
 
-  copier copy --trust --defaults \
+  copier copy --trust --defaults --vcs-ref=HEAD \
     --data "site_generator=${variant}" \
     --data "do_releases=${do_releases}" \
     --data "automerge_mode=${automerge_mode}" \
@@ -35,7 +35,7 @@ collect_copier_managed_paths() {
   for variant in "${variants[@]}"; do
     for do_releases in true false; do
       variant_dir="$(mktemp -d "${out_dir}/render-${variant}-${do_releases}.XXXXXX")"
-      copier copy --trust --defaults \
+      copier copy --trust --defaults --vcs-ref=HEAD \
         --data "site_generator=${variant}" \
         --data "do_releases=${do_releases}" \
         --data "automerge_mode=poll" \

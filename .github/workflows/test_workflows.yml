@@ -713,11 +713,11 @@ jobs:
           SUMMARY="ci_updater.yml updated the fixture branch content."
           ERRORS=()
 
-          if ! grep -q "^## What's changed" .github/release_template.md; then
+          if ! grep -q "^  ## What's changed" .github/ci-config.yml; then
             STATUS="failure"
             ERRORS+=("Missing expected release template heading.")
           fi
-          if grep -q '^outdated fixture content$' .github/release_template.md; then
+          if grep -q '^  outdated fixture content$' .github/ci-config.yml; then
             STATUS="failure"
             ERRORS+=("Fixture content was not updated.")
           fi
@@ -731,7 +731,7 @@ jobs:
             echo "errors<<EOF_ERRORS"
             printf '%s\n' "${ERRORS[@]}"
             echo "EOF_ERRORS"
-            echo "details=.github/release_template.md"
+            echo "details=.github/ci-config.yml"
           } | tee -a "$GITHUB_OUTPUT"
 
           if [ "$STATUS" != "success" ]; then

@@ -103,7 +103,7 @@ entrypoint workflows plus a shared CI config.
 
 `release_template`
 
-- Contents for `.github/release_template.md`.
+- Contents for the `template` field in `.github/ci-config.yml`.
 - Used by `release_draft.yml` when rendering the draft release body.
 - Supports `$CHANGES` for generated changelog content and `$VERSION` / `$RESOLVED_VERSION` for the resolved version.
 - Only asked when `do_releases` is enabled.
@@ -117,15 +117,11 @@ that would normally live in separate files:
 - version-resolver label rules
 - PR labeler rules
 - repository label metadata such as label descriptions and colors
-- the release body template path
+- the release body template
 
 This is intentionally a modified combination of the upstream
 [release-drafter/release-drafter](https://github.com/release-drafter/release-drafter)
 and [actions/labeler](https://github.com/actions/labeler) config formats.
-
-**Modifications to `release-drafter.yml`**
-
-- Adds `template-file` so the release body can live in `.github/release_template.md` instead of being embedded in YAML.
 
 **Modifications to `labeler.yml`**
 
