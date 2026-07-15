@@ -7,6 +7,7 @@ template: |
   ## What's changed
 
   $CHANGES
+
 categories:
   - title: ':zap: Breaking'
     labels:
