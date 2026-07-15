@@ -11,10 +11,6 @@ _subdirectory: copier/template
 
 _answers_file: .copier-answers.ci.yml
 
-# Preserve the shared CI config if it already exists in a destination repo.
-_skip_if_exists:
-  - .github/ci-config.yml
-
 site_generator:
   type: str
   default: none
