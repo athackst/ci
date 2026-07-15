@@ -3,7 +3,8 @@
 
 name-template: "Release v$RESOLVED_VERSION"
 tag-template: "v$RESOLVED_VERSION"
-template-file: ".github/release_template.md"
+template: |
+[[ release_template | indent(2, true) ]]
 categories:
   - title: ':zap: Breaking'
     labels:

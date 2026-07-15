@@ -1,7 +1,7 @@
 # Release Draft
 
 `release_draft.yml` creates or updates a draft GitHub release from merged pull
-request metadata and `.github/release_template.md`.
+request metadata and the release template in `.github/ci-config.yml`.
 
 ## Generated When
 
