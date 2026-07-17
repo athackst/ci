@@ -1,4 +1,4 @@
-theme: jekyll-theme-profile
+theme: jekyll-theme-primerpages
 title: ${title}
 description: ${description}
 image: ${image}
