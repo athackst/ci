@@ -417,147 +417,35 @@ jobs:
 
   workflow-release-draft:
     permissions:
-      contents: write
+      contents: read
       pull-requests: read
     uses: ./.github/workflows/release_drafter.yml
     with:
-      name: Test Workflow Release ${{ github.run_id }}-${{ github.run_attempt }}
-      tag-name: test-workflow-${{ github.run_id }}-${{ github.run_attempt }}
-      reuse-existing-draft: false
-    secrets:
-      token: ${{ secrets.CI_BOT_TOKEN }}
+      dry-run: true
 
-  workflow-release-draft-verify-and-cleanup:
+  workflow-release-draft-verify:
     permissions:
-      contents: write
+      contents: read
     needs: [workflow-release-draft]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Verify workflow release draft
-        id: verify-release-draft
+      - name: Verify workflow release draft dry run
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ needs.workflow-release-draft.outputs.id }}
-          EXPECTED_NAME: ${{ needs.workflow-release-draft.outputs.name }}
-          EXPECTED_TAG: ${{ needs.workflow-release-draft.outputs.tag-name }}
+          RESOLVED_VERSION: ${{ needs.workflow-release-draft.outputs.resolved-version }}
+          CHANGELOG: ${{ needs.workflow-release-draft.outputs.changelog }}
         run: |
           set -euo pipefail
-
-          STATUS="success"
-          SUMMARY="release_drafter.yml created the expected draft release."
-          ERRORS=()
-          DETAILS=""
-
-          set_failure() {
-            STATUS="failure"
-            ERRORS+=("$1")
-          }
-
-          if [ -z "${RELEASE_ID:-}" ]; then
-            SUMMARY="No release id returned; nothing to verify or clean up."
-            {
-              echo "summary=$SUMMARY"
-              echo "errors<<EOF_ERRORS"
-              echo "EOF_ERRORS"
-              echo "details<<EOF_DETAILS"
-              echo "EOF_DETAILS"
-            } | tee -a "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          RELEASE_JSON="$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}")" || {
-            set_failure "Failed to fetch release $RELEASE_ID"
-            RELEASE_JSON=""
-          }
-
-          if [ -n "$RELEASE_JSON" ]; then
-            ACTUAL_NAME="$(jq -r '.name' <<< "$RELEASE_JSON")"
-            ACTUAL_TAG="$(jq -r '.tag_name' <<< "$RELEASE_JSON")"
-            ACTUAL_DRAFT="$(jq -r '.draft' <<< "$RELEASE_JSON")"
-
-            [ "$ACTUAL_DRAFT" = "true" ] || set_failure "Expected draft=true, got $ACTUAL_DRAFT"
-            [ "$ACTUAL_NAME" = "$EXPECTED_NAME" ] || set_failure "Expected name '$EXPECTED_NAME', got '$ACTUAL_NAME'"
-            [ "$ACTUAL_TAG" = "$EXPECTED_TAG" ] || set_failure "Expected tag '$EXPECTED_TAG', got '$ACTUAL_TAG'"
-
-            DETAILS="$(printf 'id: %s\nname: %s\ntag: %s\ndraft: %s\n' \
-              "$RELEASE_ID" "$ACTUAL_NAME" "$ACTUAL_TAG" "$ACTUAL_DRAFT")"
-          fi
-
-          if [ "$STATUS" != "success" ]; then
-            SUMMARY="release_drafter.yml verification failed."
-          fi
-
+          test -z "$RELEASE_ID"
+          test -n "$RESOLVED_VERSION"
+          test -n "$CHANGELOG"
           {
-            echo "summary=$SUMMARY"
-            echo "errors<<EOF_ERRORS"
-            printf '%s\n' "${ERRORS[@]}"
-            echo "EOF_ERRORS"
-            echo "details<<EOF_DETAILS"
-            printf '%s\n' "$DETAILS"
-            echo "EOF_DETAILS"
-          } | tee -a "$GITHUB_OUTPUT"
-
-          if [ "$STATUS" != "success" ]; then
-            exit 1
-          fi
-
-      - name: Delete workflow release draft
-        if: ${{ always() && needs.workflow-release-draft.outputs.id != '' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_ID: ${{ needs.workflow-release-draft.outputs.id }}
-        run: |
-          set -euo pipefail
-          gh api -X DELETE "repos/${{ github.repository }}/releases/${RELEASE_ID}" || true
-
-      - name: Workflow summary
-        if: ${{ always() }}
-        shell: bash
-        env:
-          VERIFY_STATUS: ${{ steps.verify-release-draft.outcome || 'failure' }}
-          VERIFY_SUMMARY: ${{ steps.verify-release-draft.outputs.summary || 'release_drafter.yml verification did not run.' }}
-          VERIFY_ERRORS: ${{ steps.verify-release-draft.outputs.errors || '' }}
-          VERIFY_DETAILS: ${{ steps.verify-release-draft.outputs.details || '' }}
-        run: |
-          set -euo pipefail
-          {
-            echo "### release_drafter.yml verification"
+            echo "### release_drafter.yml dry run"
             echo ""
-            if [ "$VERIFY_STATUS" = "success" ]; then
-              echo ":white_check_mark: $VERIFY_SUMMARY"
-            else
-              echo ":x: $VERIFY_SUMMARY"
-            fi
-
-            if [ -n "$VERIFY_ERRORS" ] || [ -n "$VERIFY_DETAILS" ]; then
-              echo ""
-              echo "<details><summary>Details</summary>"
-              echo ""
-              if [ -n "$VERIFY_ERRORS" ]; then
-                echo "Errors:"
-                echo '```text'
-                printf '%s\n' "$VERIFY_ERRORS"
-                echo '```'
-                echo ""
-              fi
-              if [ -n "$VERIFY_DETAILS" ]; then
-                echo "Release:"
-                echo '```text'
-                printf '%s\n' "$VERIFY_DETAILS"
-                echo '```'
-              fi
-              echo ""
-              echo "</details>"
-            fi
-            echo ""
+            echo ":white_check_mark: Release Drafter resolved version $RESOLVED_VERSION and rendered a changelog."
           } | tee -a "$GITHUB_STEP_SUMMARY"
-
-          if [ "$VERIFY_STATUS" != "success" ]; then
-            exit 1
-          fi
 
   workflow-ci-updater-fixture-branch:
     permissions:
@@ -858,7 +746,7 @@ jobs:
       - workflow-jekyll-site-verify
       - workflow-htmlproofer-site
       - workflow-deploy-site-verify-and-cleanup
-      - workflow-release-draft-verify-and-cleanup
+      - workflow-release-draft-verify
       - workflow-ci-updater-verify-and-cleanup
     runs-on: ubuntu-latest
     steps:

@@ -1,6 +1,6 @@
 # Release Draft
 
-Resolve version metadata, build a changelog, and create or update a draft GitHub release.
+Create or update a draft GitHub release from merged pull requests.
 
 ## Usage
 
@@ -19,8 +19,7 @@ jobs:
 | `configuration-path` | (optional) Path to the release-drafter style config file. | `.github/ci-config.yml` |
 | `name` | (optional) Explicit release name override. | `""` |
 | `tag-name` | (optional) Explicit release tag name override. | `""` |
-| `draft-release-id` | (optional) Explicit draft release ID to update directly before create fallback. | `""` |
-| `reuse-existing-draft` | (optional) Update a managed draft when no release ID or matching tag is found. | `true` |
+| `dry-run` | (optional) Preview the generated release draft while preserving repository releases. | `false` |
 
 ## Secrets
 
@@ -42,18 +41,13 @@ jobs:
 
 ## Permissions
 
-- Requires `contents: write` to create or update releases.
-- Requires `pull-requests: read` for version/changelog resolution.
+- `contents: read` supports dry-run previews; live runs use `contents: write` to create or update releases.
+- `pull-requests: read` resolves version and changelog metadata.
 
 ## Advanced
 
-- Resolves config first with `resolve-config`, then feeds the same config into version resolution and changelog generation.
-- Uses the resolved version and generated changelog as the default release name, tag, and body inputs.
-- Uploads a `release-draft-debug-<run_id>-<run_attempt>` artifact containing the resolver JSON and PR info JSON for inspection.
+- Uses `release-drafter/release-drafter@v7` with the repository configuration in `.github/ci-config.yml`.
+- Uses the resolved version and generated changelog for the release name, tag, and body.
 - Supports caller overrides for release `name` and `tag-name`.
-- Adds a hidden `<!-- ci:release-draft -->` marker to release bodies it creates or updates.
-- Supports optional direct update of a known draft release via `draft-release-id`.
-- Otherwise, updates a draft release with the resolved tag when one exists.
-- If no matching tag is found and `reuse-existing-draft` is `true`, updates the newest draft release containing the hidden marker.
-- If no release ID, matching tag, or managed draft is available, creates a new draft release.
-- Checks out tags with full history so semantic version resolution can compare against prior tags.
+- `dry-run: true` resolves the version and renders the changelog while preserving repository releases.
+- Dry runs provide `resolved-version` and `changelog`; live runs also provide the release resource outputs.
