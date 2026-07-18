@@ -29,15 +29,9 @@ automerge_mode:
     - disabled
   help: How pull requests labeled automerge should be merged.
 
-site_version:
-  type: bool
-  default: false
-  help: "DEPRECATED: Replaced by do_releases."
-  when: false
-
 do_releases:
   type: bool
-  default: "[[ site_versions if site_versions is defined else false ]]"
+  default: false
   help: Whether to create releases or new versions.
 
 release_template:
