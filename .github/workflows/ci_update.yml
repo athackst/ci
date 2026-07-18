@@ -1,5 +1,5 @@
 
-# This file is generated from athackst/ci/copier/template/.github/workflows/ci_update.yml.jinja.
+# This file is generated from athackst/ci/template/.github/workflows/ci_update.yml.jinja.
 # Do not edit directly; update the template instead.
 
 name: CI Update

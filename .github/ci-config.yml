@@ -1,4 +1,4 @@
-# This file is generated from athackst/ci/copier/template/.github/ci-config.yml.jinja.
+# This file is generated from athackst/ci/template/.github/ci-config.yml.jinja.
 # Do not edit directly; update the template instead.
 
 name-template: "Release v$RESOLVED_VERSION"
