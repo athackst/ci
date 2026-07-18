@@ -62,8 +62,6 @@ jobs:
         run: |
           echo "Working directory contents:"
           tree
-          echo "Index contents:"
-          cat _site/index.html
 
       - name: Build ignore URLs for htmlproofer
         id: build-ignore

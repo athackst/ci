@@ -68,6 +68,15 @@ jobs:
       - name: Setup mkdocs config
         uses: athackst/ci/actions/mkdocs-config@main
 
+      - name: Debug MkDocs configuration
+        shell: bash
+        run: |
+          if [ -f mkdocs.yml ]; then
+            cat mkdocs.yml
+          else
+            echo "mkdocs.yml was not generated."
+          fi
+
       - name: Build docs
         id: mkdocs
         uses: athackst/mkdocs-simple-plugin@main
@@ -78,8 +87,6 @@ jobs:
       - name: Debug output
         run: |
           tree site
-          cat mkdocs.yml
-          cat site/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
