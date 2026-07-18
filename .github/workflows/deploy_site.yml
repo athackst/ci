@@ -1,4 +1,4 @@
-name: Deploy a site
+name: Deploy a Site
 
 on:
   workflow_call:
