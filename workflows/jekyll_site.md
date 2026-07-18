@@ -16,9 +16,20 @@ jobs:
 
 | Name | Description | Default |
 | --- | --- | --- |
+| `source` | (optional) Source directory for the site. | `.` |
 | `version` | (optional) Version path to append to the site base path, for example `dev` or `1.2.3`. | `""` |
 | `semiliterate` | (optional) Extract docs with semiliterate before building. | `true` |
 | `artifact-name` | (optional) Artifact name for the built site. | `github-pages` |
+
+## Outputs
+
+| Name | Description |
+| --- | --- |
+| `host` | Host name for the site. |
+| `base-path` | Base path for the site. |
+| `base-url` | Base URL for the site. |
+| `version` | Version identifier passed to the build. |
+| `artifact-name` | Name of the uploaded site artifact. |
 
 ## Permissions
 
@@ -28,7 +39,8 @@ jobs:
 
 - Uses the bundled `jekyll-config` action before building the site.
 - Optionally extracts source content with `PrimerPages/semiliterate`.
-- Exposes `host`, `base-path`, `version`, and `artifact-name` outputs for downstream workflows such as HTMLProofer and site deploy.
+- When `version` is non-empty, builds under a versioned base path and enables the shared versions manifest used by the theme's version selector.
+- Exposes site metadata outputs for downstream workflows such as HTMLProofer and site deploy.
 - This workflow only builds and uploads the site artifact. HTMLProofer and deployment are handled by separate reusable workflows.
 
 ## Examples

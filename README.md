@@ -84,7 +84,7 @@ entrypoint workflows plus a shared CI config.
 - `none` is the default and skips site workflow generation entirely.
 - `mkdocs` uses `mkdocs_site.yml`.
 - `jekyll` uses `jekyll_site.yml`.
-- MkDocs site workflows run on `main` pushes and release publishes; Jekyll site workflows run on `main` pushes.
+- MkDocs and Jekyll site workflows run on `main` pushes and release publishes.
 
 `automerge_mode`
 
@@ -97,9 +97,9 @@ entrypoint workflows plus a shared CI config.
 
 - Chooses whether to generate `release_draft.yml`.
 - When enabled, `release_draft.yml` creates or updates a draft release on `main` pushes.
-- With MkDocs sites, this also publishes versioned docs:
+- With MkDocs or Jekyll sites, this also publishes versioned docs:
   `main` publishes `dev`, and release events publish the release tag plus `latest`.
-- When disabled, release draft generation is skipped and MkDocs sites publish a simpler unversioned Pages site.
+- When disabled, release draft generation is skipped and sites publish a simpler unversioned Pages site.
 
 `release_template`
 

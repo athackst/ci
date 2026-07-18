@@ -17,7 +17,6 @@ jobs:
 | Name | Description | Default |
 | --- | --- | --- |
 | `create-pr` | (optional) Create or update a PR with template changes. | `true` |
-| `automerge` | (optional) Deprecated. Retained for compatibility; updater PRs are labeled automatically. | `false` |
 | `pr-branch` | (optional) Branch name used for template updates. | `ci/update-ci-template` |
 | `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
 
