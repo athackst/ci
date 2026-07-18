@@ -22,9 +22,9 @@ jobs:
 
 ## Secrets
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `token` | (optional) Token used for checkout, push, PR operations, failure issue maintenance, and label setup. | No |
+| Name | Description |
+| --- | --- |
+| `token` | (optional) Token used for checkout, push, PR operations, failure issue maintenance, and label setup. Falls back to `${{ github.token }}`. |
 
 ## Outputs
 

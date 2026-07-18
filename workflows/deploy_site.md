@@ -25,9 +25,9 @@ jobs:
 
 ## Secrets
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `token` | Token override for `actions/configure-pages` when `enablement: true`. | `false` |
+| Name | Description |
+| --- | --- |
+| `token` | (optional) Token override for `actions/configure-pages` when `enablement: true`. Falls back to `${{ github.token }}`. |
 
 ## Permissions
 
