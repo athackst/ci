@@ -597,7 +597,8 @@ jobs:
       issues: write
       actions: write
     uses: ./.github/workflows/ci_updater.yml
-    secrets: inherit
+    secrets:
+      token: ${{ secrets.CI_BOT_TOKEN }}
     with:
       create-pr: false
       pr-branch: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
