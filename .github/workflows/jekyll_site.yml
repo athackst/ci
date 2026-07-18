@@ -1,4 +1,4 @@
-name: Build a Jekyll Site
+name: Jekyll Site
 
 on:
   workflow_call:
