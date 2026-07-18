@@ -137,5 +137,5 @@ Reusable workflow documentation files are located in `workflows/`.
 - Never run untrusted PR code in `pull_request_target` mutation jobs.
 - Keep permissions minimal per job.
 - If broader permissions (for example `actions: write`) are used, add an in-file comment explaining why.
-- When permissions change in reusable workflows under `.github/workflows/`, double-check corresponding files under `template/.github/workflows/` to ensure caller-facing permissions still match the intended contract.
+- When permissions change in reusable workflows under `.github/workflows/`, double-check corresponding files under `copier/template/.github/workflows/` to ensure caller-facing permissions still match the intended contract.
 - Avoid destructive git operations; never hard reset in automation.
