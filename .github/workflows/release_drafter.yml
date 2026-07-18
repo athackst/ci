@@ -17,11 +17,6 @@ on:
         type: string
         required: false
         default: ""
-      release-match-pattern:
-        description: Deprecated compatibility input; no longer used for draft lookup.
-        type: string
-        required: false
-        default: "^v[0-9.]+$"
       draft-release-id:
         description: Optional explicit draft id 
         type: string
@@ -122,7 +117,6 @@ jobs:
           resolved-version: ${{ steps.version.outputs.resolved-version }}
           name: ${{ inputs.name }}
           tag-name: ${{ inputs.tag-name || '' }}
-          release-match-pattern: ${{ inputs.release-match-pattern }}
           draft-release-id: ${{ inputs.draft-release-id || '' }}
           reuse-existing-draft: ${{ inputs.reuse-existing-draft }}
           changelog: ${{ steps.changelog.outputs.changelog }}
