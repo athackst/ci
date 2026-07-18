@@ -32,6 +32,7 @@ jobs:
 ## Permissions
 
 - Requires `contents: write`, `pages: write`, and `id-token: write` in the caller job.
+- When `enablement: true` uses a fine-grained token override, that token needs `Pages: Read and write` and `Administration: Read and write` to create or configure the Pages site.
 
 ## Advanced
 
