@@ -6,7 +6,7 @@ This repo is the source of truth for:
 
 - Reusable workflows under `.github/workflows/*.yml`
 - Composite actions under `actions/*`
-- Copier templates under `template/`
+- Copier templates under `copier/template/`
 
 Consumer repos should call workflows from this repo at `@main` unless explicitly pinning.
 
@@ -68,11 +68,11 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 ## Copier Policy
 
-- Template source is `template/` via `copier.yml` `_subdirectory`.
+- Template source is `copier/template/` via `copier.yml` `_subdirectory`.
 - `_answers_file` is `.copier-answers.ci.yml`.
 - `ci_updater` uses `copier update` and requires answers file.
 - `copier_update` (PR helper) uses `copier copy --defaults --overwrite`.
-- `copier_update` should trigger only on template inputs (`copier.yml`, `template/**`) to avoid self-retrigger noise.
+- `copier_update` should trigger only on template inputs (`copier.yml`, `copier/template/**`) to avoid self-retrigger noise.
 
 ## Dispatch Policy
 
@@ -99,6 +99,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - `## Advanced` for non-obvious behavior or constraints users must know
 - `## Examples`
 - `Inputs` must use a table with columns: `Name`, `Description`, `Default`.  `Description` should include (optional) if it is optional.  Omit `Inputs` if no inputs are specified.
+- Omit deprecated compatibility inputs from user-facing documentation.
 - `Outputs` must use a table with columns: `Name`, `Description`. Omit `Outputs` if no outputs are specified.
 - Keep `Usage` to the minimal working example first.
 - Omit `Permissions` when no token scope guidance is needed.
@@ -108,7 +109,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 ## Reusable workflow documentation format
 
-Reusable workflow documentation files are located in docs/workflows.
+Reusable workflow documentation files are located in `workflows/`.
 
 - Reusable workflow READMEs should use this section order:
 - `# <Workflow Name>`
@@ -121,6 +122,7 @@ Reusable workflow documentation files are located in docs/workflows.
 - `## Advanced` for non-obvious behavior or constraints users must know
 - `## Examples`
 - `Inputs` must use a table with columns: `Name`, `Description`, `Default`. `Description` should include (optional) if it is optional. Omit `Inputs` if no inputs are specified.
+- Omit deprecated compatibility inputs from user-facing documentation.
 - `Secrets` must use a table with columns: `Name`, `Description`, `Required`. Omit `Secrets` if no secrets are specified.
 - `Outputs` must use a table with columns: `Name`, `Description`. Omit `Outputs` if no outputs are specified.
 - Keep `Usage` to the minimal working reusable workflow call first.

@@ -12,7 +12,7 @@ No site workflow is generated when `site_generator` is `none`.
 
 - Pushes to `main`
 - Pull requests
-- Release `published` events for the MkDocs release job
+- Release `published` events
 
 ## Calls
 
@@ -46,7 +46,8 @@ contract.
 - On `main` pushes, builds and deploys the configured site.
 - `build-site` is responsible for building the site artifact and exposing the site metadata used by `test-site` and `deploy-site`.
 - `test-site` runs HTMLProofer against the built artifact and reports link failures without blocking deployment.
+- When releases are enabled, both MkDocs and Jekyll publish versioned docs: `main` publishes `dev`, and release events publish the release tag plus `latest`.
 - `deploy-site` handles the publish step:
   - non-versioned sites deploy the built artifact with GitHub Pages actions
-  - versioned MkDocs sites publish with `PrimerPages/versite` via branch
+  - versioned sites publish with `PrimerPages/versite` via branch
   - `dry-run` disables the publish step for either deployment mode

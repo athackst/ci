@@ -20,7 +20,7 @@ jobs:
 | `enablement` | (optional) Try to enable GitHub Pages for the repository before deploying. | `false` |
 | `version` | (optional) Version identifier to publish, for example `dev` or `1.2.3`. Required for `type: branch`. | `""` |
 | `artifact-name` | (optional) Artifact name containing the built site content. | `github-pages` |
-| `branch` | (optional) Deployment branch for `type: branch`. Uses the action default when empty. | `""` |
+| `branch` | (optional) Deployment branch for `type: branch`. | `gh-pages` |
 | `dry-run` | (optional) Disable the publish step while still running workflow setup and artifact preparation. | `false` |
 
 ## Secrets
