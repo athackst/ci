@@ -163,11 +163,9 @@ the generated CI workflows for ${repo}. GitHub can prefill the token form here:
 Limit repository access to ${repo}.
 
 Required repository permissions:
-  - Actions: Read and write
   - Contents: Read and write
   - Issues: Read and write
   - Pull requests: Read and write
-  - Variables: Read and write
   - Workflows: Read and write
 
 After the token is created, paste it below. It will be saved as the

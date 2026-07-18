@@ -52,11 +52,15 @@ Add a repository secret named `CI_BOT_TOKEN`:
 
 Required repository permissions for the token:
 
-- `Contents: Read and write` for update commits.
-- `Pull requests: Read and write` for PR labels, comments, updater PRs, and automerge.
-- `Issues: Read and write` for repository labels, PR comments, and failure issues.
-- `Actions: Read and write` for updater PRs that modify workflow files.
+- `Contents: Read and write` for update commits and draft releases.
+- `Issues: Read and write` for repository labels and CI Updater failure issues, including recovery comments.
+- `Pull requests: Read and write` for PR labels, updater PRs, and automerge.
 - `Workflows: Read and write` for commits that create or update workflow files.
+
+If a caller opts into `deploy_site.yml` with `enablement: true`, its token also
+needs `Pages: Read and write` and `Administration: Read and write` to create or
+configure the Pages site. These conditional permissions apply only when
+`enablement: true`.
 
 ## Mental model
 
