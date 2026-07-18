@@ -25,12 +25,11 @@ workflow contract.
 
 The release draft job needs:
 
-- `contents: write` to create or update draft releases.
-- `pull-requests: read` to resolve changelog and version metadata.
+- `contents: write` creates or updates draft releases.
+- `pull-requests: read` resolves changelog and version metadata.
 
 ## Behavior
 
-- Creates or updates a draft release from resolved version and changelog data.
-- Updates a draft release with the resolved tag when one exists.
-- Otherwise updates the newest draft release containing the hidden release-draft marker.
+- Uses Release Drafter to resolve the version and changelog from `.github/ci-config.yml`.
+- Creates or updates the repository's draft release after pushes to `main` or manual dispatches.
 - Uses `secrets.CI_BOT_TOKEN` for release writes.
