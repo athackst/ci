@@ -24,9 +24,9 @@ jobs:
 
 ## Secrets
 
-| Name | Description | Default |
-| --- | --- | --- |
-| `token` | (optional) Token used to create or update the draft release. | `${{ github.token }}` |
+| Name | Description |
+| --- | --- |
+| `token` | (optional) Token used to create or update the draft release. Falls back to `${{ github.token }}`. |
 
 ## Outputs
 

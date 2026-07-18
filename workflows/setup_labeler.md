@@ -14,9 +14,9 @@ jobs:
 
 ## Secrets
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `token` | Token used to create and update repository labels. | No |
+| Name | Description |
+| --- | --- |
+| `token` | (optional) Token used to create and update repository labels. Falls back to `${{ github.token }}`. |
 
 ## Outputs
 

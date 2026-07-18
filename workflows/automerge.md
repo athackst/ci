@@ -22,9 +22,9 @@ jobs:
 
 ## Secrets
 
-| Name | Description | Default |
-| --- | --- | --- |
-| `token` | (optional) Token used for label inspection and enabling auto-merge. | `${{ github.token }}` |
+| Name | Description |
+| --- | --- |
+| `token` | (optional) Token used for label inspection and enabling auto-merge. Falls back to `${{ github.token }}`. |
 
 ## Permissions
 

@@ -14,9 +14,9 @@ jobs:
 
 ## Secrets
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `token` | Token used to resolve config and apply PR labels. | No |
+| Name | Description |
+| --- | --- |
+| `token` | (optional) Token used to resolve config and apply PR labels. Falls back to `${{ github.token }}`. |
 
 ## Permissions
 

@@ -123,7 +123,7 @@ Reusable workflow documentation files are located in `workflows/`.
 - `## Examples`
 - `Inputs` must use a table with columns: `Name`, `Description`, `Default`. `Description` should include (optional) if it is optional. Omit `Inputs` if no inputs are specified.
 - Omit deprecated compatibility inputs from user-facing documentation.
-- `Secrets` must use a table with columns: `Name`, `Description`, `Required`. Omit `Secrets` if no secrets are specified.
+- `Secrets` must use a table with columns: `Name`, `Description`. `Description` should include (optional) if it is optional and describe fallback behavior when applicable. Omit `Secrets` if no secrets are specified.
 - `Outputs` must use a table with columns: `Name`, `Description`. Omit `Outputs` if no outputs are specified.
 - Keep `Usage` to the minimal working reusable workflow call first.
 - `Usage` examples should show `uses: athackst/ci/.github/workflows/<file>.yml@main`.
