@@ -19,6 +19,7 @@ jobs:
 | `dry-run` | (optional) Detect and report template changes while preserving repository state. | `false` |
 | `pr-branch` | (optional) Branch name used for template updates. | `ci/update-ci-template` |
 | `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
+| `template-ref` | (optional) CI template ref to apply. Uses `HEAD` by default. | `""` |
 | `answers-file` | (optional) Copier answers file used for the CI template update. | `.copier-answers.ci.yml` |
 
 ## Secrets
@@ -45,6 +46,7 @@ jobs:
 ## Advanced
 
 - Wraps [`copier_update.yml`](copier_update.md) with CI-template defaults for existing consumers.
+- `checkout-ref` selects the consumer state and `template-ref` selects the CI template version applied to it.
 - Uses the configured Copier answers file for the CI template update.
 - Detects and applies every change produced by Copier in the fresh checkout.
 - Updater PRs use the title `chore: update CI template`, commit message `chore: apply CI template update`, and labels `automerge` and `skip-changelog`.

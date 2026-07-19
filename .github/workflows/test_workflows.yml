@@ -453,6 +453,8 @@ jobs:
     uses: ./.github/workflows/ci_updater.yml
     with:
       dry-run: true
+      checkout-ref: main
+      template-ref: ${{ github.sha }}
       answers-file: tests/fixtures/ci_updater/.copier-answers.ci.yml
 
   workflow-ci-updater-verify:

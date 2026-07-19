@@ -23,6 +23,11 @@ on:
         type: string
         required: false
         default: ""
+      template-ref:
+        description: Optional CI template ref to apply. Defaults to HEAD.
+        type: string
+        required: false
+        default: ""
       answers-file:
         description: Copier answers file to use for the CI template update.
         type: string
@@ -57,6 +62,7 @@ jobs:
       pr-labels: "automerge, skip-changelog"
       commit-message: "chore: apply CI template update"
       checkout-ref: ${{ inputs.checkout-ref }}
+      template-ref: ${{ inputs.template-ref }}
       answers-file: ${{ inputs.answers-file }}
     secrets:
       token: ${{ secrets.token }}

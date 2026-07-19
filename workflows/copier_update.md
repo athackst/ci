@@ -27,7 +27,7 @@ jobs:
 | `pr-labels` | (optional) Comma-separated list of labels to apply to the PR. | `""` |
 | `commit-message` | (optional) Commit message for template updates. | `chore: apply Copier template update` |
 | `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
-| `template-ref` | (optional) Copier template ref to update from. Defaults to `checkout-ref`, then `HEAD`. | `""` |
+| `template-ref` | (optional) Copier template ref to update from. Uses `HEAD` by default. | `""` |
 | `answers-file` | (optional) Copier answers file to use for the update. | `.copier-answers.yml` |
 
 ## Secrets
@@ -53,6 +53,7 @@ jobs:
 
 ## Advanced
 
+- `checkout-ref` selects the destination state and `template-ref` selects the Copier template version applied to it.
 - Skips the Copier update entirely when the configured answers file is missing.
 - Detects and applies every change produced by Copier in the fresh checkout.
 - Logs the managed-file status, diffstat, and diff from the `Detect changes` step and includes the changed file list in successful update summaries.

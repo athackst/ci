@@ -39,7 +39,7 @@ on:
         required: false
         default: ""
       template-ref:
-        description: Optional Copier template ref to update from. Defaults to checkout-ref, then HEAD.
+        description: Optional Copier template ref to update from. Defaults to HEAD.
         type: string
         required: false
         default: ""
@@ -93,7 +93,7 @@ jobs:
         id: apply
         shell: bash
         env:
-          VCS_REF: ${{ inputs.template-ref || inputs.checkout-ref || 'HEAD' }}
+          VCS_REF: ${{ inputs.template-ref || 'HEAD' }}
         run: |
           set -euo pipefail
           if [ ! -f "$ANSWERS_FILE" ]; then
@@ -272,7 +272,7 @@ jobs:
           PR_BRANCH: ${{ inputs.pr-branch }}
           PR_TITLE: ${{ inputs.pr-title }}
           ANSWERS_FILE: ${{ env.ANSWERS_FILE }}
-          COPIER_VCS_REF: ${{ inputs.template-ref || inputs.checkout-ref || 'HEAD' }}
+          COPIER_VCS_REF: ${{ inputs.template-ref || 'HEAD' }}
           CONFLICTED_FILES: ${{ steps.conflicts.outputs.files || '' }}
 
       - name: Close recovered failure issue
