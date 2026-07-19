@@ -34,8 +34,15 @@ jobs:
     permissions:
       contents: read
     needs: [workflow-mkdocs-site]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
+      - name: Verify mkdocs workflow result
+        shell: bash
+        env:
+          WORKFLOW_RESULT: ${{ needs.workflow-mkdocs-site.result }}
+        run: test "$WORKFLOW_RESULT" = "success"
+
       - name: Download mkdocs artifact
         uses: actions/download-artifact@v8
         with:
@@ -153,8 +160,15 @@ jobs:
     permissions:
       contents: read
     needs: [workflow-jekyll-site]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
+      - name: Verify Jekyll workflow result
+        shell: bash
+        env:
+          WORKFLOW_RESULT: ${{ needs.workflow-jekyll-site.result }}
+        run: test "$WORKFLOW_RESULT" = "success"
+
       - name: Download Jekyll artifact
         uses: actions/download-artifact@v8
         with:
@@ -320,6 +334,7 @@ jobs:
         id: verify-deploy-site
         shell: bash
         env:
+          WORKFLOW_RESULT: ${{ needs.workflow-deploy-site.result }}
           TEST_BRANCH: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
@@ -333,6 +348,7 @@ jobs:
             ERRORS+=("$1")
           }
 
+          [ "$WORKFLOW_RESULT" = "success" ] || set_failure "deploy_site.yml result was $WORKFLOW_RESULT"
           git fetch origin "$TEST_BRANCH" --depth=1 || set_failure "Failed to fetch $TEST_BRANCH"
           test -n "$(git rev-parse --verify FETCH_HEAD)" || set_failure "FETCH_HEAD was empty"
           if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
@@ -433,11 +449,13 @@ jobs:
       - name: Verify workflow release draft dry run
         shell: bash
         env:
+          WORKFLOW_RESULT: ${{ needs.workflow-release-draft.result }}
           RELEASE_ID: ${{ needs.workflow-release-draft.outputs.id }}
           RESOLVED_VERSION: ${{ needs.workflow-release-draft.outputs.resolved-version }}
           CHANGELOG: ${{ needs.workflow-release-draft.outputs.changelog }}
         run: |
           set -euo pipefail
+          test "$WORKFLOW_RESULT" = "success"
           test -z "$RELEASE_ID"
           test -n "$RESOLVED_VERSION"
           test -n "$CHANGELOG"
@@ -499,6 +517,7 @@ jobs:
         id: verify-ci-updater-outputs
         shell: bash
         env:
+          WORKFLOW_RESULT: ${{ needs.workflow-ci-updater.result }}
           CHANGED: ${{ needs.workflow-ci-updater.outputs.changed }}
           CHANGED_FILES: ${{ needs.workflow-ci-updater.outputs.changed-files }}
           BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
@@ -515,6 +534,7 @@ jobs:
             ERRORS+=("$1")
           }
 
+          [ "$WORKFLOW_RESULT" = "success" ] || set_failure "ci_updater.yml result was $WORKFLOW_RESULT"
           [ "$CHANGED" = "true" ] || set_failure "Expected the stale CI updater fixture to produce changes"
           grep -Fxq ".copier-answers.ci.yml" <<< "$CHANGED_FILES" || \
             set_failure "Missing the Copier answers fixture from changed-files"
@@ -531,6 +551,7 @@ jobs:
             printf '%s\n' "${ERRORS[@]}"
             echo "EOF_ERRORS"
             echo "details<<EOF_DETAILS"
+            echo "result: $WORKFLOW_RESULT"
             echo "changed: $CHANGED"
             echo "changed-files: $CHANGED_FILES"
             echo "branch: $BRANCH"
@@ -608,6 +629,7 @@ jobs:
           fi
 
   workflows-success:
+    if: ${{ always() }}
     needs:
       - workflow-lint
       - workflow-mkdocs-site-verify
@@ -620,5 +642,33 @@ jobs:
     steps:
       - name: Evaluate upstream job results
         shell: bash
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
+          set -euo pipefail
+
+          UNSUCCESSFUL_JOBS="$(jq -r '
+            to_entries[]
+            | select(.value.result != "success")
+            | "\(.key): \(.value.result)"
+          ' <<< "$NEEDS_JSON")"
+
+          {
+            echo "## Workflow Test Results"
+            echo ""
+            echo "| Job | Result |"
+            echo "| --- | --- |"
+            jq -r '
+              to_entries[]
+              | "| `\(.key)` | \(if .value.result == "success" then ":white_check_mark:" else ":x:" end) \(.value.result) |"
+            ' <<< "$NEEDS_JSON"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$UNSUCCESSFUL_JOBS" ]; then
+            echo "Workflow tests did not all pass:"
+            printf '%s\n' "$UNSUCCESSFUL_JOBS"
+            exit 1
+          fi
+
           echo "All workflow tests passed."
