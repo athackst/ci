@@ -85,6 +85,9 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - `test_actions.yml`: action-level unit/integration checks.
 - `test_workflows.yml`: reusable workflow behavior checks.
 - `test_templates.yml`: Copier template rendering/lint checks.
+- Action-specific tests belong under `actions/<action>/tests/`.
+- Copier template-specific tests belong under `copier/tests/`.
+- Repository-level and cross-cutting Bats tests belong under `tests/bats/`.
 - Prefer Bats for integration assertions; Python `unittest` for script logic.
 
 ## Action README Format

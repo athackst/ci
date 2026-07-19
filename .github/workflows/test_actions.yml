@@ -284,7 +284,7 @@ jobs:
           EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
         run: |
           set +e
-          BATS_OUTPUT="$(bats tests/bats/pr_labeler_assertion.bats 2>&1)"
+          BATS_OUTPUT="$(bats actions/pr-labeler/tests/pr_labeler_assertion.bats 2>&1)"
           BATS_STATUS=$?
           TEST_SUMMARY="PR label assertion"
           if [ "$BATS_STATUS" -eq 0 ]; then
@@ -358,7 +358,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          BATS_OUTPUT="$(bats tests/bats/mkdocs_config.bats 2>&1)"
+          BATS_OUTPUT="$(bats actions/mkdocs-config/tests/mkdocs_config.bats 2>&1)"
           BATS_STATUS=$?
           set -e
           TEST_SUMMARY="MkDocs config action test"
@@ -431,7 +431,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          BATS_OUTPUT="$(bats tests/bats/jekyll_config.bats 2>&1)"
+          BATS_OUTPUT="$(bats actions/jekyll-config/tests/jekyll_config.bats 2>&1)"
           BATS_STATUS=$?
           set -e
           TEST_SUMMARY="Jekyll config action test"
