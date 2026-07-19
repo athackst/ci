@@ -6,41 +6,50 @@ tag-template: "v$RESOLVED_VERSION"
 template: |
 [[ release_template | indent(2, true) ]]
 categories:
+  - type: pre-exclude
+    when:
+      label: skip-changelog
   - title: ':zap: Breaking'
     exclusive: true
     semver-increment: major
-    labels:
-      - 'breaking'
-      - 'major'
+    when:
+      labels:
+        - 'breaking'
+        - 'major'
   - title: ':rocket: New'
     exclusive: true
     semver-increment: minor
-    labels:
-      - 'feature'
-      - 'enhancement'
+    when:
+      labels:
+        - 'feature'
+        - 'enhancement'
   - title: ':bug: Bug Fixes'
     exclusive: true
     semver-increment: patch
-    labels:
-      - 'bug'
-      - 'fix'
+    when:
+      labels:
+        - 'bug'
+        - 'fix'
   - title: ':toolbox: Maintenance'
     exclusive: true
     semver-increment: patch
-    labels:
-      - 'maintenance'
-      - 'devops'
+    when:
+      labels:
+        - 'maintenance'
+        - 'devops'
   - title: ':memo: Documentation'
     exclusive: true
     semver-increment: patch
-    labels:
-      - 'docs'
-      - 'documentation'
+    when:
+      labels:
+        - 'docs'
+        - 'documentation'
   - title: 'Dependency Updates'
     exclusive: true
     semver-increment: patch
-    label: 'dependencies'
     collapse-after: 3
+    when:
+      label: dependencies
   - type: version-resolver
     semver-increment: minor
     when:
@@ -49,9 +58,6 @@ categories:
     semver-increment: patch
     when:
       label: security
-
-exclude-labels:
-  - 'skip-changelog'
 
 labels:
   breaking:
