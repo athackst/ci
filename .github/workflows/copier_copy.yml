@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          copier copy --trust --defaults --overwrite . .
+          copier copy --trust --defaults --overwrite --vcs-ref HEAD . .
 
       - name: Commit generated workflow updates
         id: commit
