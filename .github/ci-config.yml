@@ -10,26 +10,32 @@ template: |
 
 categories:
   - title: ':zap: Breaking'
+    exclusive: true
     labels:
       - 'breaking'
       - 'major'
   - title: ':rocket: New'
+    exclusive: true
     labels:
       - 'feature'
       - 'enhancement'
   - title: ':bug: Bug Fixes'
+    exclusive: true
     labels:
       - 'bug'
       - 'fix'
   - title: ':toolbox: Maintenance'
+    exclusive: true
     labels:
       - 'maintenance'
       - 'devops'
   - title: ':memo: Documentation'
+    exclusive: true
     labels:
       - 'docs'
       - 'documentation'
   - title: 'Dependency Updates'
+    exclusive: true
     label: 'dependencies'
     collapse-after: 3
 
