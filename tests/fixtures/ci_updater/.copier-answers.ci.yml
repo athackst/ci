@@ -1,6 +1,6 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: f7bd500
-_src_path: .
+_commit: main
+_src_path: gh:athackst/ci
 automerge_mode: poll
 do_releases: true
 release_template: '## What''s changed

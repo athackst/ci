@@ -23,7 +23,5 @@ jobs:
       # Required in this environment to allow PRs that modify .github/workflows/*.
       actions: write
     uses: athackst/ci/.github/workflows/ci_updater.yml@main
-    with:
-      create-pr: true
     secrets:
       token: ${{ secrets.CI_BOT_TOKEN }}

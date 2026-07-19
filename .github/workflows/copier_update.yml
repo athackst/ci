@@ -4,10 +4,15 @@ on:
   workflow_call:
     inputs:
       create-pr:
-        description: Create or update a PR with template changes.
+        description: Deprecated compatibility option for direct branch pushes.
         type: boolean
         required: false
         default: true
+      dry-run:
+        description: Detect and report template changes while preserving repository state.
+        type: boolean
+        required: false
+        default: false
       pr-branch:
         description: Branch name used for template updates.
         type: string
@@ -34,7 +39,7 @@ on:
         required: false
         default: ""
       template-ref:
-        description: Optional Copier template ref to update from. Defaults to checkout-ref, then HEAD.
+        description: Optional Copier template ref to update from. Defaults to HEAD.
         type: string
         required: false
         default: ""
@@ -42,12 +47,7 @@ on:
         description: Copier answers file to use for the update.
         type: string
         required: false
-        default: .copier-answers.yml
-      managed-paths:
-        description: Newline-delimited paths managed by the template, excluding the answers file.
-        type: string
-        required: false
-        default: "."
+        default: .copier-answers.ci.yml
     secrets:
       token:
         description: Optional token override for checkout, push, and PR operations.
@@ -60,18 +60,11 @@ on:
         description: Newline-delimited list of Copier-managed files changed by the update.
         value: ${{ jobs.update.outputs.changed-files }}
       branch:
-        description: Branch name used for the update, whether a PR was created or changes were pushed directly.
+        description: Branch name used for the update PR; empty during dry runs.
         value: ${{ jobs.update.outputs.branch }}
       pr-url:
-        description: URL for the update PR, if one was created or updated.
+        description: URL for the update PR; empty during dry runs.
         value: ${{ jobs.update.outputs.pr-url }}
-
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  # Required in this environment to allow PRs that modify .github/workflows/*.
-  actions: write
 
 jobs:
   update:
@@ -83,7 +76,6 @@ jobs:
       pr-url: ${{ steps.pr.outputs.pull-request-url }}
     env:
       ANSWERS_FILE: ${{ inputs.answers-file }}
-      MANAGED_PATHS: ${{ inputs.managed-paths }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.0
@@ -101,7 +93,7 @@ jobs:
         id: apply
         shell: bash
         env:
-          VCS_REF: ${{ inputs.template-ref || inputs.checkout-ref || 'HEAD' }}
+          VCS_REF: ${{ inputs.template-ref || 'HEAD' }}
         run: |
           set -euo pipefail
           if [ ! -f "$ANSWERS_FILE" ]; then
@@ -118,15 +110,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          managed_paths=()
-          while IFS= read -r path; do
-            if [ -n "${path//[[:space:]]/}" ]; then
-              managed_paths+=("$path")
-            fi
-          done <<< "$MANAGED_PATHS"
-          managed_paths+=("$ANSWERS_FILE")
-
-          STATUS_OUTPUT="$(git status --short -- "${managed_paths[@]}")"
+          STATUS_OUTPUT="$(git status --short)"
 
           if [ -n "$STATUS_OUTPUT" ]; then
             CHANGED_FILES="$(printf '%s\n' "$STATUS_OUTPUT" | sed -E 's/^.. //')"
@@ -141,10 +125,10 @@ jobs:
             printf '%s\n' "$STATUS_OUTPUT"
             echo ""
             echo "Diffstat:"
-            git diff --stat -- "${managed_paths[@]}"
+            git diff --stat
             echo ""
             echo "Diff:"
-            git diff -- "${managed_paths[@]}"
+            git diff
           else
             echo "changed=false" | tee -a "$GITHUB_OUTPUT"
             {
@@ -152,7 +136,7 @@ jobs:
               echo ""
               echo "EOF_CHANGED_FILES"
             } | tee -a "$GITHUB_OUTPUT"
-            echo "No Copier-managed changes detected under configured managed paths."
+            echo "No Copier-managed changes detected."
           fi
 
       - name: Detect Copier conflicts
@@ -161,15 +145,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          managed_paths=()
-          while IFS= read -r path; do
-            if [ -n "${path//[[:space:]]/}" ]; then
-              managed_paths+=("$path")
-            fi
-          done <<< "$MANAGED_PATHS"
-          managed_paths+=("$ANSWERS_FILE")
-
-          CONFLICTED_FILES="$(git diff --name-only --diff-filter=U -- "${managed_paths[@]}")"
+          CONFLICTED_FILES="$(git diff --name-only --diff-filter=U)"
 
           if [ -z "$CONFLICTED_FILES" ]; then
             echo "found=false" | tee -a "$GITHUB_OUTPUT"
@@ -187,10 +163,10 @@ jobs:
           printf '%s\n' "$CONFLICTED_FILES"
           echo ""
           echo "Conflict index entries:"
-          git ls-files -u -- "${managed_paths[@]}"
+          git ls-files -u
           echo ""
-          echo "Managed diff:"
-          git diff -- "${managed_paths[@]}"
+          echo "Diff:"
+          git diff
 
       - name: Stop on Copier conflicts
         if: ${{ steps.conflicts.outputs.found == 'true' }}
@@ -201,7 +177,7 @@ jobs:
 
       - name: Create or update PR
         id: pr
-        if: ${{ inputs.create-pr && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
+        if: ${{ !inputs.dry-run && inputs.create-pr && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.token || github.token }}
@@ -214,30 +190,22 @@ jobs:
 
       - name: Push update branch
         id: push-branch
-        if: ${{ !inputs.create-pr && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
+        if: ${{ !inputs.dry-run && !inputs.create-pr && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
         shell: bash
         env:
           BRANCH_NAME: ${{ inputs.pr-branch }}
         run: |
           set -euo pipefail
-          managed_paths=()
-          while IFS= read -r path; do
-            if [ -n "${path//[[:space:]]/}" ]; then
-              managed_paths+=("$path")
-            fi
-          done <<< "$MANAGED_PATHS"
-          managed_paths+=("$ANSWERS_FILE")
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH_NAME"
-          git add -A -- "${managed_paths[@]}"
+          git add -A
           git commit -m "${{ inputs.commit-message }}"
           git push --force-with-lease origin "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" | tee -a "$GITHUB_OUTPUT"
 
       - name: Upsert failure issue
-        if: ${{ failure() }}
+        if: ${{ failure() && !inputs.dry-run }}
         uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.token || github.token }}
@@ -304,11 +272,11 @@ jobs:
           PR_BRANCH: ${{ inputs.pr-branch }}
           PR_TITLE: ${{ inputs.pr-title }}
           ANSWERS_FILE: ${{ env.ANSWERS_FILE }}
-          COPIER_VCS_REF: ${{ inputs.template-ref || inputs.checkout-ref || 'HEAD' }}
+          COPIER_VCS_REF: ${{ inputs.template-ref || 'HEAD' }}
           CONFLICTED_FILES: ${{ steps.conflicts.outputs.files || '' }}
 
       - name: Close recovered failure issue
-        if: ${{ success() }}
+        if: ${{ success() && !inputs.dry-run }}
         uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.token || github.token }}
@@ -360,6 +328,7 @@ jobs:
           CONFLICT_FOUND: ${{ steps.conflicts.outputs.found || 'false' }}
           CONFLICTED_FILES: ${{ steps.conflicts.outputs.files || '' }}
           CREATE_PR_REQUESTED: ${{ inputs.create-pr }}
+          DRY_RUN: ${{ inputs.dry-run }}
           PR_BRANCH_INPUT: ${{ inputs.pr-branch }}
           PR_OPERATION: ${{ steps.pr.outputs.pull-request-operation }}
           PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
@@ -385,6 +354,8 @@ jobs:
               echo '```'
             elif [ "${CHANGED}" != "true" ]; then
               echo ":white_check_mark: Copier ran, but no file changes were produced."
+            elif [ "${DRY_RUN}" = "true" ]; then
+              echo ":white_check_mark: Dry run detected template changes."
             elif [ -n "${PR_URL}" ]; then
               echo ":white_check_mark: PR created or updated successfully."
               echo ""

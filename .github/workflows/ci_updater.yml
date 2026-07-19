@@ -4,10 +4,15 @@ on:
   workflow_call:
     inputs:
       create-pr:
-        description: Create or update a PR with template changes.
+        description: Deprecated compatibility option for direct branch pushes.
         type: boolean
         required: false
         default: true
+      dry-run:
+        description: Detect and report template changes while preserving repository state.
+        type: boolean
+        required: false
+        default: false
       pr-branch:
         description: Branch name used for template updates.
         type: string
@@ -18,6 +23,16 @@ on:
         type: string
         required: false
         default: ""
+      template-ref:
+        description: Optional CI template ref to apply. Defaults to HEAD.
+        type: string
+        required: false
+        default: ""
+      answers-file:
+        description: Copier answers file to use for the CI template update.
+        type: string
+        required: false
+        default: .copier-answers.ci.yml
     secrets:
       token:
         description: Optional token override for checkout, push, and PR operations.
@@ -30,30 +45,24 @@ on:
         description: Newline-delimited list of Copier-managed files changed by the update.
         value: ${{ jobs.update.outputs.changed-files }}
       branch:
-        description: Branch name used for the update, whether a PR was created or changes were pushed directly.
+        description: Branch name used for the update PR; empty during dry runs.
         value: ${{ jobs.update.outputs.branch }}
       pr-url:
-        description: URL for the update PR, if one was created or updated.
+        description: URL for the update PR; empty during dry runs.
         value: ${{ jobs.update.outputs.pr-url }}
-
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  # Required in this environment to allow PRs that modify .github/workflows/*.
-  actions: write
 
 jobs:
   update:
     uses: ./.github/workflows/copier_update.yml
     with:
       create-pr: ${{ inputs.create-pr }}
+      dry-run: ${{ inputs.dry-run }}
       pr-branch: ${{ inputs.pr-branch }}
       pr-title: "chore: update CI template"
       pr-labels: "automerge, skip-changelog"
       commit-message: "chore: apply CI template update"
       checkout-ref: ${{ inputs.checkout-ref }}
-      answers-file: ".copier-answers.ci.yml"
-      managed-paths: ".github"
+      template-ref: ${{ inputs.template-ref }}
+      answers-file: ${{ inputs.answers-file }}
     secrets:
       token: ${{ secrets.token }}
