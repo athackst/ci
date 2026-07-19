@@ -447,54 +447,17 @@ jobs:
             echo ":white_check_mark: Release Drafter resolved version $RESOLVED_VERSION and rendered a changelog."
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
-  workflow-ci-updater-fixture-branch:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    outputs:
-      fixture-branch: ${{ steps.branch.outputs.fixture-branch }}
-    steps:
-      - uses: actions/checkout@v7.0.0
-        with:
-          fetch-depth: 0
-      - name: Create ci_updater fixture branch
-        id: branch
-        shell: bash
-        env:
-          FIXTURE_BRANCH: ci-test/ci-updater-fixture-pr-${{ github.event.pull_request.number }}
-        run: |
-          set -euo pipefail
-
-          FIXTURE_ANSWERS_PATH="$RUNNER_TEMP/ci-updater-fixture-answers.yml"
-          cp tests/fixtures/ci_updater/.copier-answers.ci.yml "$FIXTURE_ANSWERS_PATH"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$FIXTURE_BRANCH"
-          cp "$FIXTURE_ANSWERS_PATH" .copier-answers.ci.yml
-          git add -f .copier-answers.ci.yml
-          git commit -m "test: prepare ci_updater fixture"
-          git push --force-with-lease origin "$FIXTURE_BRANCH"
-          echo "fixture-branch=$FIXTURE_BRANCH" | tee -a "$GITHUB_OUTPUT"
-
   workflow-ci-updater:
-    needs: [workflow-ci-updater-fixture-branch]
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      actions: write
+      contents: read
     uses: ./.github/workflows/ci_updater.yml
-    secrets:
-      token: ${{ secrets.CI_BOT_TOKEN }}
     with:
-      create-pr: false
-      pr-branch: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
-      checkout-ref: ${{ needs.workflow-ci-updater-fixture-branch.outputs.fixture-branch }}
+      dry-run: true
+      answers-file: tests/fixtures/ci_updater/.copier-answers.ci.yml
 
-  workflow-ci-updater-verify-and-cleanup:
+  workflow-ci-updater-verify:
     permissions:
-      contents: write
+      contents: read
     needs: [workflow-ci-updater]
     if: ${{ always() }}
     runs-on: ubuntu-latest
@@ -507,7 +470,6 @@ jobs:
           CHANGED_FILES: ${{ needs.workflow-ci-updater.outputs.changed-files }}
           BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
           PR_URL: ${{ needs.workflow-ci-updater.outputs.pr-url }}
-          EXPECTED_BRANCH: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
 
@@ -520,14 +482,11 @@ jobs:
             ERRORS+=("$1")
           }
 
-          [ "$CHANGED" = "true" ] || [ "$CHANGED" = "false" ] || set_failure "Invalid changed output: $CHANGED"
-          if [ "$CHANGED" = "true" ]; then
-            [ -n "$CHANGED_FILES" ] || set_failure "Missing changed-files output when changed=true"
-            [ -n "$BRANCH" ] || set_failure "Missing branch output when changed=true"
-            [ "$BRANCH" != "HEAD" ] || set_failure "Invalid branch output: HEAD"
-            [ "$BRANCH" = "$EXPECTED_BRANCH" ] || set_failure "Unexpected branch output: $BRANCH"
-            [ -z "$PR_URL" ] || set_failure "Expected no pr-url when create-pr=false"
-          fi
+          [ "$CHANGED" = "true" ] || set_failure "Expected the stale CI updater fixture to produce changes"
+          grep -Fxq ".github/ci-config.yml" <<< "$CHANGED_FILES" || \
+            set_failure "Missing .github/ci-config.yml from changed-files"
+          [ -z "$BRANCH" ] || set_failure "Expected an empty branch output during dry run"
+          [ -z "$PR_URL" ] || set_failure "Expected an empty pr-url output during dry run"
 
           if [ "$STATUS" != "success" ]; then
             SUMMARY="ci_updater.yml returned invalid outputs."
@@ -550,105 +509,6 @@ jobs:
             exit 1
           fi
 
-      - name: Verify ci_updater branch exists
-        id: verify-ci-updater-branch
-        if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TEST_BRANCH: ${{ needs.workflow-ci-updater.outputs.branch }}
-        run: |
-          set -euo pipefail
-          for sleep_seconds in 1 2 4 8 16 24; do
-            if gh api "repos/${{ github.repository }}/branches/${TEST_BRANCH}" >/dev/null 2>&1; then
-              {
-                echo "summary=ci_updater.yml branch exists."
-                echo "errors<<EOF_ERRORS"
-                echo "EOF_ERRORS"
-                echo "details=branch: ${TEST_BRANCH}"
-              } | tee -a "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            echo "Branch ${TEST_BRANCH} not visible yet; retrying in ${sleep_seconds}s..."
-            sleep "${sleep_seconds}"
-          done
-          {
-            echo "summary=ci_updater.yml branch was not found after waiting."
-            echo "errors<<EOF_ERRORS"
-            echo "Branch ${TEST_BRANCH} was not found after waiting."
-            echo "EOF_ERRORS"
-            echo "details=branch: ${TEST_BRANCH}"
-          } | tee -a "$GITHUB_OUTPUT"
-          exit 1
-
-      - name: Verify ci_updater branch content
-        id: checkout-ci-updater-branch
-        if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
-        uses: actions/checkout@v7.0.0
-        with:
-          ref: ${{ needs.workflow-ci-updater.outputs.branch }}
-          fetch-depth: 1
-
-      - name: Compare ci_updater fixture result
-        id: compare-ci-updater-fixture
-        if: ${{ needs.workflow-ci-updater.outputs.changed == 'true' }}
-        shell: bash
-        env:
-          EXPECTED_CONTENT: ${{ github.workspace }}
-        run: |
-          set -euo pipefail
-
-          STATUS="success"
-          SUMMARY="ci_updater.yml updated the fixture branch content."
-          ERRORS=()
-
-          if ! grep -q "^  ## What's changed" .github/ci-config.yml; then
-            STATUS="failure"
-            ERRORS+=("Missing expected release template heading.")
-          fi
-          if grep -q '^  outdated fixture content$' .github/ci-config.yml; then
-            STATUS="failure"
-            ERRORS+=("Fixture content was not updated.")
-          fi
-
-          if [ "$STATUS" != "success" ]; then
-            SUMMARY="ci_updater.yml fixture content verification failed."
-          fi
-
-          {
-            echo "summary=$SUMMARY"
-            echo "errors<<EOF_ERRORS"
-            printf '%s\n' "${ERRORS[@]}"
-            echo "EOF_ERRORS"
-            echo "details=.github/ci-config.yml"
-          } | tee -a "$GITHUB_OUTPUT"
-
-          if [ "$STATUS" != "success" ]; then
-            exit 1
-          fi
-
-      - name: Delete ci_updater test branch
-        if: ${{ always() }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TEST_BRANCH: ci-test/ci-updater-pr-${{ github.event.pull_request.number }}
-        run: |
-          set -euo pipefail
-          ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
-
-      - name: Delete ci_updater fixture branch
-        if: ${{ always() }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          FIXTURE_BRANCH: ci-test/ci-updater-fixture-pr-${{ github.event.pull_request.number }}
-        run: |
-          set -euo pipefail
-          ENCODED_BRANCH="${FIXTURE_BRANCH//\//%2F}"
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
-
       - name: Workflow summary
         if: ${{ always() }}
         shell: bash
@@ -658,15 +518,6 @@ jobs:
           OUTPUTS_SUMMARY: ${{ steps.verify-ci-updater-outputs.outputs.summary || 'ci_updater.yml output verification did not run.' }}
           OUTPUTS_ERRORS: ${{ steps.verify-ci-updater-outputs.outputs.errors || '' }}
           OUTPUTS_DETAILS: ${{ steps.verify-ci-updater-outputs.outputs.details || '' }}
-          BRANCH_STATUS: ${{ steps.verify-ci-updater-branch.outcome || 'skipped' }}
-          BRANCH_SUMMARY: ${{ steps.verify-ci-updater-branch.outputs.summary || 'ci_updater.yml branch exists.' }}
-          BRANCH_ERRORS: ${{ steps.verify-ci-updater-branch.outputs.errors || '' }}
-          BRANCH_DETAILS: ${{ steps.verify-ci-updater-branch.outputs.details || '' }}
-          CHECKOUT_STATUS: ${{ steps.checkout-ci-updater-branch.outcome || 'skipped' }}
-          COMPARE_STATUS: ${{ steps.compare-ci-updater-fixture.outcome || 'skipped' }}
-          COMPARE_SUMMARY: ${{ steps.compare-ci-updater-fixture.outputs.summary || 'ci_updater.yml fixture comparison did not run.' }}
-          COMPARE_ERRORS: ${{ steps.compare-ci-updater-fixture.outputs.errors || '' }}
-          COMPARE_DETAILS: ${{ steps.compare-ci-updater-fixture.outputs.details || '' }}
         run: |
           set -euo pipefail
 
@@ -675,15 +526,6 @@ jobs:
           if [ "$OUTPUTS_STATUS" != "success" ]; then
             STATUS="failure"
             SUMMARY="$OUTPUTS_SUMMARY"
-          elif [ "$CHANGED" = "true" ] && [ "$BRANCH_STATUS" != "success" ]; then
-            STATUS="failure"
-            SUMMARY="$BRANCH_SUMMARY"
-          elif [ "$CHANGED" = "true" ] && [ "$CHECKOUT_STATUS" != "success" ]; then
-            STATUS="failure"
-            SUMMARY="ci_updater.yml branch checkout failed."
-          elif [ "$CHANGED" = "true" ] && [ "$COMPARE_STATUS" != "success" ]; then
-            STATUS="failure"
-            SUMMARY="$COMPARE_SUMMARY"
           elif [ "$CHANGED" != "true" ]; then
             SUMMARY="ci_updater.yml reported no template changes."
           fi
@@ -699,14 +541,6 @@ jobs:
             echo ""
             echo "<details><summary>Details</summary>"
             echo ""
-            echo "Step outcomes:"
-            echo '```text'
-            echo "outputs: $OUTPUTS_STATUS"
-            echo "branch: $BRANCH_STATUS"
-            echo "checkout: $CHECKOUT_STATUS"
-            echo "compare: $COMPARE_STATUS"
-            echo '```'
-            echo ""
             if [ -n "$OUTPUTS_DETAILS" ]; then
               echo "Outputs:"
               echo '```text'
@@ -714,20 +548,10 @@ jobs:
               echo '```'
               echo ""
             fi
-            if [ -n "$OUTPUTS_ERRORS$BRANCH_ERRORS$COMPARE_ERRORS" ]; then
+            if [ -n "$OUTPUTS_ERRORS" ]; then
               echo "Errors:"
               echo '```text'
               printf '%s\n' "$OUTPUTS_ERRORS"
-              printf '%s\n' "$BRANCH_ERRORS"
-              printf '%s\n' "$COMPARE_ERRORS"
-              echo '```'
-              echo ""
-            fi
-            if [ -n "$BRANCH_DETAILS$COMPARE_DETAILS" ]; then
-              echo "Checked:"
-              echo '```text'
-              printf '%s\n' "$BRANCH_DETAILS"
-              printf '%s\n' "$COMPARE_DETAILS"
               echo '```'
               echo ""
             fi
@@ -747,7 +571,7 @@ jobs:
       - workflow-htmlproofer-site
       - workflow-deploy-site-verify-and-cleanup
       - workflow-release-draft-verify
-      - workflow-ci-updater-verify-and-cleanup
+      - workflow-ci-updater-verify
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
