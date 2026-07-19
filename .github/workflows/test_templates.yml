@@ -42,7 +42,7 @@ jobs:
             ACTIONLINT: ${{ steps.get_actionlint.outputs.executable }}
         run: |
           set +e
-          BATS_OUTPUT="$(bats tests/bats/copier_template_outputs.bats 2>&1)"
+          BATS_OUTPUT="$(bats copier/tests/copier_template_outputs.bats 2>&1)"
           BATS_STATUS=$?
           set -e
           TEST_SUMMARY="Copier template output test"

@@ -39,7 +39,7 @@
 
 @test "merge_jekyll_config writes versions config when provided" {
   temp_config="$(mktemp)"
-  repo_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  action_dir="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 
   TITLE="CI Test Site" \
   DESCRIPTION="Test description for Jekyll config" \
@@ -49,8 +49,8 @@
   VERSIONS_ENABLED="true" \
   VERSIONS_CONFIG="docs/versions.json" \
   PREFIX="/ci" \
-  python3 "$repo_root/actions/jekyll-config/merge_jekyll_config.py" \
-    "$repo_root/actions/jekyll-config/_config.yml" \
+  python3 "$action_dir/merge_jekyll_config.py" \
+    "$action_dir/_config.yml" \
     "$temp_config"
 
   run grep -F "versions:" "$temp_config"
