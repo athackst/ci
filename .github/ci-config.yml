@@ -10,52 +10,51 @@ template: |
 
 categories:
   - title: ':zap: Breaking'
+    exclusive: true
+    semver-increment: major
     labels:
       - 'breaking'
       - 'major'
   - title: ':rocket: New'
+    exclusive: true
+    semver-increment: minor
     labels:
       - 'feature'
       - 'enhancement'
   - title: ':bug: Bug Fixes'
+    exclusive: true
+    semver-increment: patch
     labels:
       - 'bug'
       - 'fix'
   - title: ':toolbox: Maintenance'
+    exclusive: true
+    semver-increment: patch
     labels:
       - 'maintenance'
       - 'devops'
   - title: ':memo: Documentation'
+    exclusive: true
+    semver-increment: patch
     labels:
       - 'docs'
       - 'documentation'
   - title: 'Dependency Updates'
+    exclusive: true
+    semver-increment: patch
     label: 'dependencies'
     collapse-after: 3
+  - type: version-resolver
+    semver-increment: minor
+    when:
+      label: minor
+  - type: version-resolver
+    semver-increment: patch
+    when:
+      label: security
 
 exclude-labels:
   - 'skip-changelog'
-
-version-resolver:
-  major:
-    labels:
-      - 'breaking'
-      - 'major'
-  minor:
-    labels:
-      - 'feature'
-      - 'minor'
-      - 'enhancement'
-  patch:
-    labels:
-      - 'bug'
-      - 'fix'
-      - 'maintenance'
-      - 'docs'
-      - 'documentation'
-      - 'devops'
-      - 'dependencies'
-      - 'security'
 
 labels:
   breaking:
