@@ -27,14 +27,14 @@ jobs:
 | `pr-labels` | (optional) Comma-separated list of labels to apply to the PR. | `""` |
 | `commit-message` | (optional) Commit message for template updates. | `chore: apply Copier template update` |
 | `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
-| `template-ref` | (optional) Copier template ref to update from. Uses `HEAD` by default. | `""` |
+| `template-ref` | (optional) Copier template ref to update from. Copier selects the template version when omitted. | `""` |
 | `answers-file` | (optional) Copier answers file to use for the update. | `.copier-answers.yml` |
 
 ## Secrets
 
 | Name | Description |
 | --- | --- |
-| `token` | (optional) Token used for checkout, PR operations, failure issue maintenance, and label setup. Falls back to `${{ github.token }}`. |
+| `token` | (optional) Token used for checkout and PR operations. Falls back to `${{ github.token }}`. |
 
 ## Outputs
 
@@ -42,25 +42,24 @@ jobs:
 | --- | --- |
 | `changed` | Whether template changes were produced by Copier. |
 | `changed-files` | Newline-delimited list of Copier-managed files changed by the update. |
-| `branch` | Branch name used for the update PR; empty during dry runs. |
-| `pr-url` | URL for the updater PR; empty during dry runs. |
+| `pr-branch` | Branch name used for the update PR; empty when no PR is created. |
+| `pr-url` | URL for the updater PR; empty when no PR is created. |
 
 ## Permissions
 
 - Dry runs use `contents: read`.
-- Update runs use `contents: write`, `pull-requests: write`, `issues: write`, and `actions: write`.
+- Update runs use `contents: write`, `pull-requests: write`, and `actions: write`.
 - `actions: write` is needed when template updates modify `.github/workflows/*`.
 
 ## Advanced
 
 - `checkout-ref` selects the destination state and `template-ref` selects the Copier template version applied to it.
-- Skips the Copier update entirely when the configured answers file is missing.
+- Requires the configured Copier answers file to exist.
 - Detects and applies every change produced by Copier in the fresh checkout.
 - Logs the managed-file status, diffstat, and diff from the `Detect changes` step and includes the changed file list in successful update summaries.
-- `dry-run: true` reports changes and conflicts while preserving branches, pull requests, and failure issues.
+- `dry-run: true` reports changes and conflicts while preserving repository state.
 - Fails before PR creation when Copier leaves merge conflicts, lists the conflicted files in the workflow summary, and prints index entries plus the diff in the log.
-- Creates or updates one open failure issue with updater context and a local repro command if the workflow fails, then comments on and closes the issue after a later successful run.
-- Writes a final workflow summary for PR and dry-run updates.
+- Writes a final workflow summary for PR and dry-run updates, including the Copier command for manual recovery after failures.
 
 ## Examples
 

@@ -3,11 +3,6 @@ name: CI Updater
 on:
   workflow_call:
     inputs:
-      create-pr:
-        description: Deprecated compatibility option for direct branch pushes.
-        type: boolean
-        required: false
-        default: true
       dry-run:
         description: Detect and report template changes while preserving repository state.
         type: boolean
@@ -27,7 +22,7 @@ on:
         description: Optional CI template ref to apply. Defaults to HEAD.
         type: string
         required: false
-        default: ""
+        default: HEAD
       answers-file:
         description: Copier answers file to use for the CI template update.
         type: string
@@ -45,17 +40,16 @@ on:
         description: Newline-delimited list of Copier-managed files changed by the update.
         value: ${{ jobs.update.outputs.changed-files }}
       branch:
-        description: Branch name used for the update PR; empty during dry runs.
-        value: ${{ jobs.update.outputs.branch }}
+        description: Branch name used for the update PR; empty when no PR is created.
+        value: ${{ jobs.update.outputs.pr-branch }}
       pr-url:
-        description: URL for the update PR; empty during dry runs.
+        description: URL for the update PR; empty when no PR is created.
         value: ${{ jobs.update.outputs.pr-url }}
 
 jobs:
   update:
     uses: ./.github/workflows/copier_update.yml
     with:
-      create-pr: ${{ inputs.create-pr }}
       dry-run: ${{ inputs.dry-run }}
       pr-branch: ${{ inputs.pr-branch }}
       pr-title: "chore: update CI template"

@@ -53,7 +53,7 @@ Add a repository secret named `CI_BOT_TOKEN`:
 Required repository permissions for the token:
 
 - `Contents: Read and write` for update commits and draft releases.
-- `Issues: Read and write` for repository labels and CI Updater failure issues, including recovery comments.
+- `Issues: Read and write` for repository labels.
 - `Pull requests: Read and write` for PR labels, updater PRs, and automerge.
 - `Workflows: Read and write` for commits that create or update workflow files.
 
