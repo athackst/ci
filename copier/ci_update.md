@@ -24,7 +24,6 @@ contract.
 
 - `contents: write` to commit template updates.
 - `pull-requests: write` to open or update the template-sync PR.
-- `issues: write` to create, update, and close the CI Updater failure issue.
 - `actions: write` so updater PRs can modify `.github/workflows/*`.
 
 ## Behavior

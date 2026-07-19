@@ -3,11 +3,6 @@ name: Copier Update
 on:
   workflow_call:
     inputs:
-      create-pr:
-        description: Deprecated compatibility option for direct branch pushes.
-        type: boolean
-        required: false
-        default: true
       dry-run:
         description: Detect and report template changes while preserving repository state.
         type: boolean
@@ -39,7 +34,7 @@ on:
         required: false
         default: ""
       template-ref:
-        description: Optional Copier template ref to update from. Defaults to HEAD.
+        description: Optional Copier template ref to update from.
         type: string
         required: false
         default: ""
@@ -47,7 +42,7 @@ on:
         description: Copier answers file to use for the update.
         type: string
         required: false
-        default: .copier-answers.ci.yml
+        default: .copier-answers.yml
     secrets:
       token:
         description: Optional token override for checkout, push, and PR operations.
@@ -59,11 +54,11 @@ on:
       changed-files:
         description: Newline-delimited list of Copier-managed files changed by the update.
         value: ${{ jobs.update.outputs.changed-files }}
-      branch:
-        description: Branch name used for the update PR; empty during dry runs.
-        value: ${{ jobs.update.outputs.branch }}
+      pr-branch:
+        description: Branch name used for the update PR; empty when no PR is created.
+        value: ${{ jobs.update.outputs.pr-branch }}
       pr-url:
-        description: URL for the update PR; empty during dry runs.
+        description: URL for the update PR; empty when no PR is created.
         value: ${{ jobs.update.outputs.pr-url }}
 
 jobs:
@@ -72,7 +67,7 @@ jobs:
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
       changed-files: ${{ steps.changes.outputs.changed-files }}
-      branch: ${{ steps.pr.outputs.pull-request-branch || steps.push-branch.outputs.branch }}
+      pr-branch: ${{ steps.pr.outputs.pull-request-branch }}
       pr-url: ${{ steps.pr.outputs.pull-request-url }}
     env:
       ANSWERS_FILE: ${{ inputs.answers-file }}
@@ -93,17 +88,25 @@ jobs:
         id: apply
         shell: bash
         env:
-          VCS_REF: ${{ inputs.template-ref || 'HEAD' }}
+          VCS_REF: ${{ inputs.template-ref }}
         run: |
           set -euo pipefail
           if [ ! -f "$ANSWERS_FILE" ]; then
-            echo "No $ANSWERS_FILE found; skipping Copier update."
-            echo "ran=false" | tee -a "$GITHUB_OUTPUT"
-            exit 0
+            echo "Required Copier answers file not found: $ANSWERS_FILE"
+            echo "answers-found=false" | tee -a "$GITHUB_OUTPUT"
+            exit 1
           fi
 
-          echo "ran=true" | tee -a "$GITHUB_OUTPUT"
-          copier update --trust -a "$ANSWERS_FILE" -A --vcs-ref "$VCS_REF" --defaults
+          echo "answers-found=true" | tee -a "$GITHUB_OUTPUT"
+          copier_args=(update --trust -a "$ANSWERS_FILE" -A --defaults)
+          if [ -n "$VCS_REF" ]; then
+            copier_args+=(--vcs-ref "$VCS_REF")
+          fi
+
+          printf -v COPIER_COMMAND '%q ' copier "${copier_args[@]}"
+          COPIER_COMMAND="${COPIER_COMMAND% }"
+          echo "command=$COPIER_COMMAND" | tee -a "$GITHUB_OUTPUT"
+          copier "${copier_args[@]}"
 
       - name: Detect changes
         id: changes
@@ -131,11 +134,6 @@ jobs:
             git diff
           else
             echo "changed=false" | tee -a "$GITHUB_OUTPUT"
-            {
-              echo "changed-files<<EOF_CHANGED_FILES"
-              echo ""
-              echo "EOF_CHANGED_FILES"
-            } | tee -a "$GITHUB_OUTPUT"
             echo "No Copier-managed changes detected."
           fi
 
@@ -167,17 +165,12 @@ jobs:
           echo ""
           echo "Diff:"
           git diff
-
-      - name: Stop on Copier conflicts
-        if: ${{ steps.conflicts.outputs.found == 'true' }}
-        shell: bash
-        run: |
-          echo "Stopping before branch push or PR creation because Copier produced merge conflicts."
+          echo "Stopping before PR creation because Copier produced merge conflicts."
           exit 1
 
       - name: Create or update PR
         id: pr
-        if: ${{ !inputs.dry-run && inputs.create-pr && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
+        if: ${{ !inputs.dry-run && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.token || github.token }}
@@ -188,152 +181,38 @@ jobs:
           body: ${{ inputs.commit-message }}
           labels: ${{ inputs.pr-labels }}
 
-      - name: Push update branch
-        id: push-branch
-        if: ${{ !inputs.dry-run && !inputs.create-pr && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
+      - name: Verify PR result
+        if: ${{ always() && !inputs.dry-run && steps.changes.outputs.changed == 'true' && steps.conflicts.outputs.found != 'true' }}
         shell: bash
         env:
-          BRANCH_NAME: ${{ inputs.pr-branch }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$BRANCH_NAME"
-          git add -A
-          git commit -m "${{ inputs.commit-message }}"
-          git push --force-with-lease origin "$BRANCH_NAME"
-          echo "branch=$BRANCH_NAME" | tee -a "$GITHUB_OUTPUT"
+          if [ -z "$PR_URL" ]; then
+            echo "Copier produced changes, but no pull request was created or updated."
+            exit 1
+          fi
 
-      - name: Upsert failure issue
-        if: ${{ failure() && !inputs.dry-run }}
-        uses: actions/github-script@v9
-        with:
-          github-token: ${{ secrets.token || github.token }}
-          script: |
-            const marker = '<!-- copier-update-failure-issue -->'
-            const title = `Copier Update failed (${process.env.RUN_ID})`
-            const conflictFiles = process.env.CONFLICTED_FILES || ''
-            const body = [
-              marker,
-              'A step failed in the CI Updater workflow.',
-              '',
-              `- Workflow: ${process.env.WORKFLOW}`,
-              `- Run: ${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
-              `- Target branch input: \`${process.env.PR_BRANCH}\``,
-              `- PR title input: \`${process.env.PR_TITLE}\``,
-              ...(conflictFiles
-                ? [
-                    '',
-                    'Copier produced merge conflicts in:',
-                    '```text',
-                    conflictFiles,
-                    '```',
-                  ]
-                : []),
-              '',
-              'You may need to run copier locally',
-              '```bash',
-              `copier update --trust -a ${process.env.ANSWERS_FILE} -A --vcs-ref ${process.env.COPIER_VCS_REF} --defaults`,
-              '```',
-            ].join('\n')
-
-            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              per_page: 100,
-            })
-            const existingIssue = openIssues.find((issue) =>
-              !issue.pull_request && issue.body && issue.body.includes(marker)
-            )
-
-            if (existingIssue) {
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: existingIssue.number,
-                title,
-                body,
-              })
-              return
-            }
-
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title,
-              body,
-            })
-        env:
-          WORKFLOW: ${{ github.workflow }}
-          RUN_ID: ${{ github.run_id }}
-          REPOSITORY: ${{ github.repository }}
-          SERVER_URL: ${{ github.server_url }}
-          PR_BRANCH: ${{ inputs.pr-branch }}
-          PR_TITLE: ${{ inputs.pr-title }}
-          ANSWERS_FILE: ${{ env.ANSWERS_FILE }}
-          COPIER_VCS_REF: ${{ inputs.template-ref || 'HEAD' }}
-          CONFLICTED_FILES: ${{ steps.conflicts.outputs.files || '' }}
-
-      - name: Close recovered failure issue
-        if: ${{ success() && !inputs.dry-run }}
-        uses: actions/github-script@v9
-        with:
-          github-token: ${{ secrets.token || github.token }}
-          script: |
-            const marker = '<!-- copier-update-failure-issue -->'
-            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              per_page: 100,
-            })
-            const failureIssues = openIssues.filter((issue) =>
-              !issue.pull_request && issue.body && issue.body.includes(marker)
-            )
-
-            for (const issue of failureIssues) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                body: [
-                  'Copier Update completed successfully.',
-                  '',
-                  `- Workflow: ${process.env.WORKFLOW}`,
-                  `- Run: ${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
-                ].join('\n'),
-              })
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                state: 'closed',
-                state_reason: 'completed',
-              })
-            }
-        env:
-          WORKFLOW: ${{ github.workflow }}
-          RUN_ID: ${{ github.run_id }}
-          REPOSITORY: ${{ github.repository }}
-          SERVER_URL: ${{ github.server_url }}
+          echo "Pull request created or updated: $PR_URL"
 
       - name: Workflow summary
         if: ${{ always() }}
         shell: bash
         env:
-          APPLY_RAN: ${{ steps.apply.outputs.ran || 'false' }}
+          JOB_STATUS: ${{ job.status }}
+          COPIER_COMMAND: ${{ steps.apply.outputs.command || '' }}
+          ANSWERS_FOUND: ${{ steps.apply.outputs.answers-found || 'false' }}
+          APPLY_STATUS: ${{ steps.apply.outcome || 'skipped' }}
           CHANGED: ${{ steps.changes.outputs.changed || 'false' }}
           CHANGED_FILES: ${{ steps.changes.outputs.changed-files || '' }}
           CONFLICT_FOUND: ${{ steps.conflicts.outputs.found || 'false' }}
           CONFLICTED_FILES: ${{ steps.conflicts.outputs.files || '' }}
-          CREATE_PR_REQUESTED: ${{ inputs.create-pr }}
           DRY_RUN: ${{ inputs.dry-run }}
           PR_BRANCH_INPUT: ${{ inputs.pr-branch }}
           PR_OPERATION: ${{ steps.pr.outputs.pull-request-operation }}
           PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
           PR_URL: ${{ steps.pr.outputs.pull-request-url }}
-          PR_BRANCH: ${{ steps.pr.outputs.pull-request-branch || steps.push-branch.outputs.branch }}
+          PR_BRANCH: ${{ steps.pr.outputs.pull-request-branch }}
         run: |
           set -euo pipefail
 
@@ -341,12 +220,29 @@ jobs:
             echo "## Copier Update"
             echo ""
 
-            if [ "${APPLY_RAN}" != "true" ]; then
-              echo ":grey_exclamation: No update attempted (missing \`${ANSWERS_FILE}\`)."
+            case "${JOB_STATUS}" in
+              success)
+                echo ":white_check_mark: Workflow completed successfully."
+                ;;
+              failure)
+                echo ":x: Workflow failed."
+                ;;
+              cancelled)
+                echo ":warning: Workflow was cancelled."
+                ;;
+            esac
+            echo ""
+
+            if [ "${APPLY_STATUS}" = "skipped" ]; then
+              echo ":x: Copier update did not run because an earlier step failed."
+            elif [ "${ANSWERS_FOUND}" != "true" ]; then
+              echo ":x: Required Copier answers file not found: \`${ANSWERS_FILE}\`."
+            elif [ "${APPLY_STATUS}" != "success" ]; then
+              echo ":x: Copier update command failed."
             elif [ "${CONFLICT_FOUND}" = "true" ]; then
-              echo ":x: Copier update produced merge conflicts; no branch was pushed and no PR was created."
+              echo ":x: Copier update produced merge conflicts; no PR was created."
               echo ""
-              echo "Resolve these files in the consumer repo, then rerun CI Updater."
+              echo "Resolve these files in the consumer repo, then rerun Copier Update."
               echo ""
               echo "conflicted-files:"
               echo '```text'
@@ -357,20 +253,20 @@ jobs:
             elif [ "${DRY_RUN}" = "true" ]; then
               echo ":white_check_mark: Dry run detected template changes."
             elif [ -n "${PR_URL}" ]; then
-              echo ":white_check_mark: PR created or updated successfully."
+              if [ "${JOB_STATUS}" = "success" ]; then
+                echo ":white_check_mark: PR created or updated successfully."
+              else
+                echo ":warning: PR created or updated before a later workflow step failed."
+              fi
               echo ""
               echo "pr-operation: \`${PR_OPERATION:-unknown}\`"
               echo "pr-number: \`${PR_NUMBER}\`"
               echo "pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
               echo "pr-url: ${PR_URL}"
-            elif [ "${CREATE_PR_REQUESTED}" = "true" ]; then
+            else
               echo ":x: No PR created or updated."
               echo ""
               echo "pr-operation: \`${PR_OPERATION:-none}\`"
-            else
-              echo ":white_check_mark: Update branch pushed without creating a PR."
-              echo ""
-              echo "pr-branch: \`${PR_BRANCH:-$PR_BRANCH_INPUT}\`"
             fi
 
             if [ -n "${CHANGED_FILES}" ] && [ "${CONFLICT_FOUND}" != "true" ]; then
@@ -378,6 +274,14 @@ jobs:
               echo "changed-files:"
               echo '```text'
               printf '%s\n' "${CHANGED_FILES}"
+              echo '```'
+            fi
+
+            if [ "${JOB_STATUS}" = "failure" ] && [ -n "${COPIER_COMMAND}" ]; then
+              echo ""
+              echo "Manual recovery command:"
+              echo '```bash'
+              printf '%s\n' "${COPIER_COMMAND}"
               echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"

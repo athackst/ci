@@ -63,7 +63,6 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 ## Commenting Policy
 
-- `copier_update`: append-style comments are acceptable per commit-producing run.
 - Do not comment on no-op runs.
 
 ## Copier Policy
@@ -71,8 +70,9 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Template source is `copier/template/` via `copier.yml` `_subdirectory`.
 - `_answers_file` is `.copier-answers.ci.yml`.
 - `ci_updater` uses `copier update` and requires answers file.
-- `copier_update` (PR helper) uses `copier copy --defaults --overwrite`.
-- `copier_update` should trigger only on template inputs (`copier.yml`, `copier/template/**`) to avoid self-retrigger noise.
+- `copier_update` uses `copier update` with its configured answers file.
+- `copier_copy` uses `copier copy --defaults --overwrite`.
+- `copier_copy` should trigger only on template inputs (`copier.yml`, `copier/template/**`) to avoid self-retrigger noise.
 
 ## Dispatch Policy
 
