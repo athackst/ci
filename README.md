@@ -75,6 +75,21 @@ which drives:
 The workflows are meant to compose around that config instead of each repository
 re-declaring the same rules in multiple places.
 
+### Release version ownership
+
+Release versions are resolved by the release workflow and are not committed to
+consumer repositories.
+
+Keeping version resolution within Release Drafter allows pull request labels to
+determine the next version at release time. An earlier design resolved the
+version separately so it could be written into the source tree, which required
+additional actions and coordination between repository state and draft-release
+state.
+
+This repository treats the version as release metadata. Projects that require a
+version in their source code can add that behavior to their release process
+explicitly.
+
 ## Configuration
 
 Copier asks a small number of questions and uses the answers to generate the
