@@ -454,7 +454,7 @@ jobs:
     with:
       dry-run: true
       checkout-ref: main
-      template-ref: ${{ github.sha }}
+      template-ref: ${{ github.head_ref }}
       answers-file: tests/fixtures/ci_updater/.copier-answers.ci.yml
 
   workflow-ci-updater-verify:
@@ -485,8 +485,8 @@ jobs:
           }
 
           [ "$CHANGED" = "true" ] || set_failure "Expected the stale CI updater fixture to produce changes"
-          grep -Fxq ".github/ci-config.yml" <<< "$CHANGED_FILES" || \
-            set_failure "Missing .github/ci-config.yml from changed-files"
+          grep -Fxq "tests/fixtures/ci_updater/.copier-answers.ci.yml" <<< "$CHANGED_FILES" || \
+            set_failure "Missing the Copier answers fixture from changed-files"
           [ -z "$BRANCH" ] || set_failure "Expected an empty branch output during dry run"
           [ -z "$PR_URL" ] || set_failure "Expected an empty pr-url output during dry run"
 
