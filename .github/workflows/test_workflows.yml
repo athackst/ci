@@ -488,10 +488,10 @@ jobs:
       checkout-ref: ${{ needs.workflow-ci-updater-fixture-branch.outputs.fixture-branch }}
       template-ref: ${{ github.head_ref }}
 
-  workflow-ci-updater-verify:
+  workflow-ci-updater-verify-and-cleanup:
     permissions:
       contents: write
-    needs: [workflow-ci-updater-fixture-branch, workflow-ci-updater]
+    needs: [workflow-ci-updater]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -615,7 +615,7 @@ jobs:
       - workflow-htmlproofer-site
       - workflow-deploy-site-verify-and-cleanup
       - workflow-release-draft-verify
-      - workflow-ci-updater-verify
+      - workflow-ci-updater-verify-and-cleanup
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
