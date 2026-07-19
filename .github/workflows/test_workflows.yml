@@ -447,20 +447,51 @@ jobs:
             echo ":white_check_mark: Release Drafter resolved version $RESOLVED_VERSION and rendered a changelog."
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+  workflow-ci-updater-fixture-branch:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      fixture-branch: ${{ steps.branch.outputs.fixture-branch }}
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Create ci_updater fixture branch
+        id: branch
+        shell: bash
+        env:
+          FIXTURE_BRANCH: ci-test/ci-updater-fixture-pr-${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          FIXTURE_ANSWERS_PATH="$RUNNER_TEMP/ci-updater-fixture-answers.yml"
+          cp tests/fixtures/ci_updater/.copier-answers.ci.yml "$FIXTURE_ANSWERS_PATH"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$FIXTURE_BRANCH" origin/main
+          cp "$FIXTURE_ANSWERS_PATH" .copier-answers.ci.yml
+          git add -f .copier-answers.ci.yml
+          git commit -m "test: prepare ci_updater fixture"
+          git push --force-with-lease origin "$FIXTURE_BRANCH"
+          echo "fixture-branch=$FIXTURE_BRANCH" | tee -a "$GITHUB_OUTPUT"
+
   workflow-ci-updater:
+    needs: [workflow-ci-updater-fixture-branch]
     permissions:
       contents: read
     uses: ./.github/workflows/ci_updater.yml
     with:
       dry-run: true
-      checkout-ref: main
+      checkout-ref: ${{ needs.workflow-ci-updater-fixture-branch.outputs.fixture-branch }}
       template-ref: ${{ github.head_ref }}
-      answers-file: tests/fixtures/ci_updater/.copier-answers.ci.yml
 
   workflow-ci-updater-verify:
     permissions:
-      contents: read
-    needs: [workflow-ci-updater]
+      contents: write
+    needs: [workflow-ci-updater-fixture-branch, workflow-ci-updater]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -485,7 +516,7 @@ jobs:
           }
 
           [ "$CHANGED" = "true" ] || set_failure "Expected the stale CI updater fixture to produce changes"
-          grep -Fxq "tests/fixtures/ci_updater/.copier-answers.ci.yml" <<< "$CHANGED_FILES" || \
+          grep -Fxq ".copier-answers.ci.yml" <<< "$CHANGED_FILES" || \
             set_failure "Missing the Copier answers fixture from changed-files"
           [ -z "$BRANCH" ] || set_failure "Expected an empty branch output during dry run"
           [ -z "$PR_URL" ] || set_failure "Expected an empty pr-url output during dry run"
@@ -510,6 +541,17 @@ jobs:
           if [ "$STATUS" != "success" ]; then
             exit 1
           fi
+
+      - name: Delete ci_updater fixture branch
+        if: ${{ always() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIXTURE_BRANCH: ci-test/ci-updater-fixture-pr-${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          ENCODED_BRANCH="${FIXTURE_BRANCH//\//%2F}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
 
       - name: Workflow summary
         if: ${{ always() }}

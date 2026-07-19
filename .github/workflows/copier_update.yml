@@ -47,7 +47,7 @@ on:
         description: Copier answers file to use for the update.
         type: string
         required: false
-        default: .copier-answers.yml
+        default: .copier-answers.ci.yml
     secrets:
       token:
         description: Optional token override for checkout, push, and PR operations.
