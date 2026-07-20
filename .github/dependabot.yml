@@ -1,11 +1,19 @@
 version: 2
 updates:
-- package-ecosystem: github-actions
-  directories: 
-  - "/"
-  - "/actions/**"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  cooldown:
-    default-days: 7
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+      - "/actions/**"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+  - package-ecosystem: pip
+    directories:
+      - "/actions/**"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7

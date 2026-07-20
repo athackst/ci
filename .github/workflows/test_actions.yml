@@ -116,6 +116,144 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
+  actions-copier-update:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.0
+
+      - name: Install Bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run copier-update with missing answers file
+        id: copier-update
+        continue-on-error: true
+        uses: ./actions/copier-update
+        with:
+          answers-file: missing-copier-answers.yml
+
+      - name: Verify copier-update failure outputs
+        shell: bash
+        env:
+          ACTION_OUTCOME: ${{ steps.copier-update.outcome }}
+          ANSWERS_FOUND: ${{ steps.copier-update.outputs.answers-found }}
+          COPIER_COMMAND: ${{ steps.copier-update.outputs.command }}
+          CHANGED: ${{ steps.copier-update.outputs.changed }}
+          CHANGED_FILES: ${{ steps.copier-update.outputs.changed-files }}
+          CONFLICTS_FOUND: ${{ steps.copier-update.outputs.conflicts-found }}
+          CONFLICTED_FILES: ${{ steps.copier-update.outputs.conflicted-files }}
+        run: |
+          set -euo pipefail
+
+          [ "$ACTION_OUTCOME" = "failure" ]
+          [ "$ANSWERS_FOUND" = "false" ]
+          [ -z "$COPIER_COMMAND" ]
+          [ "$CHANGED" = "false" ]
+          [ -z "$CHANGED_FILES" ]
+          [ "$CONFLICTS_FOUND" = "false" ]
+          [ -z "$CONFLICTED_FILES" ]
+
+          {
+            echo "### Copier update action"
+            echo ""
+            echo ":white_check_mark: Missing answers file produced the expected failure and outputs."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create successful Copier update fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TEMPLATE_DIR="$RUNNER_TEMP/copier-update-template"
+          mkdir -p "$TEMPLATE_DIR/template"
+
+          cat > "$TEMPLATE_DIR/copier.yml" <<'EOF'
+          _subdirectory: template
+          _answers_file: .copier-answers.test.yml
+          project_name:
+            type: str
+            default: fixture
+          EOF
+
+          cat > "$TEMPLATE_DIR/template/message.txt.jinja" <<'EOF'
+          message: baseline
+          project: {{ project_name }}
+          EOF
+
+          cat > "$TEMPLATE_DIR/template/{{ _copier_conf.answers_file }}.jinja" <<'EOF'
+          # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+          {{ _copier_answers|to_nice_yaml -}}
+          EOF
+
+          git -C "$TEMPLATE_DIR" init --quiet --initial-branch=main
+          git -C "$TEMPLATE_DIR" config user.name "CI Test"
+          git -C "$TEMPLATE_DIR" config user.email "ci-test@example.com"
+          git -C "$TEMPLATE_DIR" add .
+          git -C "$TEMPLATE_DIR" commit --quiet -m "Create baseline template"
+          git -C "$TEMPLATE_DIR" tag v1.0.0
+
+          cat > message.txt <<'EOF'
+          message: baseline
+          project: fixture
+          EOF
+          cat > .copier-answers.test.yml <<EOF
+          # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+          _commit: v1.0.0
+          _src_path: $TEMPLATE_DIR
+          project_name: fixture
+          EOF
+          git config user.name "CI Test"
+          git config user.email "ci-test@example.com"
+          git add message.txt .copier-answers.test.yml
+          git commit --quiet -m "Create Copier consumer fixture"
+
+          cat > "$TEMPLATE_DIR/template/message.txt.jinja" <<'EOF'
+          message: updated
+          project: {{ project_name }}
+          EOF
+          git -C "$TEMPLATE_DIR" add .
+          git -C "$TEMPLATE_DIR" commit --quiet -m "Update template message"
+          git -C "$TEMPLATE_DIR" tag v1.1.0
+
+      - name: Run successful copier-update
+        id: successful-copier-update
+        uses: ./actions/copier-update
+        with:
+          answers-file: .copier-answers.test.yml
+          vcs-ref: v1.1.0
+
+      - name: Verify successful copier-update outputs
+        shell: bash
+        env:
+          ANSWERS_FOUND: ${{ steps.successful-copier-update.outputs.answers-found }}
+          COPIER_COMMAND: ${{ steps.successful-copier-update.outputs.command }}
+          CHANGED: ${{ steps.successful-copier-update.outputs.changed }}
+          CHANGED_FILES: ${{ steps.successful-copier-update.outputs.changed-files }}
+          CONFLICTS_FOUND: ${{ steps.successful-copier-update.outputs.conflicts-found }}
+          CONFLICTED_FILES: ${{ steps.successful-copier-update.outputs.conflicted-files }}
+        run: |
+          set -euo pipefail
+
+          [ "$ANSWERS_FOUND" = "true" ]
+          [[ "$COPIER_COMMAND" == *"--vcs-ref v1.1.0"* ]]
+          [ "$CHANGED" = "true" ]
+          grep -Fqx "message.txt" <<< "$CHANGED_FILES"
+          grep -Fqx ".copier-answers.test.yml" <<< "$CHANGED_FILES"
+          [ "$CONFLICTS_FOUND" = "false" ]
+          [ -z "$CONFLICTED_FILES" ]
+          grep -Fqx "message: updated" message.txt
+          grep -Fq "_commit: v1.1.0" .copier-answers.test.yml
+
+      - name: Test copier-update with fixtures
+        shell: bash
+        run: |
+          bats actions/copier-update/tests/copier_update.bats
+
   actions-setup-labels:
     permissions:
       contents: read

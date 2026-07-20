@@ -1,0 +1,85 @@
+name: Copier Update
+description: Install Copier and update a project from its answers file.
+
+inputs:
+  answers-file:
+    description: Copier answers file to use for the update.
+    required: false
+    default: .copier-answers.yml
+  vcs-ref:
+    description: Optional Copier template ref to update from.
+    required: false
+    default: ""
+
+outputs:
+  answers-found:
+    description: Whether the configured answers file exists.
+    value: ${{ steps.update.outputs.answers-found }}
+  command:
+    description: Shell-safe Copier command used for the update.
+    value: ${{ steps.update.outputs.command }}
+  changed:
+    description: Whether Copier produced file changes.
+    value: ${{ steps.update.outputs.changed }}
+  changed-files:
+    description: Newline-delimited list of files changed by Copier.
+    value: ${{ steps.update.outputs.changed-files }}
+  conflicts-found:
+    description: Whether Copier produced merge conflicts.
+    value: ${{ steps.update.outputs.conflicts-found }}
+  conflicted-files:
+    description: Newline-delimited list of files with merge conflicts.
+    value: ${{ steps.update.outputs.conflicted-files }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Copier
+      shell: bash
+      run: |
+        python3 -m pip install --quiet --requirement "${{ github.action_path }}/requirements.txt"
+
+    - name: Apply Copier update
+      id: update
+      shell: bash
+      env:
+        ANSWERS_FILE: ${{ inputs.answers-file }}
+        VCS_REF: ${{ inputs.vcs-ref }}
+      run: |
+        set -euo pipefail
+
+        RESULT_FILE="$(mktemp "$RUNNER_TEMP/copier-update-result.XXXXXX.json")"
+
+        set +e
+        bash "${{ github.action_path }}/run_copier_update.sh" \
+          --answers-file "$ANSWERS_FILE" \
+          --vcs-ref "$VCS_REF" \
+          --result-file "$RESULT_FILE"
+        UPDATE_STATUS=$?
+        set -e
+
+        ANSWERS_FOUND="$(jq -r '.answers_found' "$RESULT_FILE")"
+        COMMAND="$(jq -r '.command' "$RESULT_FILE")"
+        CHANGED="$(jq -r '.changed' "$RESULT_FILE")"
+        CONFLICTS_FOUND="$(jq -r '.conflicts_found' "$RESULT_FILE")"
+
+        echo "answers-found=$ANSWERS_FOUND" | tee -a "$GITHUB_OUTPUT"
+        echo "changed=$CHANGED" | tee -a "$GITHUB_OUTPUT"
+        echo "conflicts-found=$CONFLICTS_FOUND" | tee -a "$GITHUB_OUTPUT"
+        {
+          echo "command<<EOF_COPIER_COMMAND"
+          printf '%s\n' "$COMMAND"
+          echo "EOF_COPIER_COMMAND"
+        } | tee -a "$GITHUB_OUTPUT"
+        {
+          echo "changed-files<<EOF_CHANGED_FILES"
+          jq -r '.changed_files[]' "$RESULT_FILE"
+          echo "EOF_CHANGED_FILES"
+        } | tee -a "$GITHUB_OUTPUT"
+        {
+          echo "conflicted-files<<EOF_CONFLICTED_FILES"
+          jq -r '.conflicted_files[]' "$RESULT_FILE"
+          echo "EOF_CONFLICTED_FILES"
+        } | tee -a "$GITHUB_OUTPUT"
+
+        exit "$UPDATE_STATUS"
