@@ -13,6 +13,74 @@ concurrency:
 
 
 jobs:
+  copier-freshness:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Apply Copier template
+        id: copier
+        uses: ./actions/copier-copy
+        with:
+          vcs-ref: HEAD
+
+      - name: Verify generated files are current
+        if: ${{ always() }}
+        shell: bash
+        env:
+          COPIER_OUTCOME: ${{ steps.copier.outcome }}
+          CHANGED: ${{ steps.copier.outputs.changed || 'false' }}
+          CHANGED_FILES: ${{ steps.copier.outputs.changed-files || '' }}
+          COMMAND: ${{ steps.copier.outputs.command || '' }}
+        run: |
+          set -euo pipefail
+
+          STATUS="success"
+          SUMMARY="Committed generated files are current."
+
+          if [ "$COPIER_OUTCOME" != "success" ]; then
+            STATUS="failure"
+            SUMMARY="Copier failed while checking generated files."
+          elif [ "$CHANGED" = "true" ]; then
+            STATUS="failure"
+            SUMMARY="Committed generated files differ from the current template."
+          fi
+
+          {
+            echo "### Copier freshness"
+            echo ""
+            if [ "$STATUS" = "success" ]; then
+              echo ":white_check_mark: $SUMMARY"
+            else
+              echo ":x: $SUMMARY"
+            fi
+
+            if [ -n "$COMMAND" ]; then
+              echo ""
+              echo "Command:"
+              echo '```text'
+              printf '%s\n' "$COMMAND"
+              echo '```'
+            fi
+
+            if [ -n "$CHANGED_FILES" ]; then
+              echo ""
+              echo "Changed files:"
+              echo '```text'
+              printf '%s\n' "$CHANGED_FILES"
+              echo '```'
+            fi
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$STATUS" != "success" ]; then
+            exit 1
+          fi
+
   test-copier:
     permissions:
       contents: read
@@ -70,13 +138,42 @@ jobs:
 
           exit "$BATS_STATUS"
 
-    
   templates-success:
+    if: ${{ always() }}
     needs:
+      - copier-freshness
       - test-copier
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
         shell: bash
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
+          set -euo pipefail
+
+          UNSUCCESSFUL_JOBS="$(jq -r '
+            to_entries[]
+            | select(.value.result != "success")
+            | "\(.key): \(.value.result)"
+          ' <<< "$NEEDS_JSON")"
+
+          {
+            echo "## Template Test Results"
+            echo ""
+            echo "| Job | Result |"
+            echo "| --- | --- |"
+            jq -r '
+              to_entries[]
+              | "| `\(.key)` | \(if .value.result == "success" then ":white_check_mark:" else ":x:" end) \(.value.result) |"
+            ' <<< "$NEEDS_JSON"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$UNSUCCESSFUL_JOBS" ]; then
+            echo "Template tests did not all pass:"
+            printf '%s\n' "$UNSUCCESSFUL_JOBS"
+            exit 1
+          fi
+
           echo "All template tests passed."
