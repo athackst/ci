@@ -56,9 +56,9 @@ jobs:
 - `checkout-ref` selects the destination state and `template-ref` selects the Copier template version applied to it.
 - Requires the configured Copier answers file to exist.
 - Detects and applies every change produced by Copier in the fresh checkout.
-- Logs the managed-file status, diffstat, and diff from the `Detect changes` step and includes the changed file list in successful update summaries.
+- Logs the managed-file status, diffstat, and diff and includes the changed file list in successful update summaries.
 - `dry-run: true` reports changes and conflicts while preserving repository state.
-- Fails before PR creation when Copier leaves merge conflicts, lists the conflicted files in the workflow summary, and prints index entries plus the diff in the log.
+- Fails before PR creation when Copier leaves merge conflicts, lists the conflicted files in the workflow summary, and prints the diff in the log.
 - Writes a final workflow summary for PR and dry-run updates, including the Copier command for manual recovery after failures.
 
 ## Examples
