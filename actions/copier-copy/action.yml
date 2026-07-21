@@ -1,0 +1,85 @@
+name: Copier Copy
+description: Install Copier and render a template into a destination.
+
+inputs:
+  source:
+    description: Copier template source.
+    required: false
+    default: .
+  destination:
+    description: Destination directory for rendered files.
+    required: false
+    default: .
+  answers-file:
+    description: Optional answers file path relative to the destination.
+    required: false
+    default: ""
+  vcs-ref:
+    description: Optional Copier template ref to copy from.
+    required: false
+    default: ""
+  overwrite:
+    description: Whether to overwrite existing destination files.
+    required: false
+    default: "true"
+
+outputs:
+  command:
+    description: Shell-safe Copier command used for the copy.
+    value: ${{ steps.copy.outputs.command }}
+  changed:
+    description: Whether Copier produced file changes.
+    value: ${{ steps.copy.outputs.changed }}
+  changed-files:
+    description: Newline-delimited list of files changed by Copier.
+    value: ${{ steps.copy.outputs.changed-files }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Copier
+      shell: bash
+      run: |
+        python3 -m pip install --quiet --requirement "${{ github.action_path }}/requirements.txt"
+
+    - name: Apply Copier template
+      id: copy
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+        DESTINATION: ${{ inputs.destination }}
+        ANSWERS_FILE: ${{ inputs.answers-file }}
+        VCS_REF: ${{ inputs.vcs-ref }}
+        OVERWRITE: ${{ inputs.overwrite }}
+      run: |
+        set -euo pipefail
+
+        RESULT_FILE="$(mktemp "$RUNNER_TEMP/copier-copy-result.XXXXXX.json")"
+
+        set +e
+        bash "${{ github.action_path }}/run_copier_copy.sh" \
+          --source "$SOURCE" \
+          --destination "$DESTINATION" \
+          --answers-file "$ANSWERS_FILE" \
+          --vcs-ref "$VCS_REF" \
+          --overwrite "$OVERWRITE" \
+          --result-file "$RESULT_FILE"
+        COPY_STATUS=$?
+        set -e
+
+        COMMAND="$(jq -r '.command' "$RESULT_FILE")"
+        CHANGED="$(jq -r '.changed' "$RESULT_FILE")"
+
+        echo "changed=$CHANGED" | tee -a "$GITHUB_OUTPUT"
+        {
+          echo "command<<EOF_COPIER_COMMAND"
+          printf '%s\n' "$COMMAND"
+          echo "EOF_COPIER_COMMAND"
+        } | tee -a "$GITHUB_OUTPUT"
+        {
+          echo "changed-files<<EOF_CHANGED_FILES"
+          jq -r '.changed_files[]' "$RESULT_FILE"
+          echo "EOF_CHANGED_FILES"
+        } | tee -a "$GITHUB_OUTPUT"
+
+        exit "$COPY_STATUS"

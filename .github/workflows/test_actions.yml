@@ -254,6 +254,50 @@ jobs:
         run: |
           bats actions/copier-update/tests/copier_update.bats
 
+  actions-copier-copy:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Install Bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run successful copier-copy
+        id: copier-copy
+        uses: ./actions/copier-copy
+        with:
+          destination: tests/generated/copier-copy-action
+          answers-file: .copier-answers.test.yml
+          vcs-ref: HEAD
+
+      - name: Verify successful copier-copy outputs
+        shell: bash
+        env:
+          COPIER_COMMAND: ${{ steps.copier-copy.outputs.command }}
+          CHANGED: ${{ steps.copier-copy.outputs.changed }}
+          CHANGED_FILES: ${{ steps.copier-copy.outputs.changed-files }}
+        run: |
+          set -euo pipefail
+
+          [ "$CHANGED" = "true" ]
+          [[ "$COPIER_COMMAND" == *"--overwrite"* ]]
+          [[ "$COPIER_COMMAND" == *"--answers-file .copier-answers.test.yml"* ]]
+          [[ "$COPIER_COMMAND" == *"--vcs-ref HEAD"* ]]
+          grep -Fqx "tests/generated/copier-copy-action/.copier-answers.test.yml" <<< "$CHANGED_FILES"
+          [ -f tests/generated/copier-copy-action/.copier-answers.test.yml ]
+
+      - name: Test copier-copy with fixtures
+        shell: bash
+        run: |
+          bats actions/copier-copy/tests/copier_copy.bats
+
   actions-setup-labels:
     permissions:
       contents: read
