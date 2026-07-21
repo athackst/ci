@@ -51,7 +51,7 @@ jobs:
 - Detects and applies every change produced by Copier in the fresh checkout.
 - Updater PRs use the title `chore: update CI template`, commit message `chore: apply CI template update`, and labels `automerge` and `skip-changelog`.
 - `dry-run: true` reports changes and conflicts while preserving repository state.
-- Skips the Copier update entirely when `.copier-answers.ci.yml` is missing.
+- Fails when the configured Copier answers file is missing.
 - Fails before PR creation when Copier leaves merge conflicts.
 - Writes a final workflow summary for PR and dry-run updates.
 
