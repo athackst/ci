@@ -2,18 +2,33 @@
 
 set -euo pipefail
 
+SOURCE=""
+DESTINATION=""
 ANSWERS_FILE=""
 VCS_REF=""
+OVERWRITE="true"
 RESULT_FILE=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --source)
+      SOURCE="$2"
+      shift 2
+      ;;
+    --destination)
+      DESTINATION="$2"
+      shift 2
+      ;;
     --answers-file)
       ANSWERS_FILE="$2"
       shift 2
       ;;
     --vcs-ref)
       VCS_REF="$2"
+      shift 2
+      ;;
+    --overwrite)
+      OVERWRITE="$2"
       shift 2
       ;;
     --result-file)
@@ -27,8 +42,13 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-if [ -z "$ANSWERS_FILE" ] || [ -z "$RESULT_FILE" ]; then
-  echo "--answers-file and --result-file are required." >&2
+if [ -z "$SOURCE" ] || [ -z "$DESTINATION" ] || [ -z "$RESULT_FILE" ]; then
+  echo "--source, --destination, and --result-file are required." >&2
+  exit 2
+fi
+
+if [ "$OVERWRITE" != "true" ] && [ "$OVERWRITE" != "false" ]; then
+  echo "--overwrite must be true or false." >&2
   exit 2
 fi
 
@@ -42,45 +62,49 @@ json_array() {
 }
 
 write_result() {
-  local answers_found="$1"
-  local command="$2"
-  local changed_files_json="$3"
-  local conflicted_files_json="$4"
+  local command="$1"
+  local changed_files_json="$2"
 
   jq --null-input \
-    --argjson answers_found "$answers_found" \
     --arg command "$command" \
     --argjson changed_files "$changed_files_json" \
-    --argjson conflicted_files "$conflicted_files_json" \
     '{
-      answers_found: $answers_found,
       command: $command,
       changed: ($changed_files | length > 0),
-      changed_files: $changed_files,
-      conflicts_found: ($conflicted_files | length > 0),
-      conflicted_files: $conflicted_files
+      changed_files: $changed_files
     }' > "$RESULT_FILE"
 }
 
-if [ ! -f "$ANSWERS_FILE" ]; then
-  write_result false "" '[]' '[]'
-  echo "Required Copier answers file not found: $ANSWERS_FILE"
-  exit 1
+copier_args=(copy --trust --defaults)
+if [ "$OVERWRITE" = "true" ]; then
+  copier_args+=(--overwrite)
 fi
-
-copier_args=(update --trust -a "$ANSWERS_FILE" -A --defaults)
+if [ -n "$ANSWERS_FILE" ]; then
+  copier_args+=(--answers-file "$ANSWERS_FILE")
+fi
 if [ -n "$VCS_REF" ]; then
   copier_args+=(--vcs-ref "$VCS_REF")
 fi
+copier_args+=("$SOURCE" "$DESTINATION")
 
 printf -v COPIER_COMMAND '%q ' copier "${copier_args[@]}"
 COPIER_COMMAND="${COPIER_COMMAND% }"
-write_result true "$COPIER_COMMAND" '[]' '[]'
+write_result "$COPIER_COMMAND" '[]'
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "Copier Copy requires a checked-out Git worktree to detect changes." >&2
+  exit 1
+fi
+
+if [ -n "$(git status --porcelain=v1)" ]; then
+  echo "Destination repository is dirty; commit or stash existing changes before running Copier Copy." >&2
+  exit 1
+fi
 
 echo "Running: $COPIER_COMMAND"
 set +e
 copier "${copier_args[@]}"
-UPDATE_STATUS=$?
+COPY_STATUS=$?
 set -e
 
 CHANGED_FILES=()
@@ -93,17 +117,8 @@ while IFS= read -r -d '' entry; do
   fi
 done < <(git status --porcelain=v1 -z --untracked-files=all)
 
-CONFLICT_OUTPUT="$(git diff --name-only --diff-filter=U)"
-CONFLICTED_FILES=()
-while IFS= read -r line; do
-  if [ -n "$line" ]; then
-    CONFLICTED_FILES+=("$line")
-  fi
-done <<< "$CONFLICT_OUTPUT"
-
 CHANGED_FILES_JSON="$(json_array "${CHANGED_FILES[@]}")"
-CONFLICTED_FILES_JSON="$(json_array "${CONFLICTED_FILES[@]}")"
-write_result true "$COPIER_COMMAND" "$CHANGED_FILES_JSON" "$CONFLICTED_FILES_JSON"
+write_result "$COPIER_COMMAND" "$CHANGED_FILES_JSON"
 
 if [ "${#CHANGED_FILES[@]}" -gt 0 ]; then
   echo "Copier produced changes:"
@@ -112,10 +127,4 @@ else
   echo "Copier produced no changes."
 fi
 
-if [ "${#CONFLICTED_FILES[@]}" -gt 0 ]; then
-  echo "Copier produced merge conflicts:"
-  printf '%s\n' "${CONFLICTED_FILES[@]}"
-  exit 1
-fi
-
-exit "$UPDATE_STATUS"
+exit "$COPY_STATUS"
