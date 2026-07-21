@@ -69,10 +69,9 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 - Template source is `copier/template/` via `copier.yml` `_subdirectory`.
 - `_answers_file` is `.copier-answers.ci.yml`.
-- `ci_updater` uses `copier update` and requires answers file.
-- `copier_update` uses `copier update` with its configured answers file.
-- `copier_copy` uses `copier copy --defaults --overwrite`.
-- `copier_copy` should trigger only on template inputs (`copier.yml`, `copier/template/**`) to avoid self-retrigger noise.
+- `copier_update` and `ci_updater` use the `copier-update` action and require an answers file.
+- The `copier-copy` action uses `copier copy --defaults --overwrite`.
+- `test_templates` uses the `copier-copy` action to verify committed template outputs without mutating the repository.
 
 ## Dispatch Policy
 
@@ -84,7 +83,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 - `test_actions.yml`: action-level unit/integration checks.
 - `test_workflows.yml`: reusable workflow behavior checks.
-- `test_templates.yml`: Copier template rendering/lint checks.
+- `test_templates.yml`: Copier template rendering, lint, and freshness checks.
 - Action-specific tests belong under `actions/<action>/tests/`.
 - Copier template-specific tests belong under `copier/tests/`.
 - Repository-level and cross-cutting Bats tests belong under `tests/bats/`.

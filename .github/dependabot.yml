@@ -12,6 +12,11 @@ updates:
   - package-ecosystem: pip
     directories:
       - "/actions/**"
+    groups:
+      copier:
+        patterns:
+          - copier
+        group-by: dependency-name
     schedule:
       interval: daily
     open-pull-requests-limit: 10
