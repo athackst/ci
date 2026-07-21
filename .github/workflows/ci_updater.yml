@@ -28,11 +28,6 @@ on:
         type: string
         required: false
         default: .copier-answers.ci.yml
-      create-pr:
-        description: DEPRECATED Whether to create a PR for the template update. Use pr-branch instead.
-        type: boolean
-        required: false
-        default: true
     secrets:
       token:
         description: Optional token override for checkout, push, and PR operations.
