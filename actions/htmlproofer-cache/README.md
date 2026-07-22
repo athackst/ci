@@ -25,5 +25,6 @@ Run HTMLProofer with shared cache restore and save steps.
 
 ## Advanced
 
-- Restores and saves the shared `tmp/.htmlproofer` cache around the HTMLProofer run.
+- Restores the newest shared `tmp/.htmlproofer` cache and saves refreshed results under a unique workflow-run key.
+- Rechecks cached links weekly, limits HTTP concurrency to two requests, retries failures three times, and skips external fragment validation.
 - Leaves ignore URL and swap URL construction to the calling workflow.
