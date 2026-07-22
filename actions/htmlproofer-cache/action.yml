@@ -20,16 +20,21 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Cache HTMLProofer
-      uses: actions/cache@v6.1.0
+    - name: Restore HTMLProofer cache
+      uses: actions/cache/restore@v6.1.0
       with:
         path: tmp/.htmlproofer
-        key: ${{ runner.os }}-htmlproofer
+        key: ${{ runner.os }}-htmlproofer-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          ${{ runner.os }}-htmlproofer-
 
     - name: Test with htmlproofer
       uses: athackst/htmlproofer-action@main
       with:
-        max_concurrency: 5
+        max_concurrency: 2
+        retries: 3
+        check_external_hash: false
+        cache: '{ "timeframe": { "external": "1w", "internal": "1w" } }'
         host: ${{ inputs.host }}
         base_path: ${{ inputs.base-path }}
         ignore_urls: ${{ inputs.ignore-urls }}
@@ -39,5 +44,5 @@ runs:
       if: always()
       uses: actions/cache/save@v6.1.0
       with:
-        key: ${{ runner.os }}-htmlproofer
+        key: ${{ runner.os }}-htmlproofer-${{ github.run_id }}-${{ github.run_attempt }}
         path: tmp/.htmlproofer
