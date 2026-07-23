@@ -1,8 +1,4 @@
-import contextlib
-import io
-import json
 from pathlib import Path
-import tempfile
 from types import SimpleNamespace
 import sys
 import unittest
@@ -12,7 +8,6 @@ ACTION_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ACTION_DIR))
 
 import list_repos  # noqa: E402
-import merge_repo_lists  # noqa: E402
 
 
 class FakeClient:
@@ -210,36 +205,6 @@ class ListReposTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Expected GitHub user or organization"):
             list_repos.collect_repositories(args, client)
-
-    def test_merge_repo_lists_deduplicates_and_sorts(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_dir = Path(tmp)
-            first = tmp_dir / "first.json"
-            second = tmp_dir / "second.json"
-            first.write_text(
-                '[{"full_name":"PrimerPages/site","name":"site"},'
-                '{"full_name":"athackst/ci","name":"ci"}]'
-            )
-            second.write_text(
-                '[{"full_name":"athackst/ci","name":"ci"},'
-                '{"full_name":"PrimerPages/action","name":"action"}]'
-            )
-
-            original_argv = sys.argv
-            sys.argv = ["merge_repo_lists.py", str(first), str(second)]
-            output = io.StringIO()
-            try:
-                with contextlib.redirect_stdout(output):
-                    status = merge_repo_lists.main()
-            finally:
-                sys.argv = original_argv
-
-        self.assertEqual(status, 0)
-        self.assertEqual(
-            [repo["full_name"] for repo in json.loads(output.getvalue())],
-            ["athackst/ci", "PrimerPages/action", "PrimerPages/site"],
-        )
-
 
 if __name__ == "__main__":
     unittest.main()

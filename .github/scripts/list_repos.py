@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""List repositories for a GitHub owner."""
+
 from __future__ import annotations
 
 import argparse

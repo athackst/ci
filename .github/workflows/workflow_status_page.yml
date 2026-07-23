@@ -18,6 +18,10 @@ concurrency:
 
 env:
   GH_TOKEN: ${{ github.token }}
+  REPOSITORY_SOURCES: |
+    athackst
+    althack
+    PrimerPages
 
 jobs:
   update-workflow-status-page:
@@ -32,32 +36,16 @@ jobs:
         run: |
           gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
 
-      - name: List managed repositories
-        id: repos
-        uses: ./actions/list-repos
-        with:
-          github-token: ${{ github.token }}
-          users: |
-            athackst
-            althack
-            PrimerPages
-          filter-paths: |
-            .copier-answers.ci.yml
-          private: false
-          fork: false
-          archived: false
-          output-path: .github/repositories.json
-
-      - name: Get gh rate limit after listing repositories
-        shell: bash
-        run: |
-          gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
-
       - name: Refresh workflow status page
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/generate_workflow_status.py --repos-file "${{ steps.repos.outputs.repository-file }}"
+          .github/scripts/generate_workflow_status_page.sh
+
+      - name: Get gh rate limit after refresh
+        shell: bash
+        run: |
+          gh api graphql -f query='{ rateLimit { limit remaining resetAt cost } }'
 
       - name: Preview workflow status page
         if: ${{ inputs.dry_run == true }}
