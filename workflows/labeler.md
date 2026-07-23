@@ -16,15 +16,15 @@ jobs:
 
 | Name | Description |
 | --- | --- |
-| `token` | (optional) Token used to resolve config and apply PR labels. Falls back to `${{ github.token }}`. |
+| `token` | (optional) Token used to apply PR labels. Falls back to `${{ github.token }}`. |
 
 ## Permissions
 
 - Requires `pull-requests: write` to add labels.
-- Uses `contents: read` to resolve the shared config.
+- Uses `contents: read` to check out the repository configuration.
 
 ## Advanced
 
-- Resolves `.github/ci-config.yml` first and tolerates missing config resolution with `continue-on-error`.
+- Always reads `.github/ci-config.yml` from the checked-out repository.
 - Delegates the actual labeling logic to the `pr-labeler` composite action.
 - Adds a workflow summary only when labels were actually added.
