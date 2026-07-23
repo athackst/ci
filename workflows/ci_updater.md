@@ -46,11 +46,13 @@ jobs:
 ## Advanced
 
 - Wraps [`copier_update.yml`](copier_update.md) with CI-template defaults for existing consumers.
+- Updates are enabled by default. Set the repository variable `CI_UPDATE_ENABLED` to `false` to skip non-dry-run updates intentionally.
 - `checkout-ref` selects the consumer state and `template-ref` selects the CI template version applied to it.
 - Uses the configured Copier answers file for the CI template update.
 - Detects and applies every change produced by Copier in the fresh checkout.
 - Updater PRs use the title `chore: update CI template`, commit message `chore: apply CI template update`, and labels `automerge` and `skip-changelog`.
 - `dry-run: true` reports changes and conflicts while preserving repository state.
+- Dry runs execute regardless of `CI_UPDATE_ENABLED` so updater configuration can still be validated.
 - Fails when the configured Copier answers file is missing.
 - Fails before PR creation when Copier leaves merge conflicts.
 - Writes a final workflow summary for PR and dry-run updates.

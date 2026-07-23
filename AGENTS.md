@@ -70,6 +70,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Template source is `copier/template/` via `copier.yml` `_subdirectory`.
 - `_answers_file` is `.copier-answers.ci.yml`.
 - `copier_update` and `ci_updater` use the `copier-update` action and require an answers file.
+- `ci_updater` is enabled by default; repository variable `CI_UPDATE_ENABLED=false` skips non-dry-run updates while preserving dry-run tests.
 - The `copier-copy` action uses `copier copy --defaults --overwrite`.
 - `test_templates` uses the `copier-copy` action to verify committed template outputs without mutating the repository.
 

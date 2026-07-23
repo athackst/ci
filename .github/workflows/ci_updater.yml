@@ -48,6 +48,7 @@ on:
 
 jobs:
   update:
+    if: ${{ inputs.dry-run || vars.CI_UPDATE_ENABLED != 'false' }}
     uses: ./.github/workflows/copier_update.yml
     with:
       dry-run: ${{ inputs.dry-run }}
