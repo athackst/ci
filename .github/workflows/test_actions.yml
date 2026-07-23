@@ -394,13 +394,39 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
 
+      - name: Check PR labeler changes
+        id: changes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RUN_TEST=false
+          while IFS= read -r path; do
+            case "$path" in
+              actions/pr-labeler/*)
+                RUN_TEST=true
+                break
+                ;;
+            esac
+          done < <(
+            gh api --paginate \
+              "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+              --jq '.[].filename'
+          )
+
+          echo "run=$RUN_TEST" | tee -a "$GITHUB_OUTPUT"
+
       - name: Set configuration path
+        if: ${{ steps.changes.outputs.run == 'true' }}
         id: config
         shell: bash
         run: |
           echo "path=./tests/fixtures/test-labeler.yml" | tee -a "$GITHUB_OUTPUT"
 
       - name: Read expected labels from config
+        if: ${{ steps.changes.outputs.run == 'true' }}
         id: expected
         shell: bash
         run: |
@@ -408,6 +434,7 @@ jobs:
           echo "labels-json=$EXPECTED_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
 
       - name: Pre-clean expected labels
+        if: ${{ steps.changes.outputs.run == 'true' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -420,18 +447,22 @@ jobs:
             gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
           done
 
-      - uses: ./actions/pr-labeler
+      - name: Run PR labeler action
+        if: ${{ steps.changes.outputs.run == 'true' }}
+        uses: ./actions/pr-labeler
         id: labeler
         with:
           configuration-path: ${{ steps.config.outputs.path }}
 
       - name: Install bats
+        if: ${{ steps.changes.outputs.run == 'true' }}
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y bats
 
       - name: Get PR labels after action
+        if: ${{ steps.changes.outputs.run == 'true' }}
         id: actual
         shell: bash
         env:
@@ -458,6 +489,7 @@ jobs:
           echo "actual-labels-json=$ACTUAL_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
 
       - name: Check PR label assertion
+        if: ${{ steps.changes.outputs.run == 'true' }}
         id: check_labels
         shell: bash
         env:
@@ -516,6 +548,26 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           exit "$BATS_STATUS"
+
+      - name: Remove PR labeler test labels
+        if: ${{ always() && steps.changes.outputs.run == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
+        run: |
+          set -euo pipefail
+
+          jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
+            echo "Removing test label: $label"
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
+          done
+
+      - name: Restore repository PR labels
+        if: ${{ always() && steps.changes.outputs.run == 'true' }}
+        uses: athackst/ci/actions/pr-labeler@main
+        with:
+          configuration-path: .github/ci-config.yml
 
 
   actions-mkdocs-config:
