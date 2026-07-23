@@ -19,6 +19,21 @@ uses: athackst/ci/.github/workflows/automerge.yml@main
 See [`automerge.yml`](../workflows/automerge.md) for the reusable workflow
 contract.
 
+## Dependencies
+
+```mermaid
+flowchart LR
+    template["Template workflow<br/>pr_automerge.yml"] --> automerge["Reusable workflow<br/>automerge.yml"]
+    automerge --> checks["Action<br/>wechuli/allcheckspassed"]
+
+    classDef template fill:#e0f2fe,stroke:#0284c7
+    classDef workflow fill:#ede9fe,stroke:#7c3aed
+    classDef action fill:#ecfccb,stroke:#65a30d
+    class template template
+    class automerge workflow
+    class checks action
+```
+
 ## Permissions
 
 - `contents: write`

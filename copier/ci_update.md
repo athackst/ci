@@ -20,6 +20,24 @@ uses: athackst/ci/.github/workflows/ci_updater.yml@main
 See [`ci_updater.yml`](../workflows/ci_updater.md) for the reusable workflow
 contract.
 
+## Dependencies
+
+```mermaid
+flowchart LR
+    template["Template workflow<br/>ci_update.yml"] --> updater["Reusable workflow<br/>ci_updater.yml"]
+    updater --> copier["Reusable workflow<br/>copier_update.yml"]
+    copier --> checkout["Action<br/>actions/checkout"]
+    copier --> update["Composite action<br/>copier-update"]
+    copier --> pull_request["Action<br/>peter-evans/create-pull-request"]
+
+    classDef template fill:#e0f2fe,stroke:#0284c7
+    classDef workflow fill:#ede9fe,stroke:#7c3aed
+    classDef action fill:#ecfccb,stroke:#65a30d
+    class template template
+    class updater,copier workflow
+    class checkout,update,pull_request action
+```
+
 ## Permissions
 
 - `contents: write` to commit template updates.

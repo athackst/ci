@@ -21,6 +21,21 @@ uses: athackst/ci/.github/workflows/release_drafter.yml@main
 See [`release_drafter.yml`](../workflows/release_drafter.md) for the reusable
 workflow contract.
 
+## Dependencies
+
+```mermaid
+flowchart LR
+    template["Template workflow<br/>release_draft.yml"] --> drafter["Reusable workflow<br/>release_drafter.yml"]
+    drafter --> release_drafter["Action<br/>release-drafter/release-drafter"]
+
+    classDef template fill:#e0f2fe,stroke:#0284c7
+    classDef workflow fill:#ede9fe,stroke:#7c3aed
+    classDef action fill:#ecfccb,stroke:#65a30d
+    class template template
+    class drafter workflow
+    class release_drafter action
+```
+
 ## Permissions
 
 The release draft job needs:

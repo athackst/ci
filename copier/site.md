@@ -34,6 +34,54 @@ uses: athackst/ci/.github/workflows/jekyll_site.yml@main
 See [`jekyll_site.yml`](../workflows/jekyll_site.md) for the reusable workflow
 contract.
 
+## Dependencies
+
+```mermaid
+flowchart TD
+    template["Template workflow<br/>site.yml"]
+
+    subgraph build_site["build-site (configured generator)"]
+        direction LR
+
+        subgraph mkdocs_option["MkDocs option"]
+            mkdocs["Reusable workflow<br/>mkdocs_site.yml"]
+            mkdocs --> mkdocs_config["Composite action<br/>mkdocs-config"]
+            mkdocs --> mkdocs_plugin["Action<br/>athackst/mkdocs-simple-plugin"]
+            mkdocs --> pages_build["Actions<br/>checkout, configure-pages,<br/>upload-pages-artifact"]
+        end
+
+        subgraph jekyll_option["Jekyll option"]
+            jekyll["Reusable workflow<br/>jekyll_site.yml"]
+            jekyll --> jekyll_config["Composite action<br/>jekyll-config"]
+            jekyll --> semiliterate["Action<br/>PrimerPages/semiliterate"]
+            jekyll --> ruby["Action<br/>ruby/setup-ruby"]
+            jekyll --> pages_jekyll["Actions<br/>checkout, configure-pages,<br/>upload-pages-artifact"]
+        end
+    end
+
+    template --> mkdocs
+    template --> jekyll
+    mkdocs -->|artifact and outputs| test["Reusable workflow<br/>htmlproofer_site.yml"]
+    jekyll -->|artifact and outputs| test
+    mkdocs -->|artifact and outputs| deploy["Reusable workflow<br/>deploy_site.yml"]
+    jekyll -->|artifact and outputs| deploy
+
+    test --> cache["Composite action<br/>htmlproofer-cache"]
+    test --> test_artifact["Actions<br/>checkout, download-artifact"]
+    cache --> htmlproofer["Action<br/>athackst/htmlproofer-action"]
+    cache --> cache_actions["Actions<br/>cache/restore, cache/save"]
+
+    deploy --> pages_deploy["Actions<br/>configure-pages, deploy-pages,<br/>checkout, download-artifact"]
+    deploy --> versite["Action<br/>PrimerPages/versite"]
+
+    classDef template fill:#e0f2fe,stroke:#0284c7
+    classDef workflow fill:#ede9fe,stroke:#7c3aed
+    classDef action fill:#ecfccb,stroke:#65a30d
+    class template template
+    class mkdocs,jekyll,test,deploy workflow
+    class mkdocs_config,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
+```
+
 ## Permissions
 
 - `build-site`: `contents: read`
