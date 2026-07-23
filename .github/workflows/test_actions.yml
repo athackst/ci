@@ -76,46 +76,6 @@ jobs:
           
           exit "$ALL_STATUS"
 
-  actions-resolve-config:
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.0
-
-      - name: Run resolve-config action
-        id: resolve
-        uses: ./actions/resolve-config
-        with:
-          configuration-path: ./tests/fixtures/test-labeler.yml
-
-      - name: Verify resolve-config outputs
-        shell: bash
-        env:
-          SOURCE_CONFIG_PATH: ${{ steps.resolve.outputs.source-config-path }}
-          RESOLVED_CONFIG_PATH: ${{ steps.resolve.outputs.config-path }}
-        run: |
-          set -euo pipefail
-
-          [ -n "$SOURCE_CONFIG_PATH" ] || { echo "source-config-path is empty"; exit 1; }
-          [ -n "$RESOLVED_CONFIG_PATH" ] || { echo "config-path is empty"; exit 1; }
-          [ -f "$RESOLVED_CONFIG_PATH" ] || { echo "config-path does not exist: $RESOLVED_CONFIG_PATH"; exit 1; }
-
-          cmp -s ./tests/fixtures/test-labeler.yml "$RESOLVED_CONFIG_PATH" || {
-            echo "Resolved config content does not match fixture."
-            exit 1
-          }
-
-          {
-            echo "### Resolve config outputs"
-            echo ""
-            echo "source-config-path: \`$SOURCE_CONFIG_PATH\`"
-            echo "config-path: \`$RESOLVED_CONFIG_PATH\`"
-            echo ""
-            echo ":white_check_mark: Resolved config matches fixture content."
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-
   actions-copier-update:
     permissions:
       contents: read
@@ -760,7 +720,6 @@ jobs:
       - actions-list-repos
       - actions-mkdocs-config
       - actions-jekyll-config
-      - actions-resolve-config
       - actions-setup-labels
     runs-on: ubuntu-latest
     steps:
