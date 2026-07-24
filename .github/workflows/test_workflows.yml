@@ -27,13 +27,12 @@ jobs:
   workflow-mkdocs-site:
     permissions:
       contents: read
+      pages: read
     uses: ./.github/workflows/mkdocs_site.yml
     secrets: inherit
     with:
       artifact-name: github-pages-mkdocs-test
-      host: https://docs.example.com/
-      base-path: project/
-      version: /dev/
+      version: dev
 
   workflow-mkdocs-site-verify:
     permissions:
@@ -52,9 +51,8 @@ jobs:
           SITE_VERSION: ${{ needs.workflow-mkdocs-site.outputs.version }}
         run: |
           test "$WORKFLOW_RESULT" = "success"
-          test "$SITE_HOST" = "docs.example.com"
-          test "$SITE_BASE_PATH" = "/project"
-          test "$SITE_BASE_URL" = "https://docs.example.com/project"
+          test -n "$SITE_HOST"
+          test -n "$SITE_BASE_URL"
           test "$SITE_VERSION" = "dev"
 
       - name: Download mkdocs artifact
@@ -162,14 +160,13 @@ jobs:
   workflow-jekyll-site:
     permissions:
       contents: read
+      pages: read
     uses: ./.github/workflows/jekyll_site.yml
     secrets: inherit
     with:
       source: tests/fixtures/jekyll_site
       artifact-name: github-pages-jekyll-test
-      host: docs.example.com
-      base-url: https://docs.example.com/project/
-      version: /dev/
+      version: dev
 
   workflow-jekyll-site-verify:
     permissions:
@@ -188,9 +185,8 @@ jobs:
           SITE_VERSION: ${{ needs.workflow-jekyll-site.outputs.version }}
         run: |
           test "$WORKFLOW_RESULT" = "success"
-          test "$SITE_HOST" = "docs.example.com"
-          test "$SITE_BASE_PATH" = "/project"
-          test "$SITE_BASE_URL" = "https://docs.example.com/project"
+          test -n "$SITE_HOST"
+          test -n "$SITE_BASE_URL"
           test "$SITE_VERSION" = "dev"
 
       - name: Download Jekyll artifact

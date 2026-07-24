@@ -116,9 +116,9 @@ entrypoint workflows plus a shared CI config.
 
 - Chooses whether to generate `release_draft.yml`.
 - When enabled, `release_draft.yml` creates or updates a draft release on `main` pushes.
-- With MkDocs or Jekyll sites, this also publishes versioned docs:
+- With GitHub Pages sites, this also publishes versioned docs:
   `main` publishes `dev`, and release events publish the release tag plus `latest`.
-- When disabled, release draft generation is skipped and sites publish a simpler unversioned Pages site.
+- When disabled, release draft generation is skipped and GitHub Pages sites publish a simpler unversioned site.
 
 `release_template`
 

@@ -6,7 +6,7 @@
 
 Generated when `site_generator` is `mkdocs` or `jekyll`.
 
-No site workflow is generated when `site_generator` is `none`.
+Choose `site_generator: none` when an external provider owns the site workflow.
 
 ## Runs On
 
@@ -45,7 +45,7 @@ flowchart TD
 
         subgraph mkdocs_option["MkDocs option"]
             mkdocs["Reusable workflow<br/>mkdocs_site.yml"]
-            mkdocs --> site_config["Composite action<br/>configure-site"]
+            mkdocs --> configure_pages["Action<br/>actions/configure-pages"]
             mkdocs --> mkdocs_config["Composite action<br/>mkdocs-config"]
             mkdocs --> mkdocs_plugin["Action<br/>athackst/mkdocs-simple-plugin"]
             mkdocs --> pages_build["Actions<br/>checkout, upload-pages-artifact"]
@@ -53,7 +53,7 @@ flowchart TD
 
         subgraph jekyll_option["Jekyll option"]
             jekyll["Reusable workflow<br/>jekyll_site.yml"]
-            jekyll --> site_config
+            jekyll --> configure_pages
             jekyll --> jekyll_config["Composite action<br/>jekyll-config"]
             jekyll --> semiliterate["Action<br/>PrimerPages/semiliterate"]
             jekyll --> ruby["Action<br/>ruby/setup-ruby"]
@@ -72,8 +72,6 @@ flowchart TD
     test --> test_artifact["Actions<br/>checkout, download-artifact"]
     cache --> htmlproofer["Action<br/>athackst/htmlproofer-action"]
     cache --> cache_actions["Actions<br/>cache/restore, cache/save"]
-    site_config --> configure_pages["Action<br/>configure-pages<br/>(GitHub Pages location)"]
-
     deploy --> pages_deploy["Actions<br/>configure-pages, deploy-pages,<br/>checkout, download-artifact"]
     deploy --> versite["Action<br/>PrimerPages/versite"]
 
@@ -82,7 +80,7 @@ flowchart TD
     classDef action fill:#ecfccb,stroke:#65a30d
     class template template
     class mkdocs,jekyll,test,deploy workflow
-    class site_config,configure_pages,mkdocs_config,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
+    class configure_pages,mkdocs_config,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
 ```
 
 ## Permissions
