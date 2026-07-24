@@ -37,7 +37,8 @@ jobs:
 ## Advanced
 
 - Uses GitHub Pages metadata for the root site location.
-- Uses the bundled `mkdocs-config` action before building the site.
+- Builds with the bundled MkDocs configuration, theme overrides, and Python dependencies.
+- Treats the checked-out repository as site content.
 - Exposes site metadata outputs for downstream workflows such as HTMLProofer and site deploy.
 - The workflow outputs retain the root site location; `version` is appended to the URL passed to MkDocs.
 - This workflow only builds and uploads the site artifact. HTMLProofer and deployment are handled by separate reusable workflows.

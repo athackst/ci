@@ -47,25 +47,19 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Setup mkdocs config
+        id: config
         uses: athackst/ci/actions/mkdocs-config@main
-
-      - name: Debug MkDocs configuration
-        shell: bash
-        run: |
-          if [ -f mkdocs.yml ]; then
-            cat mkdocs.yml
-          else
-            echo "mkdocs.yml was not generated."
-          fi
 
       - name: Build docs
         id: mkdocs
         uses: athackst/mkdocs-simple-plugin@main
         with:
+          config: ${{ steps.config.outputs.config-path || 'mkdocs.yml' }}
           push: false
+          site_dir: site
           site_url: ${{ steps.pages.outputs.base_url }}${{ inputs.version != '' && format('/{0}', inputs.version) || '' }}
 
-      - name: Debug output
+      - name: Show site output
         run: |
           tree site
 
