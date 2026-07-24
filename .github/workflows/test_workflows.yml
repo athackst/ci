@@ -26,13 +26,14 @@ jobs:
 
   workflow-mkdocs-site:
     permissions:
-      contents: write
-      pages: write
-      id-token: write
+      contents: read
     uses: ./.github/workflows/mkdocs_site.yml
     secrets: inherit
     with:
       artifact-name: github-pages-mkdocs-test
+      host: https://docs.example.com/
+      base-path: project/
+      version: /dev/
 
   workflow-mkdocs-site-verify:
     permissions:
@@ -45,7 +46,16 @@ jobs:
         shell: bash
         env:
           WORKFLOW_RESULT: ${{ needs.workflow-mkdocs-site.result }}
-        run: test "$WORKFLOW_RESULT" = "success"
+          SITE_HOST: ${{ needs.workflow-mkdocs-site.outputs.host }}
+          SITE_BASE_PATH: ${{ needs.workflow-mkdocs-site.outputs.base-path }}
+          SITE_BASE_URL: ${{ needs.workflow-mkdocs-site.outputs.base-url }}
+          SITE_VERSION: ${{ needs.workflow-mkdocs-site.outputs.version }}
+        run: |
+          test "$WORKFLOW_RESULT" = "success"
+          test "$SITE_HOST" = "docs.example.com"
+          test "$SITE_BASE_PATH" = "/project"
+          test "$SITE_BASE_URL" = "https://docs.example.com/project"
+          test "$SITE_VERSION" = "dev"
 
       - name: Download mkdocs artifact
         uses: actions/download-artifact@v8
@@ -151,14 +161,15 @@ jobs:
 
   workflow-jekyll-site:
     permissions:
-      contents: write
-      pages: write
-      id-token: write
+      contents: read
     uses: ./.github/workflows/jekyll_site.yml
     secrets: inherit
     with:
       source: tests/fixtures/jekyll_site
       artifact-name: github-pages-jekyll-test
+      host: docs.example.com
+      base-url: https://docs.example.com/project/
+      version: /dev/
 
   workflow-jekyll-site-verify:
     permissions:
@@ -171,7 +182,16 @@ jobs:
         shell: bash
         env:
           WORKFLOW_RESULT: ${{ needs.workflow-jekyll-site.result }}
-        run: test "$WORKFLOW_RESULT" = "success"
+          SITE_HOST: ${{ needs.workflow-jekyll-site.outputs.host }}
+          SITE_BASE_PATH: ${{ needs.workflow-jekyll-site.outputs.base-path }}
+          SITE_BASE_URL: ${{ needs.workflow-jekyll-site.outputs.base-url }}
+          SITE_VERSION: ${{ needs.workflow-jekyll-site.outputs.version }}
+        run: |
+          test "$WORKFLOW_RESULT" = "success"
+          test "$SITE_HOST" = "docs.example.com"
+          test "$SITE_BASE_PATH" = "/project"
+          test "$SITE_BASE_URL" = "https://docs.example.com/project"
+          test "$SITE_VERSION" = "dev"
 
       - name: Download Jekyll artifact
         uses: actions/download-artifact@v8
@@ -274,6 +294,37 @@ jobs:
           if [ "$VERIFY_STATUS" != "success" ]; then
             exit 1
           fi
+
+  workflow-site-output-consistency:
+    permissions:
+      contents: read
+    needs:
+      - workflow-mkdocs-site
+      - workflow-jekyll-site
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare site workflow outputs
+        shell: bash
+        env:
+          MKDOCS_RESULT: ${{ needs.workflow-mkdocs-site.result }}
+          MKDOCS_HOST: ${{ needs.workflow-mkdocs-site.outputs.host }}
+          MKDOCS_BASE_PATH: ${{ needs.workflow-mkdocs-site.outputs.base-path }}
+          MKDOCS_BASE_URL: ${{ needs.workflow-mkdocs-site.outputs.base-url }}
+          MKDOCS_VERSION: ${{ needs.workflow-mkdocs-site.outputs.version }}
+          JEKYLL_RESULT: ${{ needs.workflow-jekyll-site.result }}
+          JEKYLL_HOST: ${{ needs.workflow-jekyll-site.outputs.host }}
+          JEKYLL_BASE_PATH: ${{ needs.workflow-jekyll-site.outputs.base-path }}
+          JEKYLL_BASE_URL: ${{ needs.workflow-jekyll-site.outputs.base-url }}
+          JEKYLL_VERSION: ${{ needs.workflow-jekyll-site.outputs.version }}
+        run: |
+          set -euo pipefail
+          test "$MKDOCS_RESULT" = "success"
+          test "$JEKYLL_RESULT" = "success"
+          test "$MKDOCS_HOST" = "$JEKYLL_HOST"
+          test "$MKDOCS_BASE_PATH" = "$JEKYLL_BASE_PATH"
+          test "$MKDOCS_BASE_URL" = "$JEKYLL_BASE_URL"
+          test "$MKDOCS_VERSION" = "$JEKYLL_VERSION"
 
   workflow-htmlproofer-site-fixture:
     permissions:
@@ -638,6 +689,7 @@ jobs:
       - workflow-validation
       - workflow-mkdocs-site-verify
       - workflow-jekyll-site-verify
+      - workflow-site-output-consistency
       - workflow-htmlproofer-site
       - workflow-deploy-site-verify-and-cleanup
       - workflow-release-draft-verify

@@ -12,6 +12,21 @@ on:
         type: string
         required: false
         default: "github-pages"
+      host:
+        description: "Optional site host or origin."
+        type: string
+        required: false
+        default: ""
+      base-path:
+        description: "Optional path beneath the configured host."
+        type: string
+        required: false
+        default: ""
+      base-url:
+        description: "Optional full site base URL."
+        type: string
+        required: false
+        default: ""
     outputs:
       host:
         description: The host name for the site
@@ -33,37 +48,23 @@ jobs:
   build-site:
     runs-on: ubuntu-latest
     outputs:
-      host: ${{ steps.settings.outputs.host }}
-      base-path: ${{ steps.settings.outputs.base_path }}
-      base-url: ${{ steps.settings.outputs.base_url }}
-      version: ${{ steps.settings.outputs.version }}
+      host: ${{ steps.site.outputs.host }}
+      base-path: ${{ steps.site.outputs.base-path }}
+      base-url: ${{ steps.site.outputs.base-url }}
+      version: ${{ steps.site.outputs.version }}
       artifact-name: ${{ inputs.artifact-name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.0
 
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v6
-
-      - name: Settings
-        id: settings
-        run: |
-          set -euo pipefail
-          version="${{ inputs.version }}"
-          echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
-
-          base_path="${{ steps.pages.outputs.base_path }}"
-          base_url="${{ steps.pages.outputs.base_url }}"
-          if [ -n "$version" ]; then
-            base_path="${base_path}/${version}"
-            base_url="${base_url}/${version}"
-          fi
-          echo "base_path=${base_path}" | tee -a "$GITHUB_OUTPUT"
-          echo "base_url=${base_url}" | tee -a "$GITHUB_OUTPUT"
-
-          host="${{ steps.pages.outputs.host }}"
-          echo "host=${host}" | tee -a "$GITHUB_OUTPUT"
+      - name: Configure site
+        id: site
+        uses: athackst/ci/actions/configure-site@main
+        with:
+          host: ${{ inputs.host }}
+          base-path: ${{ inputs.base-path }}
+          base-url: ${{ inputs.base-url }}
+          version: ${{ inputs.version }}
 
       - name: Setup mkdocs config
         uses: athackst/ci/actions/mkdocs-config@main
@@ -82,7 +83,7 @@ jobs:
         uses: athackst/mkdocs-simple-plugin@main
         with:
           push: false
-          site_url: ${{ steps.settings.outputs.base_url }}
+          site_url: ${{ steps.site.outputs.base-url }}${{ steps.site.outputs.version != '' && format('/{0}', steps.site.outputs.version) || '' }}
 
       - name: Debug output
         run: |
