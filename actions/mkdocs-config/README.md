@@ -1,36 +1,50 @@
 # Configure MkDocs for GitHub Pages
 
-Layer the bundled MkDocs site config into the workspace and append the required Python packages for the site.
+Copy the bundled MkDocs configuration, dependencies, and theme overrides into a managed directory.
 
 ## Usage
 
 ```yaml
 - name: Configure MkDocs
+  id: mkdocs-config
   uses: athackst/ci/actions/mkdocs-config@main
 ```
 
+## Inputs
+
+| Name | Description | Default |
+| --- | --- | --- |
+| `output-directory` | Directory where the managed MkDocs files are written. (optional) | `.` |
+
+## Outputs
+
+| Name | Description |
+| --- | --- |
+| `config-path` | Path to the generated `mkdocs.yml`. |
+| `requirements-path` | Path to the generated `requirements.txt`. |
+| `overrides-path` | Path to the generated theme overrides directory. |
+
 ## Advanced
 
-- Layers the bundled `mkdocs.yml` into the workspace root as a base config.
-- When the repository already has an `mkdocs.yml`, its keys override the bundled defaults.
-- Copies the bundled `overrides/` directory into the workspace root.
-- Creates `requirements.txt` if it does not already exist.
-- Appends the action's bundled Python requirements to `requirements.txt`.
-- Existing workspace files with the same names are merged or extended.
+- Replaces the managed `mkdocs.yml`, `requirements.txt`, and `overrides/` contents on every run.
+- Keeps the generated files together under `output-directory`.
 
 ## Examples
 
-Configure MkDocs before building the site:
+Configure MkDocs in an isolated directory:
 
 ```yaml
 - name: Configure MkDocs
+  id: mkdocs-config
   uses: athackst/ci/actions/mkdocs-config@main
+  with:
+    output-directory: ${{ runner.temp }}/mkdocs
 
 - name: Install site dependencies
   shell: bash
-  run: python3 -m pip install -r requirements.txt
+  run: python3 -m pip install -r "${{ steps.mkdocs-config.outputs.requirements-path }}"
 
 - name: Build docs
   shell: bash
-  run: mkdocs build
+  run: mkdocs build --config-file "${{ steps.mkdocs-config.outputs.config-path }}"
 ```

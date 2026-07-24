@@ -1,10 +1,36 @@
 name: 'Configure MkDocs for GitHub Pages'
 description: 'A GitHub Action to enable MkDocs for Pages and extract various metadata about a site.'
+inputs:
+  output-directory:
+    description: 'Directory where the managed MkDocs files are written.'
+    required: false
+    default: '.'
+
+outputs:
+  config-path:
+    description: Path to the generated mkdocs.yml.
+    value: ${{ steps.setup.outputs.config-path }}
+  requirements-path:
+    description: Path to the generated requirements.txt.
+    value: ${{ steps.setup.outputs.requirements-path }}
+  overrides-path:
+    description: Path to the generated theme overrides directory.
+    value: ${{ steps.setup.outputs.overrides-path }}
 
 runs:
   using: 'composite'
   steps:
     - name: Setup MkDocs config
+      id: setup
       shell: bash
+      env:
+        OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
       run: |
         bash "${{ github.action_path }}/setup_mkdocs.sh"
+        output_directory="$OUTPUT_DIRECTORY"
+        if [ "$output_directory" != "/" ]; then
+          output_directory="${output_directory%/}"
+        fi
+        echo "config-path=$output_directory/mkdocs.yml" | tee -a "$GITHUB_OUTPUT"
+        echo "requirements-path=$output_directory/requirements.txt" | tee -a "$GITHUB_OUTPUT"
+        echo "overrides-path=$output_directory/overrides" | tee -a "$GITHUB_OUTPUT"
