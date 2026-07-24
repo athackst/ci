@@ -1,6 +1,6 @@
 # Configure Jekyll for GitHub Pages
 
-Create the baseline Jekyll files used by this CI setup and render the bundled site config into the workspace.
+Render the bundled Jekyll configuration and copy its managed dependencies into a selected directory.
 
 ## Usage
 
@@ -21,18 +21,21 @@ Create the baseline Jekyll files used by this CI setup and render the bundled si
 | `nav_filename` | The navigation file name. (optional) | `.nav.yml` |
 | `versions_config` | The versions config path written into `versions.config`. Use a root-relative Pages path such as `/ci/versions.json`. When empty, versioning stays disabled. (optional) | `""` |
 | `base_path` | The site base path written into `versions.prefix`, for example `/ci`. (optional) | `""` |
+| `output-directory` | Directory where the managed Jekyll files are written. (optional) | `.` |
 
 ## Outputs
 
 | Name | Description |
 | --- | --- |
-| `gemfile-path` | Path to the generated or existing `Gemfile`. |
-| `config-path` | Path to the generated or existing `_config.yml`. |
-| `semiliterate-config-path` | Path to the generated or existing `semiliterate.yml`. |
+| `gemfile-path` | Path to the generated `Gemfile`. |
+| `config-path` | Path to the generated `_config.yml`. |
+| `semiliterate-config-path` | Path to the generated `semiliterate.yml`. |
 
 ## Advanced
 
-- Creates `_config.yml`, `Gemfile`, and `semiliterate.yml` only when they do not already exist.
+- Replaces the managed `_config.yml`, `Gemfile`, and `semiliterate.yml` on every run.
+- Resolves dependencies from the managed `Gemfile` by clearing the destination `Gemfile.lock`.
+- Keeps the generated files together under `output-directory`.
 - Renders the bundled `_config.yml` template with the provided metadata and GitHub repository context.
 - Sets `versions.enabled` automatically based on whether `versions_config` is empty.
 - Writes the provided `versions_config` value directly to `versions.config`.
@@ -53,6 +56,9 @@ Enable versioned docs with a root-relative Pages manifest:
     description: Project documentation
     versions_config: /ci/versions.json
     base_path: /ci
+    output-directory: ${{ runner.temp }}/jekyll
 
 - run: bundle exec jekyll build --config "${{ steps.jekyll-config.outputs.config-path }}"
+  env:
+    BUNDLE_GEMFILE: ${{ steps.jekyll-config.outputs.gemfile-path }}
 ```

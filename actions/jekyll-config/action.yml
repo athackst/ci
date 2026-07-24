@@ -29,16 +29,20 @@ inputs:
     description: 'The base path for the site.'
     required: false
     default: ""
+  output-directory:
+    description: 'Directory where the managed Jekyll files are written.'
+    required: false
+    default: '.'
 
 outputs:
   gemfile-path:
-    description: Path to the generated or existing Gemfile.
+    description: Path to the generated Gemfile.
     value: ${{ steps.setup.outputs.gemfile-path }}
   config-path:
-    description: Path to the generated or existing _config.yml.
+    description: Path to the generated _config.yml.
     value: ${{ steps.setup.outputs.config-path }}
   semiliterate-config-path:
-    description: Path to the generated or existing semiliterate.yml.
+    description: Path to the generated semiliterate.yml.
     value: ${{ steps.setup.outputs.semiliterate-config-path }}
 
 runs:
@@ -57,5 +61,13 @@ runs:
         VERSIONS_ENABLED: ${{ inputs.versions_config != '' }}
         VERSIONS_CONFIG: ${{ inputs.versions_config }}
         PREFIX: ${{ inputs.base_path }}
+        OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
       run: |
         bash "${{ github.action_path }}/setup_jekyll.sh"
+        output_directory="$OUTPUT_DIRECTORY"
+        if [ "$output_directory" != "/" ]; then
+          output_directory="${output_directory%/}"
+        fi
+        echo "gemfile-path=$output_directory/Gemfile" | tee -a "$GITHUB_OUTPUT"
+        echo "config-path=$output_directory/_config.yml" | tee -a "$GITHUB_OUTPUT"
+        echo "semiliterate-config-path=$output_directory/semiliterate.yml" | tee -a "$GITHUB_OUTPUT"

@@ -36,7 +36,7 @@ plugins:
 awesome_nav:
   enabled: true
   root: ""
-  nav_filename: .nav.yml
+  nav_filename: ${nav_filename}
 
 optional_front_matter:
   remove_originals: true

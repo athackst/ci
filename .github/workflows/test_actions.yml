@@ -594,6 +594,15 @@ jobs:
         run: |
           python3 -m pip install --quiet pyyaml
 
+      - name: Create existing Jekyll files
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/jekyll-config"
+          echo "repository_only: true" > "$RUNNER_TEMP/jekyll-config/_config.yml"
+          echo "gem 'repository-only-gem'" > "$RUNNER_TEMP/jekyll-config/Gemfile"
+          touch "$RUNNER_TEMP/jekyll-config/Gemfile.lock"
+          echo "repository_only: true" > "$RUNNER_TEMP/jekyll-config/semiliterate.yml"
+
       - name: Test jekyll config action
         id: jekyll-config
         uses: ./actions/jekyll-config
@@ -602,6 +611,7 @@ jobs:
           description: Test description for Jekyll config
           image: https://example.com/site-preview.png
           edit_url: https://example.com/edit/
+          output-directory: ${{ runner.temp }}/jekyll-config
 
       - name: Verify jekyll config outputs
         shell: bash
@@ -611,9 +621,9 @@ jobs:
           SEMILITERATE_CONFIG_PATH: ${{ steps.jekyll-config.outputs.semiliterate-config-path }}
         run: |
           set -euo pipefail
-          [ "$GEMFILE_PATH" = "./Gemfile" ]
-          [ "$CONFIG_PATH" = "./_config.yml" ]
-          [ "$SEMILITERATE_CONFIG_PATH" = "./semiliterate.yml" ]
+          [ "$GEMFILE_PATH" = "$RUNNER_TEMP/jekyll-config/Gemfile" ]
+          [ "$CONFIG_PATH" = "$RUNNER_TEMP/jekyll-config/_config.yml" ]
+          [ "$SEMILITERATE_CONFIG_PATH" = "$RUNNER_TEMP/jekyll-config/semiliterate.yml" ]
 
       - name: Install bats
         shell: bash
@@ -623,6 +633,8 @@ jobs:
 
       - name: Verify jekyll config artifacts (bats)
         shell: bash
+        env:
+          TEST_OUTPUT_DIRECTORY: ${{ runner.temp }}/jekyll-config
         run: |
           set +e
           BATS_OUTPUT="$(bats actions/jekyll-config/tests/jekyll_config.bats 2>&1)"
