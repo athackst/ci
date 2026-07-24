@@ -13,7 +13,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
 
       - name: actionlint
         uses: raven-actions/actionlint@v2.2.0
@@ -327,7 +327,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
 
       - name: Upload HTMLProofer fixture artifact
         uses: actions/upload-pages-artifact@v5
@@ -350,7 +350,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
 
       - name: Upload deploy-site fixture artifact
         uses: actions/upload-pages-artifact@v5
@@ -379,7 +379,7 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
 
       - name: Verify deploy-site branch
         id: verify-deploy-site
@@ -523,7 +523,7 @@ jobs:
     outputs:
       fixture-branch: ${{ steps.branch.outputs.fixture-branch }}
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
