@@ -69,19 +69,21 @@ jobs:
         id: semiliterate
         uses: PrimerPages/semiliterate@main
         with:
-          config: semiliterate.yml
+          config: ${{ steps.config.outputs.semiliterate-config-path }}
           source: ${{ inputs.source }}
           out: jekyll-site
           verbose: true
 
-      - name: Debug semiliterate
+      - name: Show extracted source
+        if: ${{ inputs.semiliterate }}
         shell: bash
         run: |
-          ls 
           tree jekyll-site
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1.319.0
+        env:
+          BUNDLE_GEMFILE: ${{ steps.config.outputs.gemfile-path }}
         with:
           ruby-version: 3.3.4
           bundler-cache: true
@@ -91,12 +93,13 @@ jobs:
         env:
           JEKYLL_ENV: production
           JEKYLL_GITHUB_TOKEN: ${{ github.token }}
+          BUNDLE_GEMFILE: ${{ steps.config.outputs.gemfile-path }}
           BASEURL: ${{ steps.pages.outputs.base_path }}${{ inputs.version != '' && format('/{0}', inputs.version) || '' }}
-          SOURCE: ${{ steps.semiliterate.outputs.out  || '.' }}
-          CONFIG_FILE: "_config.yml"
+          SOURCE: ${{ steps.semiliterate.outputs.out || inputs.source }}
+          CONFIG_FILE: ${{ steps.config.outputs.config-path }}
         run: bundle exec jekyll build --baseurl "${BASEURL}" --source "${SOURCE}" --config "${CONFIG_FILE}"
 
-      - name: Debug output
+      - name: Show site output
         run: |
           tree _site
 

@@ -39,7 +39,8 @@ jobs:
 ## Advanced
 
 - Uses GitHub Pages metadata for the root site location.
-- Uses the bundled `jekyll-config` action before building the site.
+- Builds with the bundled Jekyll configuration and Gemfile.
+- Treats the selected `source` directory as site content.
 - Optionally extracts source content with `PrimerPages/semiliterate`.
 - The workflow outputs retain the root site location; `version` is appended to the base path passed to Jekyll.
 - Versioned builds enable the shared versions manifest used by the theme's version selector.
