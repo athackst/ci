@@ -2,22 +2,15 @@
 set -euo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+OUTPUT_DIRECTORY="${OUTPUT_DIRECTORY:-.}"
 
-if [[ ! -f "./_config.yml" ]]; then
-    python3 "${DIR}/merge_jekyll_config.py" "${DIR}/_config.yml" "./_config.yml"
-    echo "Created _config.yml from template."
-fi
+mkdir -p "$OUTPUT_DIRECTORY"
 
-if [[ ! -f "./Gemfile" ]]; then
-    cp "${DIR}/Gemfile" "./Gemfile"
-    echo "Created Gemfile from template."
-fi
+python3 "${DIR}/render_jekyll_config.py" \
+    "${DIR}/_config.yml" \
+    "$OUTPUT_DIRECTORY/_config.yml"
+cp "${DIR}/Gemfile" "$OUTPUT_DIRECTORY/Gemfile"
+rm -f "$OUTPUT_DIRECTORY/Gemfile.lock"
+cp "${DIR}/semiliterate.yml" "$OUTPUT_DIRECTORY/semiliterate.yml"
 
-if [[ ! -f "./semiliterate.yml" ]]; then
-    cp "${DIR}/semiliterate.yml" "./semiliterate.yml"
-    echo "Created semiliterate.yml from template."
-fi
-
-echo "gemfile-path=./Gemfile" | tee -a "$GITHUB_OUTPUT"
-echo "config-path=./_config.yml" | tee -a "$GITHUB_OUTPUT"
-echo "semiliterate-config-path=./semiliterate.yml" | tee -a "$GITHUB_OUTPUT"
+echo "Created managed Jekyll files in $OUTPUT_DIRECTORY."
