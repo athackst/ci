@@ -23,21 +23,6 @@ on:
         type: string
         required: false
         default: "github-pages"
-      host:
-        description: "Optional site host or origin."
-        type: string
-        required: false
-        default: ""
-      base-path:
-        description: "Optional path beneath the configured host."
-        type: string
-        required: false
-        default: ""
-      base-url:
-        description: "Optional full site base URL."
-        type: string
-        required: false
-        default: ""
     outputs:
       host:
         description: The host name for the site
@@ -59,30 +44,25 @@ jobs:
   build-site:
     runs-on: ubuntu-latest
     outputs:
-      host: ${{ steps.site.outputs.host }}
-      base-path: ${{ steps.site.outputs.base-path }}
-      base-url: ${{ steps.site.outputs.base-url }}
-      version: ${{ steps.site.outputs.version }}
+      host: ${{ steps.pages.outputs.host }}
+      base-path: ${{ steps.pages.outputs.base_path }}
+      base-url: ${{ steps.pages.outputs.base_url }}
+      version: ${{ inputs.version }}
       artifact-name: ${{ inputs.artifact-name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.0
 
-      - name: Configure site
-        id: site
-        uses: athackst/ci/actions/configure-site@main
-        with:
-          host: ${{ inputs.host }}
-          base-path: ${{ inputs.base-path }}
-          base-url: ${{ inputs.base-url }}
-          version: ${{ inputs.version }}
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v6
 
       - name: Configure Jekyll site
         id: config
         uses: athackst/ci/actions/jekyll-config@main
         with:
-          versions_config: ${{ steps.site.outputs.version != '' && format('{0}/versions.json', steps.site.outputs.base-path) || '' }}
-          base_path: ${{ steps.site.outputs.base-path }}
+          versions_config: ${{ inputs.version != '' && format('{0}/versions.json', steps.pages.outputs.base_path) || '' }}
+          base_path: ${{ steps.pages.outputs.base_path }}
 
       - name: Extract with semiliterate
         if: ${{ inputs.semiliterate }}
@@ -111,7 +91,7 @@ jobs:
         env:
           JEKYLL_ENV: production
           JEKYLL_GITHUB_TOKEN: ${{ github.token }}
-          BASEURL: ${{ steps.site.outputs.base-path }}${{ steps.site.outputs.version != '' && format('/{0}', steps.site.outputs.version) || '' }}
+          BASEURL: ${{ steps.pages.outputs.base_path }}${{ inputs.version != '' && format('/{0}', inputs.version) || '' }}
           SOURCE: ${{ steps.semiliterate.outputs.out  || '.' }}
           CONFIG_FILE: "_config.yml"
         run: bundle exec jekyll build --baseurl "${BASEURL}" --source "${SOURCE}" --config "${CONFIG_FILE}"

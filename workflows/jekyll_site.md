@@ -20,9 +20,6 @@ jobs:
 | `version` | (optional) Version path to append to the site base path, for example `dev` or `1.2.3`. | `""` |
 | `semiliterate` | (optional) Extract docs with semiliterate before building. | `true` |
 | `artifact-name` | (optional) Artifact name for the built site. | `github-pages` |
-| `host` | (optional) Site host or origin, such as `docs.example.com` or `https://docs.example.com`. | `""` |
-| `base-path` | (optional) Path beneath `host`, such as `/project`. | `""` |
-| `base-url` | (optional) Full site base URL. Derived from `host` and `base-path` when omitted. | `""` |
 
 ## Outputs
 
@@ -41,8 +38,7 @@ jobs:
 
 ## Advanced
 
-- Uses `configure-site` to resolve a GitHub Pages location or an explicit hosting location.
-- An empty `host` selects GitHub Pages metadata; explicit `base-path` and `base-url` values accompany an explicit `host`.
+- Uses GitHub Pages metadata for the root site location.
 - Uses the bundled `jekyll-config` action before building the site.
 - Optionally extracts source content with `PrimerPages/semiliterate`.
 - The workflow outputs retain the root site location; `version` is appended to the base path passed to Jekyll.
@@ -68,15 +64,4 @@ jobs:
     uses: athackst/ci/.github/workflows/jekyll_site.yml@main
     with:
       version: dev
-```
-
-Build for an externally hosted site:
-
-```yaml
-jobs:
-  site:
-    uses: athackst/ci/.github/workflows/jekyll_site.yml@main
-    with:
-      host: docs.example.com
-      base-path: /project
 ```
