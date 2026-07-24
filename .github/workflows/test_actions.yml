@@ -539,8 +539,31 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      - name: Create existing MkDocs files
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/mkdocs-config/overrides"
+          echo "site_name: Repository config" > "$RUNNER_TEMP/mkdocs-config/mkdocs.yml"
+          echo "repository-only-package" > "$RUNNER_TEMP/mkdocs-config/requirements.txt"
+          touch "$RUNNER_TEMP/mkdocs-config/overrides/obsolete.html"
+
       - name: Test mkdocs config action
+        id: mkdocs-config
         uses: ./actions/mkdocs-config
+        with:
+          output-directory: ${{ runner.temp }}/mkdocs-config
+
+      - name: Verify mkdocs config outputs
+        shell: bash
+        env:
+          CONFIG_PATH: ${{ steps.mkdocs-config.outputs.config-path }}
+          REQUIREMENTS_PATH: ${{ steps.mkdocs-config.outputs.requirements-path }}
+          OVERRIDES_PATH: ${{ steps.mkdocs-config.outputs.overrides-path }}
+        run: |
+          set -euo pipefail
+          [ "$CONFIG_PATH" = "$RUNNER_TEMP/mkdocs-config/mkdocs.yml" ]
+          [ "$REQUIREMENTS_PATH" = "$RUNNER_TEMP/mkdocs-config/requirements.txt" ]
+          [ "$OVERRIDES_PATH" = "$RUNNER_TEMP/mkdocs-config/overrides" ]
 
       - name: Install bats
         shell: bash
@@ -550,6 +573,8 @@ jobs:
 
       - name: Verify mkdocs config artifacts (bats)
         shell: bash
+        env:
+          TEST_OUTPUT_DIRECTORY: ${{ runner.temp }}/mkdocs-config
         run: |
           set +e
           BATS_OUTPUT="$(bats actions/mkdocs-config/tests/mkdocs_config.bats 2>&1)"
