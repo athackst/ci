@@ -45,17 +45,19 @@ flowchart TD
 
         subgraph mkdocs_option["MkDocs option"]
             mkdocs["Reusable workflow<br/>mkdocs_site.yml"]
+            mkdocs --> site_config["Composite action<br/>configure-site"]
             mkdocs --> mkdocs_config["Composite action<br/>mkdocs-config"]
             mkdocs --> mkdocs_plugin["Action<br/>athackst/mkdocs-simple-plugin"]
-            mkdocs --> pages_build["Actions<br/>checkout, configure-pages,<br/>upload-pages-artifact"]
+            mkdocs --> pages_build["Actions<br/>checkout, upload-pages-artifact"]
         end
 
         subgraph jekyll_option["Jekyll option"]
             jekyll["Reusable workflow<br/>jekyll_site.yml"]
+            jekyll --> site_config
             jekyll --> jekyll_config["Composite action<br/>jekyll-config"]
             jekyll --> semiliterate["Action<br/>PrimerPages/semiliterate"]
             jekyll --> ruby["Action<br/>ruby/setup-ruby"]
-            jekyll --> pages_jekyll["Actions<br/>checkout, configure-pages,<br/>upload-pages-artifact"]
+            jekyll --> pages_jekyll["Actions<br/>checkout, upload-pages-artifact"]
         end
     end
 
@@ -70,6 +72,7 @@ flowchart TD
     test --> test_artifact["Actions<br/>checkout, download-artifact"]
     cache --> htmlproofer["Action<br/>athackst/htmlproofer-action"]
     cache --> cache_actions["Actions<br/>cache/restore, cache/save"]
+    site_config --> configure_pages["Action<br/>configure-pages<br/>(GitHub Pages location)"]
 
     deploy --> pages_deploy["Actions<br/>configure-pages, deploy-pages,<br/>checkout, download-artifact"]
     deploy --> versite["Action<br/>PrimerPages/versite"]
@@ -79,12 +82,12 @@ flowchart TD
     classDef action fill:#ecfccb,stroke:#65a30d
     class template template
     class mkdocs,jekyll,test,deploy workflow
-    class mkdocs_config,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
+    class site_config,configure_pages,mkdocs_config,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
 ```
 
 ## Permissions
 
-- `build-site`: `contents: read`
+- `build-site`: `contents: read`, plus `pages: read` for GitHub Pages location resolution
 - `test-site`: `contents: read`
 - `deploy-site`: `contents: write`, `pages: write`, `id-token: write`
 

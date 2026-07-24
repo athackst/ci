@@ -19,6 +19,7 @@ jobs:
   build-site:
     permissions:
       contents: read
+      pages: read
 [%- if site_generator == "mkdocs" %]
     uses: athackst/ci/.github/workflows/mkdocs_site.yml@main
 [%- else %]
