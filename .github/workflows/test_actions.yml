@@ -530,6 +530,65 @@ jobs:
           configuration-path: .github/ci-config.yml
 
 
+  actions-configure-site:
+    permissions:
+      contents: read
+      pages: read
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7.0.0
+
+      - name: Test configure site action
+        id: site
+        uses: ./actions/configure-site
+        with:
+          host: https://docs.example.com/
+          base-path: project/
+          version: /dev/
+
+      - name: Verify configure site outputs
+        shell: bash
+        env:
+          SITE_HOST: ${{ steps.site.outputs.host }}
+          SITE_BASE_PATH: ${{ steps.site.outputs.base-path }}
+          SITE_BASE_URL: ${{ steps.site.outputs.base-url }}
+          SITE_VERSION: ${{ steps.site.outputs.version }}
+        run: |
+          set -euo pipefail
+          test "$SITE_HOST" = "docs.example.com"
+          test "$SITE_BASE_PATH" = "/project"
+          test "$SITE_BASE_URL" = "https://docs.example.com/project"
+          test "$SITE_VERSION" = "dev"
+
+      - name: Test GitHub Pages site settings
+        id: pages-site
+        uses: ./actions/configure-site
+
+      - name: Verify GitHub Pages site settings
+        shell: bash
+        env:
+          SITE_HOST: ${{ steps.pages-site.outputs.host }}
+          SITE_BASE_URL: ${{ steps.pages-site.outputs.base-url }}
+        run: |
+          set -euo pipefail
+          test -n "$SITE_HOST"
+          test -n "$SITE_BASE_URL"
+
+      - name: Test incomplete explicit site settings
+        id: incomplete-site
+        continue-on-error: true
+        uses: ./actions/configure-site
+        with:
+          base-path: /project
+
+      - name: Verify incomplete site settings failure
+        shell: bash
+        env:
+          ACTION_OUTCOME: ${{ steps.incomplete-site.outcome }}
+        run: test "$ACTION_OUTCOME" = "failure"
+
   actions-mkdocs-config:
     permissions:
       contents: read
@@ -657,6 +716,7 @@ jobs:
     needs:
       - actions-unit-tests
       - actions-pr-labeler
+      - actions-configure-site
       - actions-mkdocs-config
       - actions-jekyll-config
       - actions-setup-labels
