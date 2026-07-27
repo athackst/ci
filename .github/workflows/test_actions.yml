@@ -529,7 +529,6 @@ jobs:
         with:
           configuration-path: .github/ci-config.yml
 
-
   actions-mkdocs-config:
     permissions:
       contents: read
@@ -592,6 +591,63 @@ jobs:
 
           {
             echo "### mkdocs-config action test"
+            echo ""
+            echo "<details><summary>$TEST_SUMMARY</summary>"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
+
+  actions-mkdocs-preset:
+    permissions:
+      contents: read
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Test MkDocs site preset
+        id: mkdocs-preset
+        uses: ./actions/mkdocs-preset
+        with:
+          docs-dir: actions/mkdocs-preset/tests/fixtures/mkdocs_site
+          site-dir: tests/generated/mkdocs-site
+          site-url: http://localhost:8000/
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify MkDocs site artifact (bats)
+        shell: bash
+        env:
+          TEST_OUTPUT_DIRECTORY: tests/generated/mkdocs-site
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats actions/mkdocs-preset/tests/mkdocs_preset.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+          TEST_SUMMARY="MkDocs site preset test"
+          if [ "$BATS_STATUS" -eq 0 ]; then
+            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
+          else
+            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
+          fi
+          echo "$TEST_SUMMARY"
+
+          echo "$BATS_OUTPUT"
+
+          {
+            echo "### MkDocs site preset test"
             echo ""
             echo "<details><summary>$TEST_SUMMARY</summary>"
             echo ""
@@ -695,6 +751,7 @@ jobs:
       - actions-unit-tests
       - actions-pr-labeler
       - actions-mkdocs-config
+      - actions-mkdocs-preset
       - actions-jekyll-config
       - actions-setup-labels
     runs-on: ubuntu-latest

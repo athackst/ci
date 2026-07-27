@@ -1,0 +1,11 @@
+
+mike
+mkdocs
+mkdocs-autorefs
+mkdocs-awesome-pages-plugin
+mkdocs-get-deps
+mkdocs-macros-plugin
+mkdocs-material
+mkdocs-material-extensions
+markdown_gfm_admonition
+mkdocs-simple-plugin
