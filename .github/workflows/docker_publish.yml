@@ -25,6 +25,8 @@ jobs:
         include:
           - image_name: mkdocs-preset
             context: ./actions/mkdocs-preset
+          - image_name: jekyll-preset
+            context: ./actions/jekyll-preset
 
     steps:
       - name: Check out source

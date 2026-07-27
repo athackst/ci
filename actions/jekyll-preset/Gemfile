@@ -1,0 +1,19 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gem 'jekyll', '4.4.1'
+gem 'jekyll-theme-primerpages', '2.3.3'
+
+group :jekyll_plugins do
+    gem 'jekyll-awesome-nav', '0.2.1'
+    gem 'jekyll-gfm-admonitions', '1.4.4'
+    gem 'jekyll-octicons', '19.8.0'
+    gem 'jekyll-relative-links', '0.7.0'
+    gem 'jekyll-sitemap', '1.4.0'
+    gem 'jekyll-tagging', '1.1.0'
+    gem 'jekyll-toc', '0.19.0'
+    gem 'jekyll-redirect-from', '0.16.0'
+    gem 'jekyll-readme-index', '0.3.0'
+    gem 'jekyll-optional-front-matter', '0.3.2'
+end
