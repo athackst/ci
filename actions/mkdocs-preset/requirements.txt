@@ -1,11 +1,11 @@
 
-mike
-mkdocs
-mkdocs-autorefs
-mkdocs-awesome-pages-plugin
-mkdocs-get-deps
-mkdocs-macros-plugin
-mkdocs-material
-mkdocs-material-extensions
-markdown_gfm_admonition
-mkdocs-simple-plugin
+mike==2.2.0
+mkdocs==1.6.1
+mkdocs-autorefs==1.4.4
+mkdocs-awesome-pages-plugin==2.10.1
+mkdocs-get-deps==0.2.2
+mkdocs-macros-plugin==1.5.0
+mkdocs-material==9.7.7
+mkdocs-material-extensions==1.3.1
+markdown_gfm_admonition==0.3.0
+mkdocs-simple-plugin==4.0.1
