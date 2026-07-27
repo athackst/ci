@@ -57,47 +57,18 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      - name: Configure Jekyll site
-        id: config
-        uses: athackst/ci/actions/jekyll-config@main
-        with:
-          versions_config: ${{ inputs.version != '' && format('{0}/versions.json', steps.pages.outputs.base_path) || '' }}
-          base_path: ${{ steps.pages.outputs.base_path }}
-
-      - name: Extract with semiliterate
-        if: ${{ inputs.semiliterate }}
-        id: semiliterate
-        uses: PrimerPages/semiliterate@main
-        with:
-          config: ${{ steps.config.outputs.semiliterate-config-path }}
-          source: ${{ inputs.source }}
-          out: jekyll-site
-          verbose: true
-
-      - name: Show extracted source
-        if: ${{ inputs.semiliterate }}
-        shell: bash
-        run: |
-          tree jekyll-site
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.319.0
+      - name: Build with Jekyll preset
+        id: site
+        uses: athackst/ci/actions/jekyll-preset@main
         env:
-          BUNDLE_GEMFILE: ${{ steps.config.outputs.gemfile-path }}
-        with:
-          ruby-version: 3.3.4
-          bundler-cache: true
-
-      - name: Build with Jekyll
-        # Outputs to the './_site' directory by default
-        env:
-          JEKYLL_ENV: production
           JEKYLL_GITHUB_TOKEN: ${{ github.token }}
-          BUNDLE_GEMFILE: ${{ steps.config.outputs.gemfile-path }}
-          BASEURL: ${{ steps.pages.outputs.base_path }}${{ inputs.version != '' && format('/{0}', inputs.version) || '' }}
-          SOURCE: ${{ steps.semiliterate.outputs.out || inputs.source }}
-          CONFIG_FILE: ${{ steps.config.outputs.config-path }}
-        run: bundle exec jekyll build --baseurl "${BASEURL}" --source "${SOURCE}" --config "${CONFIG_FILE}"
+        with:
+          source: ${{ inputs.source }}
+          site-dir: _site
+          semiliterate: ${{ inputs.semiliterate }}
+          versions-config: ${{ inputs.version != '' && format('{0}/versions.json', steps.pages.outputs.base_path) || '' }}
+          base-path: ${{ steps.pages.outputs.base_path }}
+          base-url: ${{ steps.pages.outputs.base_path }}${{ inputs.version != '' && format('/{0}', inputs.version) || '' }}
 
       - name: Show site output
         run: |
@@ -108,4 +79,4 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           name: ${{ inputs.artifact-name }}
-          path: _site
+          path: ${{ steps.site.outputs.site-path }}

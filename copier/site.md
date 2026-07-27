@@ -53,9 +53,7 @@ flowchart TD
         subgraph jekyll_option["Jekyll option"]
             jekyll["Reusable workflow<br/>jekyll_site.yml"]
             jekyll --> configure_pages
-            jekyll --> jekyll_config["Composite action<br/>jekyll-config"]
-            jekyll --> semiliterate["Action<br/>PrimerPages/semiliterate"]
-            jekyll --> ruby["Action<br/>ruby/setup-ruby"]
+            jekyll --> jekyll_preset["Docker action<br/>jekyll-preset"]
             jekyll --> pages_jekyll["Actions<br/>checkout, upload-pages-artifact"]
         end
     end
@@ -79,7 +77,7 @@ flowchart TD
     classDef action fill:#ecfccb,stroke:#65a30d
     class template template
     class mkdocs,jekyll,test,deploy workflow
-    class configure_pages,mkdocs_preset,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
+    class configure_pages,mkdocs_preset,mkdocs_plugin,pages_build,jekyll_preset,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
 ```
 
 ## Permissions
