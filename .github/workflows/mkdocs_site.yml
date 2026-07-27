@@ -46,18 +46,13 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      - name: Setup mkdocs config
-        id: config
-        uses: athackst/ci/actions/mkdocs-config@main
-
       - name: Build docs
-        id: mkdocs
-        uses: athackst/mkdocs-simple-plugin@main
+        id: site
+        uses: athackst/ci/actions/mkdocs-preset@main
         with:
-          config: ${{ steps.config.outputs.config-path || 'mkdocs.yml' }}
-          push: false
-          site_dir: site
-          site_url: ${{ steps.pages.outputs.base_url }}${{ inputs.version != '' && format('/{0}', inputs.version) || '' }}
+          docs-dir: docs
+          site-dir: site
+          site-url: ${{ steps.pages.outputs.base_url }}${{ inputs.version != '' && format('/{0}', inputs.version) || '' }}
 
       - name: Show site output
         run: |
