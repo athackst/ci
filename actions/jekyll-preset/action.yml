@@ -1,0 +1,89 @@
+name: 'Jekyll Site Preset'
+description: 'Build or serve a Jekyll site with the managed CI preset.'
+inputs:
+  source:
+    description: 'Site source directory, relative to the workspace.'
+    required: false
+    default: '.'
+
+  site-dir:
+    description: 'Built site directory, relative to the workspace.'
+    required: false
+    default: '_site'
+
+  title:
+    description: 'The title of the site.'
+    required: false
+    default: '${{ github.repository }}'
+
+  description:
+    description: 'A short description of the site.'
+    required: false
+    default: ''
+
+  image:
+    description: 'The URL of the image used for social media previews.'
+    required: false
+    default: ''
+
+  edit-url:
+    description: 'The URL used for editing site content.'
+    required: false
+    default: 'https://www.github.com/${{ github.repository }}/edit/main/'
+
+  nav-filename:
+    description: 'The navigation file name.'
+    required: false
+    default: '.nav.yml'
+
+  versions-config:
+    description: 'The location of the versions manifest.'
+    required: false
+    default: ''
+
+  base-path:
+    description: 'The root site path used by the version selector.'
+    required: false
+    default: ''
+
+  base-url:
+    description: 'The base URL path passed to Jekyll.'
+    required: false
+    default: ''
+
+  semiliterate:
+    description: 'Extract source content with semiliterate before building.'
+    required: false
+    default: 'true'
+
+outputs:
+  site-path:
+    description: Relative path to the built site in the workspace.
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - build
+    - --source
+    - ${{ inputs.source }}
+    - --site-dir
+    - ${{ inputs.site-dir }}
+    - --title
+    - ${{ inputs.title }}
+    - --description
+    - ${{ inputs.description }}
+    - --image
+    - ${{ inputs.image }}
+    - --edit-url
+    - ${{ inputs.edit-url }}
+    - --nav-filename
+    - ${{ inputs.nav-filename }}
+    - --versions-config
+    - ${{ inputs.versions-config }}
+    - --base-path
+    - ${{ inputs.base-path }}
+    - --base-url
+    - ${{ inputs.base-url }}
+    - --semiliterate
+    - ${{ inputs.semiliterate }}

@@ -661,6 +661,53 @@ jobs:
 
           exit "$BATS_STATUS"
 
+  actions-jekyll-preset:
+    permissions:
+      contents: read
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Test Jekyll site preset
+        id: jekyll-preset
+        uses: ./actions/jekyll-preset
+        env:
+          JEKYLL_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          source: actions/jekyll-preset/tests/fixtures/jekyll_site
+          site-dir: tests/generated/jekyll-site
+          title: Jekyll Preset Test
+
+      - name: Install bats
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Verify Jekyll site artifact
+        shell: bash
+        env:
+          TEST_OUTPUT_DIRECTORY: tests/generated/jekyll-site
+        run: |
+          set +e
+          BATS_OUTPUT="$(bats actions/jekyll-preset/tests/jekyll_preset.bats 2>&1)"
+          BATS_STATUS=$?
+          set -e
+
+          echo "$BATS_OUTPUT"
+          {
+            echo "### Jekyll site preset test"
+            echo ""
+            echo '```text'
+            echo "$BATS_OUTPUT"
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$BATS_STATUS"
+
   actions-jekyll-config:
     permissions:
       contents: read
@@ -752,6 +799,7 @@ jobs:
       - actions-pr-labeler
       - actions-mkdocs-config
       - actions-mkdocs-preset
+      - actions-jekyll-preset
       - actions-jekyll-config
       - actions-setup-labels
     runs-on: ubuntu-latest

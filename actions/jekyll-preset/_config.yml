@@ -1,0 +1,64 @@
+theme: jekyll-theme-primerpages
+title: ${title}
+description: ${description}
+image: ${image}
+edit_url: ${edit_url}
+repository: ${repository}
+
+permalink: pretty
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "docs"
+      toc: true
+      index: "/"
+
+style: appbar
+
+repo_info: true
+user_metadata: true
+profile_link: true
+
+plugins:
+  - jekyll-awesome-nav
+  - jekyll-gfm-admonitions
+  - jekyll-octicons
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-relative-links
+  - jekyll-seo-tag
+  - jekyll-toc
+  - jemoji
+
+awesome_nav:
+  enabled: true
+  root: ""
+  nav_filename: ${nav_filename}
+
+optional_front_matter:
+  remove_originals: true
+
+readme_index:
+  remove_originals: true
+
+toc:
+  max_level: 2
+
+relative_links:
+  enabled: true
+  collections: true
+
+versions:
+  enabled: ${versions}
+  config: ${versions_config}
+  prefix: ${prefix}
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/
+  - _site/
+  - .venv/
