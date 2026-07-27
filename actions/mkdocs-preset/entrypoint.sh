@@ -112,7 +112,11 @@ cd "$WORKSPACE"
 case "$COMMAND" in
   build)
     mkdir -p "$SITE_PATH"
+    mkdir -p "$DOCS_PATH"
     find "$SITE_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+    echo "Building site to $SITE_PATH"
+    echo "Using mkdocs config: $CONFIG_DIRECTORY/mkdocs.yml"
+    cat "$CONFIG_DIRECTORY/mkdocs.yml"
     mkdocs build --clean --config-file "$CONFIG_DIRECTORY/mkdocs.yml"
     if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
       echo "site-path=$SITE_DIR" | tee -a "$GITHUB_OUTPUT"
