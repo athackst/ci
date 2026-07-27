@@ -46,8 +46,7 @@ flowchart TD
         subgraph mkdocs_option["MkDocs option"]
             mkdocs["Reusable workflow<br/>mkdocs_site.yml"]
             mkdocs --> configure_pages["Action<br/>actions/configure-pages"]
-            mkdocs --> mkdocs_config["Composite action<br/>mkdocs-config"]
-            mkdocs --> mkdocs_plugin["Action<br/>athackst/mkdocs-simple-plugin"]
+            mkdocs --> mkdocs_preset["Docker action<br/>mkdocs-preset"]
             mkdocs --> pages_build["Actions<br/>checkout, upload-pages-artifact"]
         end
 
@@ -80,7 +79,7 @@ flowchart TD
     classDef action fill:#ecfccb,stroke:#65a30d
     class template template
     class mkdocs,jekyll,test,deploy workflow
-    class configure_pages,mkdocs_config,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
+    class configure_pages,mkdocs_preset,mkdocs_plugin,pages_build,jekyll_config,semiliterate,ruby,pages_jekyll,cache,test_artifact,htmlproofer,cache_actions,pages_deploy,versite action
 ```
 
 ## Permissions
