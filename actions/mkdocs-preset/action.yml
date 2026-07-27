@@ -1,0 +1,54 @@
+name: 'MkDocs Site Preset'
+description: 'Build or serve a MkDocs site with the managed CI preset.'
+inputs:
+  docs-dir:
+    description: 'Documentation source directory, relative to the workspace.'
+    required: false
+    default: 'docs'
+
+  site-dir:
+    description: 'Built site directory, relative to the workspace.'
+    required: false
+    default: 'site'
+
+  site-name:
+    description: 'The name of the documentation site.'
+    required: false
+    default: '${{ github.repository }}'
+
+  repo-url:
+    description: 'The source repository URL.'
+    required: false
+    default: 'https://github.com/${{ github.repository }}'
+
+  site-url:
+    description: 'The canonical URL of the generated site.'
+    required: false
+    default: ''
+
+  edit-uri:
+    description: 'The repository-relative edit URI.'
+    required: false
+    default: 'edit/main/'
+
+outputs:
+  site-path:
+    description: Relative path to the built site in the workspace.
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - build
+    - --docs-dir
+    - ${{ inputs.docs-dir }}
+    - --site-dir
+    - ${{ inputs.site-dir }}
+    - --site-name
+    - ${{ inputs.site-name }}
+    - --repo-url
+    - ${{ inputs.repo-url }}
+    - --site-url
+    - ${{ inputs.site-url }}
+    - --edit-uri
+    - ${{ inputs.edit-uri }}
