@@ -10,7 +10,7 @@ if [[ $# -gt 0 ]]; then
   shift
 fi
 
-DOCS_DIR="docs"
+DOCS_DIR="/tmp/docs"
 SITE_DIR="site"
 SITE_NAME="${GITHUB_REPOSITORY:-}"
 REPO_URL=""
@@ -91,6 +91,7 @@ if [[ ! -d "$WORKSPACE" ]]; then
   exit 1
 fi
 
+mkdir -p "${DOCS_PATH}"
 rm -rf "$CONFIG_DIRECTORY"
 mkdir -p "$CONFIG_DIRECTORY"
 cp "$TEMPLATE_DIRECTORY/requirements.txt" "$CONFIG_DIRECTORY/requirements.txt"
@@ -112,7 +113,6 @@ cd "$WORKSPACE"
 case "$COMMAND" in
   build)
     mkdir -p "$SITE_PATH"
-    mkdir -p "$DOCS_PATH"
     find "$SITE_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
     echo "Building site to $SITE_PATH"
     echo "Using mkdocs config: $CONFIG_DIRECTORY/mkdocs.yml"
