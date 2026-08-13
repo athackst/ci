@@ -24,13 +24,12 @@ jobs:
 
 | Name | Description |
 | --- | --- |
-| `token` | (optional) Token used for label inspection and enabling auto-merge. Falls back to `${{ github.token }}`. |
+| `token` | Token used to inspect labels, enable auto-merge, and merge pull requests. |
 
 ## Permissions
 
-- Requires `pull-requests: write` to merge PRs directly or enable auto-merge.
+- Requires `contents: write` and `pull-requests: write` to merge PRs directly or enable auto-merge.
 - Requires `checks: read` to poll required checks in `poll` mode.
-- Uses `contents: read` for the rest of the workflow.
 
 ## Advanced
 

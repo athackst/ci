@@ -53,6 +53,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Reusable workflows accept `secrets.token` as the canonical override.
 - Templates map consumer secret `CI_BOT_TOKEN` -> `secrets.token`.
 - `github.token` is fallback only.
+- Workflows whose commits must trigger other workflows require `secrets.token` and must not fall back to `github.token`, because pushes made with `github.token` do not start new workflow runs.
 - Dependabot/fork contexts may not have repo secrets on `pull_request`.
 
 ## Automerge Policy
