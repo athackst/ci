@@ -21,7 +21,6 @@ class RenderJekyllConfigTests(unittest.TestCase):
                 "image": "",
                 "edit_url": "https://example.com/edit/",
                 "repository": "athackst/ci",
-                "nav_filename": ".nav.yml",
                 "versions_config": "",
                 "base_path": "/ci",
             },
@@ -29,6 +28,7 @@ class RenderJekyllConfigTests(unittest.TestCase):
 
         self.assertEqual(rendered["title"], "CI Test Site")
         self.assertNotIn("image", rendered)
+        self.assertEqual(rendered["awesome_nav"]["nav_filename"], ".nav.yml")
         self.assertFalse(rendered["versions"]["enabled"])
         self.assertEqual(rendered["versions"]["config"], "")
         self.assertEqual(rendered["versions"]["prefix"], "/ci")
@@ -52,8 +52,6 @@ class RenderJekyllConfigTests(unittest.TestCase):
                 "https://example.com/edit/",
                 "--repository",
                 "athackst/ci",
-                "--nav-filename",
-                ".nav.yml",
                 "--versions-config",
                 "/ci/versions.json",
                 "--base-path",

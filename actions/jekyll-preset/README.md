@@ -22,7 +22,6 @@ Build or serve a Jekyll site with the managed CI configuration, theme, semiliter
 | `description` | A short description of the site. (optional) | `""` |
 | `image` | The social preview image URL. (optional) | `""` |
 | `edit-url` | The URL used for edit links. (optional) | `https://www.github.com/${{ github.repository }}/edit/main/` |
-| `nav-filename` | The navigation file name. (optional) | `.nav.yml` |
 | `versions-config` | The location of the versions manifest. (optional) | `""` |
 | `base-path` | The root site path used by the version selector. (optional) | `""` |
 | `base-url` | The base URL path passed to Jekyll. (optional) | `""` |
@@ -44,6 +43,7 @@ When `github.token` is passed as `JEKYLL_GITHUB_TOKEN`, `contents: read` is suff
 - Runs semiliterate extraction in temporary container storage when `semiliterate` is enabled.
 - Runs `jekyll build` when used as a GitHub Action.
 - The container accepts `serve` for local preview on port 4000.
+- Uses `.nav.yml` files for navigation configuration.
 - Local `serve` performs semiliterate extraction once at startup; restart the container to extract subsequent source changes.
 
 ## Examples
