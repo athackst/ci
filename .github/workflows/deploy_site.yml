@@ -46,7 +46,7 @@ permissions:
 jobs:
   deploy-action:
     # Use artifact deploy when publishing an unversioned Pages site.
-    if: ${{ inputs.dry-run != 'true' && inputs.type == 'action' && inputs.version == '' }}
+    if: ${{ !inputs.dry-run && inputs.type == 'action' && inputs.version == '' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
