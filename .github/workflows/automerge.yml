@@ -9,8 +9,8 @@ on:
         default: poll
     secrets:
       token:
-        description: Optional token override for labeling, version resolution, and automerge.
-        required: false
+        description: Token used to inspect labels, enable auto-merge, and merge pull requests.
+        required: true
 
 jobs:
   prepare:
@@ -38,11 +38,31 @@ jobs:
           esac
           echo "mode=${{ inputs.automerge-mode }}" | tee -a "$GITHUB_OUTPUT"
 
+      - name: Check gh auth identity
+        id: auth
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.token }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$GH_TOKEN" ]; then
+            echo "token is empty; set the repository secret the caller maps to it." >&2
+            exit 1
+          fi
+
+          if ! VIEWER_LOGIN="$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')"; then
+            echo "token did not authenticate." >&2
+            exit 1
+          fi
+
+          echo "viewer-login=$VIEWER_LOGIN" | tee -a "$GITHUB_OUTPUT"
+
       - name: Check automerge label
         id: automerge-label
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
+          GH_TOKEN: ${{ secrets.token }}
         run: |
           set -euo pipefail
           HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
@@ -67,7 +87,7 @@ jobs:
         if: ${{ steps.automerge-label.outputs.has-automerge == 'true' && steps.origin.outputs.is-self != 'true' }}
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
+          GH_TOKEN: ${{ secrets.token }}
         run: |
           set -euo pipefail
           echo "Removing automerge label from fork PR #${{ github.event.pull_request.number }}."
@@ -113,22 +133,11 @@ jobs:
           echo "operation=$OPERATION" | tee -a "$GITHUB_OUTPUT"
           echo "reason=$REASON" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Debug gh auth identity
-        id: auth
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
-          HAS_CALLER_TOKEN: ${{ secrets.token != '' }}
-        run: |
-          set -euo pipefail
-          echo "token-source=$([ "$HAS_CALLER_TOKEN" = "true" ] && echo caller-secret || echo github-token-fallback)"
-          echo "gh-viewer-login=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')"
-
   native:
     needs: prepare
     if: ${{ needs.prepare.result == 'success' && needs.prepare.outputs.mode == 'native' }}
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     runs-on: ubuntu-latest
     outputs:
@@ -138,7 +147,7 @@ jobs:
         id: native-merge
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
+          GH_TOKEN: ${{ secrets.token }}
           OPERATION: ${{ needs.prepare.outputs.operation }}
         run: |
           set -euo pipefail
@@ -163,7 +172,7 @@ jobs:
     needs: prepare
     if: ${{ needs.prepare.result == 'success' && needs.prepare.outputs.mode == 'poll' }}
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       checks: read
     runs-on: ubuntu-latest
@@ -175,7 +184,7 @@ jobs:
         uses: wechuli/allcheckspassed@v2
         continue-on-error: true
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.token }}
           commit_sha: ${{ github.event.pull_request.head.sha }}
           delay: "0"
           polling_interval: "1"
@@ -188,7 +197,7 @@ jobs:
         if: ${{ steps.checks.outcome == 'success' }}
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
+          GH_TOKEN: ${{ secrets.token }}
         run: |
           set -euo pipefail
           HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
@@ -199,7 +208,7 @@ jobs:
         if: ${{ steps.checks.outcome == 'success' && steps.current-label.outputs.has-automerge == 'true' }}
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.token || github.token }}
+          GH_TOKEN: ${{ secrets.token }}
         run: |
           set -euo pipefail
           gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --squash
