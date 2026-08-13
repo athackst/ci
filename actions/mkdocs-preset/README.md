@@ -52,13 +52,12 @@ Build and upload the generated site:
     path: ${{ steps.site.outputs.site-path }}
 ```
 
-Run the same image locally after building it from this action directory:
+Run the published image locally:
 
 ```bash
-docker build -t ci-mkdocs actions/mkdocs-preset
 docker run --rm -it \
   --user "$(id -u):$(id -g)" \
   -p 8000:8000 \
   -v "$PWD:/github/workspace" \
-  ci-mkdocs serve
+  ghcr.io/athackst/ci/mkdocs-preset:latest serve
 ```
