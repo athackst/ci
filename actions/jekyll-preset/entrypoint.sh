@@ -130,6 +130,9 @@ python "$PRESET_DIRECTORY/render_jekyll_config.py" \
   --versions-config "$VERSIONS_CONFIG" \
   --base-path "$BASE_PATH"
 
+mkdir -p "$SITE_PATH"
+find "$SITE_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+
 BUILD_SOURCE="$SOURCE_PATH"
 EXTRACTED_SOURCE=""
 if [[ "$SEMILITERATE" = "true" ]]; then
@@ -143,9 +146,6 @@ if [[ "$SEMILITERATE" = "true" ]]; then
     --verbose
   BUILD_SOURCE="$EXTRACTED_SOURCE"
 fi
-
-mkdir -p "$SITE_PATH"
-find "$SITE_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 
 JEKYLL_ARGS=(
   --source "$BUILD_SOURCE"
