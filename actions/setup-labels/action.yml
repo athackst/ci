@@ -37,15 +37,13 @@ runs:
     - name: Resolve label configuration
       id: config
       shell: bash
+      env:
+        DEFAULT_CONFIG_PATH: ${{ github.action_path }}/../pr-labeler/labeler.yml
+        RESOLVED_CONFIG_PATH: ${{ inputs.configuration-path || format('{0}/../pr-labeler/labeler.yml', github.action_path) }}
       run: |
         set -euo pipefail
 
-        DEFAULT_CONFIG_PATH="${{ github.action_path }}/../pr-labeler/labeler.yml"
-        RESOLVED_CONFIG_PATH="${{ inputs.configuration-path }}"
-
-        if [ -z "$RESOLVED_CONFIG_PATH" ]; then
-          RESOLVED_CONFIG_PATH="$DEFAULT_CONFIG_PATH"
-        elif [ ! -f "$RESOLVED_CONFIG_PATH" ]; then
+        if [ ! -f "$RESOLVED_CONFIG_PATH" ] && [ "$RESOLVED_CONFIG_PATH" != "$DEFAULT_CONFIG_PATH" ]; then
           echo "Configuration path not found: $RESOLVED_CONFIG_PATH"
           echo "Falling back to bundled config: $DEFAULT_CONFIG_PATH"
           RESOLVED_CONFIG_PATH="$DEFAULT_CONFIG_PATH"
@@ -61,14 +59,18 @@ runs:
     - name: Setup labels
       id: setup
       shell: bash
+      env:
+        CONFIG_PATH: ${{ steps.config.outputs.config-path }}
+        REPOSITORY: ${{ inputs.repo }}
+        SETUP_LABELS_TOKEN: ${{ inputs.github-token }}
       run: |
         set -euo pipefail
 
         RESULT_PATH="$RUNNER_TEMP/setup-labels-result.json"
         RESULT_JSON="$(python3 "${{ github.action_path }}/setup_labels.py" \
-          --config-path "${{ steps.config.outputs.config-path }}" \
-          --repo "${{ inputs.repo }}" \
-          --github-token "${{ inputs.github-token }}" \
+          --config-path "$CONFIG_PATH" \
+          --repo "$REPOSITORY" \
+          --github-token "$SETUP_LABELS_TOKEN" \
           --output-path "$RESULT_PATH")"
 
         echo "created-labels=$(jq -r '.created_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
