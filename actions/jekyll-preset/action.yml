@@ -31,11 +31,6 @@ inputs:
     required: false
     default: 'https://www.github.com/${{ github.repository }}/edit/main/'
 
-  nav-filename:
-    description: 'The navigation file name.'
-    required: false
-    default: '.nav.yml'
-
   versions-config:
     description: 'The location of the versions manifest.'
     required: false
@@ -77,8 +72,6 @@ runs:
     - ${{ inputs.image }}
     - --edit-url
     - ${{ inputs.edit-url }}
-    - --nav-filename
-    - ${{ inputs.nav-filename }}
     - --versions-config
     - ${{ inputs.versions-config }}
     - --base-path

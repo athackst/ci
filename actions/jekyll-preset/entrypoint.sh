@@ -17,7 +17,6 @@ DESCRIPTION=""
 IMAGE=""
 EDIT_URL=""
 REPOSITORY="${GITHUB_REPOSITORY:-}"
-NAV_FILENAME=".nav.yml"
 VERSIONS_CONFIG=""
 BASE_PATH=""
 BASE_URL=""
@@ -25,7 +24,7 @@ SEMILITERATE="true"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --source|--site-dir|--title|--description|--image|--edit-url|--repository|--nav-filename|--versions-config|--base-path|--base-url|--semiliterate)
+    --source|--site-dir|--title|--description|--image|--edit-url|--repository|--versions-config|--base-path|--base-url|--semiliterate)
       [[ $# -ge 2 ]] || { echo "Missing value for $1" >&2; exit 2; }
       key="${1#--}"
       value="$2"
@@ -37,7 +36,6 @@ while [[ $# -gt 0 ]]; do
         image) IMAGE="$value" ;;
         edit-url) EDIT_URL="$value" ;;
         repository) REPOSITORY="$value" ;;
-        nav-filename) NAV_FILENAME="$value" ;;
         versions-config) VERSIONS_CONFIG="$value" ;;
         base-path) BASE_PATH="$value" ;;
         base-url) BASE_URL="$value" ;;
@@ -129,7 +127,6 @@ python "$PRESET_DIRECTORY/render_jekyll_config.py" \
   --image "$IMAGE" \
   --edit-url "$EDIT_URL" \
   --repository "$REPOSITORY" \
-  --nav-filename "$NAV_FILENAME" \
   --versions-config "$VERSIONS_CONFIG" \
   --base-path "$BASE_PATH"
 

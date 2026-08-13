@@ -21,7 +21,6 @@ def render_yaml_template(template_path: Path, values: dict[str, str]) -> dict:
         image="null" if not values["image"] else json.dumps(values["image"]),
         edit_url=json.dumps(values["edit_url"]),
         repository=json.dumps(values["repository"]),
-        nav_filename=json.dumps(values["nav_filename"]),
         versions="true" if values["versions_config"] else "false",
         versions_config=json.dumps(values["versions_config"]),
         prefix=json.dumps(values["base_path"]),
@@ -41,7 +40,6 @@ def main() -> int:
     parser.add_argument("--image", required=True)
     parser.add_argument("--edit-url", required=True)
     parser.add_argument("--repository", required=True)
-    parser.add_argument("--nav-filename", required=True)
     parser.add_argument("--versions-config", required=True)
     parser.add_argument("--base-path", required=True)
     args = parser.parse_args()
@@ -54,7 +52,6 @@ def main() -> int:
             "image": args.image,
             "edit_url": args.edit_url,
             "repository": args.repository,
-            "nav_filename": args.nav_filename,
             "versions_config": args.versions_config,
             "base_path": args.base_path,
         },

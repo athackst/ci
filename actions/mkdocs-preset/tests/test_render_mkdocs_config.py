@@ -33,6 +33,7 @@ class RenderMkdocsConfigTests(unittest.TestCase):
         self.assertIn('docs_dir: "/github/workspace/docs"', rendered)
         self.assertIn('site_dir: "/github/workspace/site"', rendered)
         self.assertIn('custom_dir: "/workspace/mkdocs/overrides"', rendered)
+        self.assertIn("- awesome-nav", rendered)
         self.assertNotIn("${", rendered)
 
     def test_main_writes_rendered_config(self):

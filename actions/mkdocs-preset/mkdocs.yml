@@ -8,8 +8,7 @@ site_dir: ${site_dir}
 plugins:
   - simple
   - search
-  - awesome-pages:
-      collapse_single_pages: true
+  - awesome-nav
 theme:
   name: material
   custom_dir: ${overrides_dir}

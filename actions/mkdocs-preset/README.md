@@ -33,6 +33,7 @@ Build or serve a MkDocs site with the managed CI preset, theme overrides, and co
 - Resolves `docs_dir`, `site_dir`, and theme overrides to explicit paths because the generated `mkdocs.yml` is kept outside the repository workspace.
 - Runs `mkdocs build` when used as a GitHub Action.
 - The container also accepts `serve` as its command for local live preview.
+- Uses the `awesome-nav` plugin and its default `.nav.yml` files for navigation configuration.
 - The managed configuration is regenerated on every run and is not written into the repository.
 
 ## Examples
