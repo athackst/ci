@@ -82,8 +82,10 @@ if [[ -z "$REPO_URL" ]]; then
   remote_url="$(git -C "$WORKSPACE" config --get remote.origin.url 2>/dev/null || true)"
   if [[ "$remote_url" =~ ^git@github\.com:(.+)\.git$ ]]; then
     REPO_URL="https://github.com/${BASH_REMATCH[1]}"
-  elif [[ "$remote_url" =~ ^https://github\.com/(.+?)(\.git)?$ ]]; then
-    REPO_URL="https://github.com/${BASH_REMATCH[1]}"
+  elif [[ "$remote_url" =~ ^https://github\.com/(.+)$ ]]; then
+    repository="${BASH_REMATCH[1]}"
+    repository="${repository%.git}"
+    REPO_URL="https://github.com/${repository}"
   fi
 fi
 
