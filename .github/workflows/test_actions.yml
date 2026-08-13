@@ -595,14 +595,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      - name: Prepare nested Jekyll site fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tests/generated/jekyll-source/site
+          cp -R actions/jekyll-preset/tests/fixtures/jekyll_site/. tests/generated/jekyll-source/
+          echo "stale output" > tests/generated/jekyll-source/site/stale.html
+
       - name: Test Jekyll site preset
         id: jekyll-preset
         uses: ./actions/jekyll-preset
         env:
           JEKYLL_GITHUB_TOKEN: ${{ github.token }}
         with:
-          source: actions/jekyll-preset/tests/fixtures/jekyll_site
-          site-dir: tests/generated/jekyll-site
+          source: tests/generated/jekyll-source
+          site-dir: tests/generated/jekyll-source/site
           title: Jekyll Preset Test
 
       - name: Install bats
@@ -614,7 +622,7 @@ jobs:
       - name: Verify Jekyll site artifact
         shell: bash
         env:
-          TEST_OUTPUT_DIRECTORY: tests/generated/jekyll-site
+          TEST_OUTPUT_DIRECTORY: tests/generated/jekyll-source/site
         run: |
           set +e
           BATS_OUTPUT="$(bats actions/jekyll-preset/tests/jekyll_preset.bats 2>&1)"
