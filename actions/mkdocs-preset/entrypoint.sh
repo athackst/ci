@@ -49,11 +49,9 @@ resolve_workspace_path() {
   fi
 }
 
-DOCS_PATH="$(resolve_workspace_path "$DOCS_DIR")"
-SITE_PATH="$(resolve_workspace_path "$SITE_DIR")"
-
 WORKSPACE_PATH="$(realpath -m "$WORKSPACE")"
-SITE_PATH="$(realpath -m "$SITE_PATH")"
+DOCS_PATH="$(realpath -m "$(resolve_workspace_path "$DOCS_DIR")")"
+SITE_PATH="$(realpath -m "$(resolve_workspace_path "$SITE_DIR")")"
 
 case "$SITE_PATH" in
   "$WORKSPACE_PATH"/*|/tmp/*)
@@ -68,6 +66,13 @@ if [[ "$SITE_PATH" = "$WORKSPACE_PATH" || "$SITE_PATH" = "/tmp" ]]; then
   echo "Refusing to use the workspace or /tmp root as the site directory: $SITE_PATH" >&2
   exit 2
 fi
+
+case "$DOCS_PATH" in
+  "$SITE_PATH"|"$SITE_PATH"/*)
+    echo "Site directory must not equal or contain the documentation directory: $SITE_PATH" >&2
+    exit 2
+    ;;
+esac
 
 if [[ -z "$SITE_NAME" ]]; then
   SITE_NAME="$(basename "$WORKSPACE")"
