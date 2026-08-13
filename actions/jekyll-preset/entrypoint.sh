@@ -84,6 +84,13 @@ if [[ "$SITE_PATH" = "$WORKSPACE_PATH" || "$SITE_PATH" = "/tmp" ]]; then
   exit 2
 fi
 
+case "$SOURCE_PATH" in
+  "$SITE_PATH"|"$SITE_PATH"/*)
+    echo "Site directory must not equal or contain the source directory: $SITE_PATH" >&2
+    exit 2
+    ;;
+esac
+
 case "$SEMILITERATE" in
   true|false)
     ;;
