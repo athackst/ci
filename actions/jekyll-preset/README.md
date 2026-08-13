@@ -55,5 +55,5 @@ docker run --rm -it \
   --user "$(id -u):$(id -g)" \
   -p 4000:4000 \
   -v "$PWD:/github/workspace" \
-  ghcr.io/athackst/ci:jekyll-preset-latest serve
+  ghcr.io/athackst/ci/jekyll-preset:latest serve
 ```
