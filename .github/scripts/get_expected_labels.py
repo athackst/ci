@@ -1,148 +1,120 @@
 #!/usr/bin/env python3
+"""Emit the labels a labeler config guarantees for the current pull request.
+
+Prints a JSON list of the labels that actions/labeler is certain to apply
+given the branch names in GITHUB_HEAD_REF and GITHUB_BASE_REF. Conditions
+that depend on information unavailable here, such as changed-files globs
+narrower than a match-everything pattern, are treated as not guaranteed, so
+the output is a subset of what the labeler applies and is safe to assert as
+required labels.
+
+Matches actions/labeler v5 semantics: branch patterns are regular
+expressions tested with a partial match, top-level match objects under a
+label are OR'd, and keys within one match object are AND'd.
+"""
+
 import argparse
-import ast
 import json
 import os
 import re
 import sys
-from fnmatch import fnmatch
 from pathlib import Path
 
-def load_label_config_lines(path: Path):
-    lines = path.read_text(encoding="utf-8").splitlines()
+import yaml
 
-    labels_index = None
-    for i, raw_line in enumerate(lines):
-        if raw_line.startswith((" ", "\t")):
-            continue
-        if raw_line.strip() == "labels:":
-            labels_index = i
-            break
-
-    if labels_index is None:
-        return lines
-
-    normalized = []
-    for raw_line in lines[labels_index + 1 :]:
-        stripped = raw_line.strip()
-        if not stripped:
-            normalized.append(raw_line)
-            continue
-        if raw_line.startswith("  "):
-            normalized.append(raw_line[2:])
-            continue
-        break
-
-    return normalized
+# Every pull request changes at least one file, so these globs always match.
+UNIVERSAL_GLOBS = {"**", "**/*"}
+GLOB_KEYS = (
+    "any-glob-to-any-file",
+    "all-globs-to-all-files",
+    "all-globs-to-any-file",
+    "any-glob-to-all-files",
+)
 
 
-def load_config_labels(path: Path):
-    labels = []
-    seen = set()
-    for raw_line in load_label_config_lines(path):
-        if raw_line.startswith((" ", "\t", "#")):
-            continue
-        match = re.match(r"^([^:#][^:]*)\s*:\s*$", raw_line)
-        if not match:
-            continue
-        label = match.group(1).strip()
-        if label and label not in seen:
-            labels.append(label)
-            seen.add(label)
-    return labels
+class ConfigError(ValueError):
+    pass
 
 
-def uses_changed_files_rules(path: Path):
-    for raw_line in load_label_config_lines(path):
-        line = raw_line.strip()
-        if line.startswith(("changed-files:", "- changed-files:", "any-glob-to-any-file:")):
-            return True
+def as_list(value):
+    return value if isinstance(value, list) else [value]
+
+
+def branch_matches(label, patterns, branch):
+    for pattern in as_list(patterns):
+        try:
+            if re.search(str(pattern), branch):
+                return True
+        except re.error as err:
+            raise ConfigError(f"{label}: invalid branch pattern {pattern!r}: {err}")
     return False
 
 
-def load_label_patterns(path: Path):
-    pattern_map = {}
-    current_label = None
-
-    for line_no, raw_line in enumerate(load_label_config_lines(path), start=1):
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
+def changed_files_guaranteed(matchers):
+    for matcher in as_list(matchers):
+        if not isinstance(matcher, dict):
             continue
+        for key in GLOB_KEYS:
+            globs = as_list(matcher.get(key, []))
+            if any(str(glob) in UNIVERSAL_GLOBS for glob in globs):
+                return True
+    return False
 
-        if not raw_line.startswith((" ", "\t")):
-            if ":" not in line:
-                continue
-            label, rest = line.split(":", 1)
-            label = label.strip()
-            rest = rest.strip()
-            current_label = label
-            pattern_map.setdefault(current_label, [])
 
-            if rest.startswith("["):
-                try:
-                    values = ast.literal_eval(rest)
-                except (ValueError, SyntaxError):
-                    print(
-                        f"Malformed line {line_no}: invalid list syntax for label '{label}'",
-                        file=sys.stderr,
-                    )
-                    continue
-                if isinstance(values, list):
-                    pattern_map[current_label].extend(str(item) for item in values)
-            continue
+def condition_guaranteed(label, condition, head_ref, base_ref):
+    if not isinstance(condition, dict):
+        return False
 
-        if current_label is None or "any-glob-to-any-file:" not in line:
-            continue
-
-        _, list_text = line.split("any-glob-to-any-file:", 1)
-        list_text = list_text.strip()
-        if not list_text.startswith("["):
-            continue
-        try:
-            values = ast.literal_eval(list_text)
-        except (ValueError, SyntaxError):
-            print(
-                f"Malformed line {line_no}: invalid any-glob-to-any-file list syntax",
-                file=sys.stderr,
+    results = []
+    for key, value in condition.items():
+        if key == "head-branch":
+            results.append(branch_matches(label, value, head_ref))
+        elif key == "base-branch":
+            results.append(bool(base_ref) and branch_matches(label, value, base_ref))
+        elif key == "changed-files":
+            results.append(changed_files_guaranteed(value))
+        elif key == "any":
+            results.append(
+                any(condition_guaranteed(label, c, head_ref, base_ref) for c in as_list(value))
             )
-            continue
-        if isinstance(values, list):
-            pattern_map[current_label].extend(str(item) for item in values)
+        elif key == "all":
+            results.append(
+                all(condition_guaranteed(label, c, head_ref, base_ref) for c in as_list(value))
+            )
+        # Other keys are label metadata such as description and color.
 
-    return [(label, globs) for label, globs in pattern_map.items() if globs]
+    return bool(results) and all(results)
 
 
-def expected_labels_from_branch(branch: str, patterns):
+def load_labels(config_path: Path):
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise ConfigError("Label configuration must be a mapping.")
+    labels = data.get("labels")
+    if not isinstance(labels, dict):
+        labels = data
+    return labels
+
+
+def compute_expected_labels(config_path: Path, head_ref: str, base_ref: str):
     expected = []
-    seen = set()
-    for label, globs in patterns:
-        for glob in globs:
-            if fnmatch(branch, glob):
-                if label not in seen:
-                    expected.append(label)
-                    seen.add(label)
-                break
+    for label, conditions in load_labels(config_path).items():
+        if not isinstance(conditions, list):
+            raise ConfigError(f"{label}: conditions must be a list")
+        if any(
+            condition_guaranteed(label, condition, head_ref, base_ref)
+            for condition in conditions
+        ):
+            expected.append(label)
     return expected
-
-
-def compute_expected_labels(config_path: Path, branch: str):
-    configured_labels = load_config_labels(config_path)
-    patterns = load_label_patterns(config_path)
-
-    if uses_changed_files_rules(config_path):
-        return configured_labels
-
-    if branch and patterns:
-        return expected_labels_from_branch(branch, patterns)
-
-    return configured_labels
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
-            "Extract expected PR labels from a labeler config. "
-            "Requires the GITHUB_HEAD_REF environment variable for branch matching."
+            "Extract the labels a labeler config guarantees for a pull request. "
+            "Requires the GITHUB_HEAD_REF environment variable; uses "
+            "GITHUB_BASE_REF for base-branch rules when set."
         )
     )
     parser.add_argument("config_path", help="Path to the labeler config file.")
@@ -152,9 +124,10 @@ def parse_args():
 def main():
     args = parse_args()
     config_path = Path(args.config_path)
-    branch = os.environ.get("GITHUB_HEAD_REF", "")
+    head_ref = os.environ.get("GITHUB_HEAD_REF", "")
+    base_ref = os.environ.get("GITHUB_BASE_REF", "")
 
-    if not branch:
+    if not head_ref:
         print("Missing required environment variable: GITHUB_HEAD_REF", file=sys.stderr)
         return 1
 
@@ -162,7 +135,12 @@ def main():
         print(f"Missing label config at {config_path}", file=sys.stderr)
         return 1
 
-    expected = compute_expected_labels(config_path, branch)
+    try:
+        expected = compute_expected_labels(config_path, head_ref, base_ref)
+    except (ConfigError, yaml.YAMLError) as err:
+        print(f"Invalid label config {config_path}: {err}", file=sys.stderr)
+        return 1
+
     print(json.dumps(expected))
     return 0
 
