@@ -109,6 +109,7 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           VERSION: ${{ inputs.version }}
         run: |
+          set -euo pipefail
           alias=""
           echo "version=${VERSION}" | tee -a "$GITHUB_OUTPUT"
 
@@ -125,6 +126,7 @@ jobs:
           BRANCH: ${{ inputs.branch }}
           VERSION: ${{ steps.settings.outputs.version }}
         run: |
+          set -euo pipefail
           if [ -n "$BRANCH" ] && git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
             git fetch origin "$BRANCH" --depth=1
 
