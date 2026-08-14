@@ -261,7 +261,7 @@ jobs:
   actions-setup-labels:
     permissions:
       contents: read
-      issues: write
+      issues: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -299,11 +299,11 @@ jobs:
         with:
           github-token: ${{ github.token }}
           configuration-path: ${{ steps.test-config.outputs.config-path }}
+          dry-run: true
 
       - name: Verify setup-labels result
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
           LABEL_ONE: ${{ steps.test-config.outputs.label-one }}
           LABEL_TWO: ${{ steps.test-config.outputs.label-two }}
           CREATED_LABELS: ${{ steps.setup-labels.outputs.created-labels }}
@@ -313,37 +313,29 @@ jobs:
         run: |
           set -euo pipefail
 
-          LABEL_ONE_JSON="$(gh api "repos/${{ github.repository }}/labels/${LABEL_ONE}")"
-          LABEL_TWO_JSON="$(gh api "repos/${{ github.repository }}/labels/${LABEL_TWO}")"
+          contains_label() {
+            local labels="$1"
+            local label="$2"
+            case ",${labels}," in
+              *,"${label}",*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
 
-          [ "$(jq -r '.color' <<< "$LABEL_ONE_JSON")" = "1d4ed8" ] || { echo "Unexpected color for $LABEL_ONE"; exit 1; }
-          [ "$(jq -r '.description' <<< "$LABEL_ONE_JSON")" = "CI setup-labels integration test label one" ] || { echo "Unexpected description for $LABEL_ONE"; exit 1; }
-          [ "$(jq -r '.color' <<< "$LABEL_TWO_JSON")" = "047857" ] || { echo "Unexpected color for $LABEL_TWO"; exit 1; }
-          [ "$(jq -r '.description' <<< "$LABEL_TWO_JSON")" = "CI setup-labels integration test label two" ] || { echo "Unexpected description for $LABEL_TWO"; exit 1; }
+          contains_label "$CREATED_LABELS" "$LABEL_ONE" || { echo "Dry run did not plan $LABEL_ONE for creation"; exit 1; }
+          contains_label "$CREATED_LABELS" "$LABEL_TWO" || { echo "Dry run did not plan $LABEL_TWO for creation"; exit 1; }
 
           {
-            echo "### Setup-labels outputs"
+            echo "### Setup-labels dry run"
             echo ""
             echo "- created-labels: \`$CREATED_LABELS\` "
             echo "- updated-labels: \`$UPDATED_LABELS\` "
             echo "- unchanged-labels: \`$UNCHANGED_LABELS\` "
             echo "- skipped-labels: \`$SKIPPED_LABELS\` "
             echo ""
-            echo ":white_check_mark: Verified label metadata for \`$LABEL_ONE\` and \`$LABEL_TWO\`."
+            echo ":white_check_mark: Verified planned creation for \`$LABEL_ONE\` and \`$LABEL_TWO\` without mutating repository labels."
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Cleanup setup-labels test labels
-        if: ${{ always() }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          LABEL_ONE: ${{ steps.test-config.outputs.label-one }}
-          LABEL_TWO: ${{ steps.test-config.outputs.label-two }}
-        run: |
-          set -euo pipefail
-          gh api -X DELETE "repos/${{ github.repository }}/labels/${LABEL_ONE}" || true
-          gh api -X DELETE "repos/${{ github.repository }}/labels/${LABEL_TWO}" || true
           
   actions-pr-labeler:
     permissions:
