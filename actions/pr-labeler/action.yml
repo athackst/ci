@@ -26,9 +26,10 @@ runs:
       shell: bash
       env:
         DEFAULT_CONFIG_PATH: ${{ github.action_path }}/labeler.yml
-        RESOLVED_CONFIG_PATH: ${{ inputs.configuration-path || format('{0}/labeler.yml', github.action_path) }}
+        RESOLVED_CONFIG_PATH: ${{ inputs.configuration-path }}
       run: |
         set -euo pipefail
+        RESOLVED_CONFIG_PATH="${RESOLVED_CONFIG_PATH:=$DEFAULT_CONFIG_PATH}"
 
         if [ ! -f "$RESOLVED_CONFIG_PATH" ] && [ "$RESOLVED_CONFIG_PATH" != "$DEFAULT_CONFIG_PATH" ]; then
           echo "Configuration path not found: $RESOLVED_CONFIG_PATH"
