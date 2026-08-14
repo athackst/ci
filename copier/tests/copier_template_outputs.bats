@@ -69,11 +69,17 @@ collect_copier_managed_paths() {
   run grep -q "site_generator: mkdocs" "${answers_file}"
   [ "$status" -eq 0 ]
 
+  run grep -q "do_releases: true" "${answers_file}"
+  [ "$status" -eq 0 ]
+
   run grep -q "automerge_mode: poll" "${answers_file}"
   [ "$status" -eq 0 ]
 
   run grep -q "automerge-mode: poll" "${wf_dir}/pr_automerge.yml"
   [ "$status" -eq 0 ]
+
+  run grep -q "DRAFT_RELEASE_ID" "${wf_dir}/release_draft.yml"
+  [ "$status" -ne 0 ]
 
   run "$ACTIONLINT" "${wf_dir}"/*.yml
   if [ "$status" -ne 0 ]; then
@@ -143,21 +149,6 @@ collect_copier_managed_paths() {
 
   run "$ACTIONLINT" "${wf_dir}"/*.yml
   [ "$status" -eq 0 ]
-}
-
-@test "copier renders release draft workflow when do_releases is true" {
-  render_variant mkdocs true
-  wf_dir="${out_dir}/.github/workflows"
-  answers_file="${out_dir}/.copier-answers.ci.yml"
-
-  [ -f "${wf_dir}/release_draft.yml" ]
-  [ -f "${answers_file}" ]
-
-  run grep -q "do_releases: true" "${answers_file}"
-  [ "$status" -eq 0 ]
-
-  run grep -q "DRAFT_RELEASE_ID" "${wf_dir}/release_draft.yml"
-  [ "$status" -ne 0 ]
 }
 
 @test "copier renders native automerge mode" {
