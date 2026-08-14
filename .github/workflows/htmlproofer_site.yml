@@ -91,14 +91,16 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           DEV_NAME: "dev"
           LATEST_NAME: "latest"
+          WORKSPACE: ${{ github.workspace }}
         run: |
+          DELIMITER="EOF_${RANDOM}_${RANDOM}_$(date +%s%N)"
           {
-            echo "swap_urls<<EOF"
+            echo "swap_urls<<${DELIMITER}"
             echo "^\/${DEV_NAME}:"
             echo "^\/v[0-9]+\.[0-9]+\.[0-9]+:"
             echo "^\/${LATEST_NAME}:"
-            echo "^https\:\/\/(?\:www\.)?github\.com\/${REPO_OWNER}\/${REPO_NAME}\/blob\/:file\:/${{ github.workspace }}/"
-            echo "EOF"
+            echo "^https\:\/\/(?\:www\.)?github\.com\/${REPO_OWNER}\/${REPO_NAME}\/blob\/:file\:/${WORKSPACE}/"
+            echo "$DELIMITER"
           } | tee -a "$GITHUB_OUTPUT"
 
       - name: Test with HTMLProofer
