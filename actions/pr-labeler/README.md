@@ -9,14 +9,14 @@ Apply pull request labels using a centralized labeler configuration.
   id: labeler
   uses: athackst/ci/actions/pr-labeler@main
   with:
-    github_token: ${{ github.token }}
+    token: ${{ github.token }}
 ```
 
 ## Inputs
 
 | Name | Description | Default |
 | --- | --- | --- |
-| `github_token` | (optional) GitHub token used to read pull requests and add labels. | `${{ github.token }}` |
+| `token` | (optional) GitHub token used to read pull requests and add labels. | `${{ github.token }}` |
 | `configuration-path` | (optional) Path to the labeler configuration file. | Bundled `labeler.yml` |
 
 ## Outputs
@@ -44,7 +44,6 @@ Use a repository-specific labeler config:
 - name: Label pull request
   uses: athackst/ci/actions/pr-labeler@main
   with:
-    github_token: ${{ secrets.CI_BOT_TOKEN }}
+    token: ${{ secrets.CI_BOT_TOKEN }}
     configuration-path: .github/ci-config.yml
 ```
-

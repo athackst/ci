@@ -19,7 +19,7 @@ jobs:
         id: labeler
         uses: athackst/ci/actions/pr-labeler@main
         with:
-          github_token: ${{ secrets.token || github.token }}
+          token: ${{ secrets.token || github.token }}
           configuration-path: .github/ci-config.yml
 
       - name: Summarize added labels
