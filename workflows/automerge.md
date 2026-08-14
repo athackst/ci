@@ -35,7 +35,7 @@ jobs:
 
 - Designed for callers triggered by open-PR `labeled`, `unlabeled`, and
   `ready_for_review` events. Label events for labels other than `automerge` are
-  ignored.
+  ignored before automerge processing begins.
 - A `ready_for_review` event reconciles an existing `automerge` label, allowing
   a PR labeled while draft to begin automerge once it is ready.
 - Only enables or performs automerge when the PR has an `automerge` label and
@@ -51,8 +51,9 @@ jobs:
   unrelated events without the label leave manually configured state alone.
 - `disabled` performs no merge operation; the fork-label safety rule still
   applies.
-- The workflow summary reports whether auto-merge was enabled or disabled, the
-  PR was merged, or no automerge change was made.
+- When precheck admits the event, the workflow summary reports whether
+  auto-merge was enabled or disabled, the PR was merged, or no automerge change
+  was made.
 - Callers should use per-PR concurrency that cancels an in-progress run only
   when the `automerge` label is removed. The final live-label check remains the
   merge authorization boundary in `poll` mode.

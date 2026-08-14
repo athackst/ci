@@ -13,7 +13,7 @@ on:
         required: true
 
 jobs:
-  prepare:
+  precheck:
     if: ${{ github.event.pull_request.state == 'open' && (((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name == 'automerge') || github.event.action == 'ready_for_review') }}
     permissions:
       contents: read
@@ -135,22 +135,22 @@ jobs:
           echo "operation=$OPERATION" | tee -a "$GITHUB_OUTPUT"
           echo "reason=$REASON" | tee -a "$GITHUB_OUTPUT"
 
-  native:
-    needs: prepare
-    if: ${{ needs.prepare.result == 'success' && needs.prepare.outputs.mode == 'native' }}
+  merge:
+    needs: precheck
+    if: ${{ needs.precheck.result == 'success' }}
     permissions:
       contents: write
       pull-requests: write
+      checks: read
     runs-on: ubuntu-latest
-    outputs:
-      merge-summary: ${{ steps.native-merge.outputs.merge-summary }}
     steps:
-      - name: Enable/disable auto-merge for labeled PR
+      - name: Enable/disable native auto-merge for labeled PR
+        if: ${{ needs.precheck.outputs.mode == 'native' }}
         id: native-merge
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token }}
-          OPERATION: ${{ needs.prepare.outputs.operation }}
+          OPERATION: ${{ needs.precheck.outputs.operation }}
         run: |
           set -euo pipefail
           case "$OPERATION" in
@@ -170,18 +170,8 @@ jobs:
               ;;
           esac
 
-  poll:
-    needs: prepare
-    if: ${{ needs.prepare.result == 'success' && needs.prepare.outputs.mode == 'poll' }}
-    permissions:
-      contents: write
-      pull-requests: write
-      checks: read
-    runs-on: ubuntu-latest
-    outputs:
-      merge-summary: ${{ steps.poll-merge.outputs.merge-summary }}
-    steps:
       - name: GitHub Checks
+        if: ${{ needs.precheck.outputs.mode == 'poll' }}
         id: checks
         uses: wechuli/allcheckspassed@v2
         continue-on-error: true
@@ -194,42 +184,37 @@ jobs:
           checks_exclude: ".*automerge.*$"
           treat_neutral_as_passed: "true"
 
-      - name: Recheck automerge label
-        id: current-label
-        if: ${{ steps.checks.outcome == 'success' }}
+      - name: Merge labeled PR after checks pass
+        id: poll-merge
+        if: ${{ needs.precheck.outputs.mode == 'poll' && steps.checks.outcome == 'success' }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token }}
         run: |
           set -euo pipefail
+
+          # Check that the PR still has the automerge label before merging
           HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
           echo "has-automerge=$HAS_AUTOMERGE" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Merge labeled PR after checks pass
-        id: poll-merge
-        if: ${{ steps.checks.outcome == 'success' && steps.current-label.outputs.has-automerge == 'true' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token }}
-        run: |
-          set -euo pipefail
+          if [ "$HAS_AUTOMERGE" != "true" ]; then
+            echo "merge-summary=Skipped merge because the automerge label was removed." | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --squash
           echo "merge-summary=Merged PR." | tee -a "$GITHUB_OUTPUT"
 
-  summary:
-    needs: [prepare, native, poll]
-    if: ${{ always() && needs.prepare.result != 'skipped' }}
-    permissions: {}
-    runs-on: ubuntu-latest
-    steps:
       - name: Workflow summary
+        if: ${{ always() }}
+        id: workflow-summary
         shell: bash
         env:
           AUTOMERGE_MODE: ${{ inputs.automerge-mode }}
-          AUTOMERGE_RESULT: ${{ needs.prepare.outputs.mode == 'native' && needs.native.result || needs.prepare.outputs.mode == 'poll' && needs.poll.result || 'skipped' }}
-          AUTOMERGE_SUMMARY: ${{ needs.native.outputs.merge-summary || needs.poll.outputs.merge-summary }}
-          PREPARE_RESULT: ${{ needs.prepare.result }}
-          PREPARE_REASON: ${{ needs.prepare.outputs.reason }}
+          AUTOMERGE_RESULT: ${{ needs.precheck.outputs.mode == 'native' && steps.native-merge.outcome || needs.precheck.outputs.mode == 'poll' && steps.poll-merge.outcome || 'skipped' }}
+          AUTOMERGE_SUMMARY: ${{ steps.native-merge.outputs.merge-summary || steps.poll-merge.outputs.merge-summary }}
+          PRECHECK_RESULT: ${{ needs.precheck.result }}
+          PRECHECK_REASON: ${{ needs.precheck.outputs.reason }}
         run: |
           set -euo pipefail
           {
@@ -237,10 +222,10 @@ jobs:
             echo ""
             echo "mode: \`${AUTOMERGE_MODE}\`"
             echo ""
-            if [ "${PREPARE_RESULT}" != "success" ]; then
-              echo "Preparation did not complete successfully."
-            elif [ -n "${PREPARE_REASON}" ]; then
-              echo "Skipped: ${PREPARE_REASON}"
+            if [ "${PRECHECK_RESULT}" != "success" ]; then
+              echo "Precheck did not complete successfully."
+            elif [ -n "${PRECHECK_REASON}" ]; then
+              echo "Skipped: ${PRECHECK_REASON}"
             elif [ "${AUTOMERGE_RESULT}" = "failure" ]; then
               echo "Automerge did not complete successfully."
             elif [ -n "${AUTOMERGE_SUMMARY}" ]; then
