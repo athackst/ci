@@ -27,16 +27,18 @@ jobs:
       - name: Check automerge mode
         id: automerge-mode
         shell: bash
+        env:
+          AUTOMERGE_MODE: ${{ inputs.automerge-mode }}
         run: |
           set -euo pipefail
-          case "${{ inputs.automerge-mode }}" in
+          case "$AUTOMERGE_MODE" in
             poll|native|disabled) ;;
             *)
-              echo "Unsupported automerge mode: ${{ inputs.automerge-mode }}"
+              echo "Unsupported automerge mode: $AUTOMERGE_MODE"
               exit 1
               ;;
           esac
-          echo "mode=${{ inputs.automerge-mode }}" | tee -a "$GITHUB_OUTPUT"
+          echo "mode=$AUTOMERGE_MODE" | tee -a "$GITHUB_OUTPUT"
 
       - name: Check gh auth identity
         id: auth

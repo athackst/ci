@@ -66,9 +66,12 @@ jobs:
       - name: Build ignore URLs for htmlproofer
         id: build-ignore
         shell: bash
+        env:
+          CUSTOM_IGNORE_URLS: ${{ inputs.htmlproofer-ignore-urls }}
         run: |
+          DELIMITER="EOF_${RANDOM}_${RANDOM}_$(date +%s%N)"
           {
-            echo "ignore_urls<<EOF"
+            echo "ignore_urls<<${DELIMITER}"
             echo '/^https?://(www\.)?twitter\.com(/.*)?/'
             echo '/^https?://x\.com(/.*)?/'
             echo '/^https?://platform\.twitter\.com(/.*)?/'
@@ -76,8 +79,8 @@ jobs:
             echo '/^https?://fonts\.gstatic\.com(/.*)?/'
             echo '/^https?://www\.flaticon\.com(/.*)?/'
             echo '/^https?://docs\.docker\.com(/.*)?/'
-            echo '${{ inputs.htmlproofer-ignore-urls }}'
-            echo "EOF"
+            printf '%s\n' "$CUSTOM_IGNORE_URLS"
+            echo "$DELIMITER"
           } | tee -a "$GITHUB_OUTPUT"
 
       - name: Build swap URLS for htmlproofer

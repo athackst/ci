@@ -104,11 +104,15 @@ jobs:
       - name: Settings
         id: settings
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ inputs.version }}
         run: |
-          version="${{ inputs.version }}"
-          echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
+          alias=""
+          echo "version=${VERSION}" | tee -a "$GITHUB_OUTPUT"
 
-          if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.release.tag_name }}" != "" ]; then
+          if [ "$EVENT_NAME" = "release" ] || [ -n "$RELEASE_TAG" ]; then
             alias="latest"
           fi
           echo "alias=${alias}" | tee -a "$GITHUB_OUTPUT"
@@ -116,21 +120,22 @@ jobs:
       - name: Pick default target
         id: pick-default
         shell: bash
+        env:
+          ALIAS: ${{ steps.settings.outputs.alias }}
+          BRANCH: ${{ inputs.branch }}
+          VERSION: ${{ steps.settings.outputs.version }}
         run: |
-          branch="${{ inputs.branch }}"
-          alias="${{ steps.settings.outputs.alias }}"
-
-          if [ -n "$branch" ] && git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-            git fetch origin "$branch" --depth=1
+          if [ -n "$BRANCH" ] && git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$BRANCH" --depth=1
 
             # If the alias exists on the branch, use it as default-to.
-            if git show "origin/${branch}:${alias}/index.html" >/dev/null 2>&1; then
-              echo "value=${alias}" >> "$GITHUB_OUTPUT"
+            if git show "origin/${BRANCH}:${ALIAS}/index.html" >/dev/null 2>&1; then
+              echo "value=${ALIAS}" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           fi
 
-          echo "value=${{ steps.settings.outputs.version }}" >> "$GITHUB_OUTPUT"
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to branch with versite
         uses: PrimerPages/versite@main
