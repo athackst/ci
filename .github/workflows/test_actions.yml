@@ -365,7 +365,7 @@ jobs:
           RUN_TEST=false
           while IFS= read -r path; do
             case "$path" in
-              actions/pr-labeler/*)
+              actions/pr-labeler/*|.github/scripts/get_expected_labels.py|tests/fixtures/test-labeler.yml)
                 RUN_TEST=true
                 break
                 ;;
