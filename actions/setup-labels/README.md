@@ -19,6 +19,7 @@ Create or update repository label metadata from a label configuration file.
 | `github-token` | (optional) GitHub token with permissions to manage repository labels. | `${{ github.token }}` |
 | `repo` | (optional) Repository in `owner/repo` format where labels should be managed. | `${{ github.repository }}` |
 | `configuration-path` | (optional) Path to the label configuration file. | Bundled `../pr-labeler/labeler.yml` |
+| `dry-run` | (optional) Report planned changes without creating or updating labels. | `false` |
 
 ## Outputs
 
@@ -31,7 +32,7 @@ Create or update repository label metadata from a label configuration file.
 
 ## Permissions
 
-- Requires a token that can create and update repository labels. `issues: write` is typically sufficient.
+- Requires a token that can create and update repository labels. `issues: write` is typically sufficient; dry runs only need read access to labels.
 
 ## Advanced
 
@@ -43,6 +44,7 @@ Create or update repository label metadata from a label configuration file.
 - If `color` is missing, the action uses the default color `808080`.
 - Outputs are written before the step fails, so skipped and partial results remain available on error.
 - Existing labels are matched case-insensitively before deciding whether to create, update, or leave them unchanged.
+- With `dry-run: true`, the action reads existing labels and reports the create/update plan without mutating the repository.
 
 ## Examples
 

@@ -102,6 +102,50 @@ empty:
         self.assertEqual(errors, [])
         self.assertEqual(api_mock.call_count, 2)
 
+    def test_apply_labels_dry_run_reports_changes_without_writing(self):
+        desired = {
+            "new": {
+                "name": "new",
+                "description": "New label",
+                "color": "1d4ed8",
+            },
+            "docs": {
+                "name": "docs",
+                "description": "Updated description",
+                "color": setup_labels_module.DEFAULT_COLOR,
+            },
+            "bug": {
+                "name": "bug",
+                "description": "Bug label",
+                "color": "d73a4a",
+            },
+        }
+        existing = {
+            "docs": {
+                "name": "docs",
+                "color": "1d4ed8",
+                "description": "Old description",
+            },
+            "bug": {
+                "name": "bug",
+                "color": "d73a4a",
+                "description": "Bug label",
+            },
+        }
+
+        with mock.patch.object(
+            setup_labels_module, "iter_repo_labels", return_value=existing
+        ), mock.patch.object(setup_labels_module, "api") as api_mock:
+            created, updated, unchanged, errors = setup_labels_module.apply_labels(
+                "owner/repo", "token", desired, dry_run=True
+            )
+
+        self.assertEqual(created, ["new"])
+        self.assertEqual(updated, ["docs"])
+        self.assertEqual(unchanged, ["bug"])
+        self.assertEqual(errors, [])
+        api_mock.assert_not_called()
+
     def test_main_writes_result_payload(self):
         with tempfile.NamedTemporaryFile("r", delete=False) as fh:
             output_path = fh.name
@@ -112,6 +156,7 @@ empty:
                 repo="owner/repo",
                 github_token="token",
                 output_path=output_path,
+                dry_run=False,
             )
         ), mock.patch.object(
             setup_labels_module,

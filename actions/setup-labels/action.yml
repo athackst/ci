@@ -13,6 +13,10 @@ inputs:
     description: Path to label configuration file.
     required: false
     default: ""
+  dry-run:
+    description: Report planned label changes without creating or updating labels.
+    required: false
+    default: "false"
 outputs:
   created-labels:
     description: Comma-separated labels created.
@@ -64,20 +68,30 @@ runs:
         CONFIG_PATH: ${{ steps.config.outputs.config-path }}
         REPOSITORY: ${{ inputs.repo }}
         SETUP_LABELS_TOKEN: ${{ inputs.github-token }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         set -euo pipefail
+
+        DRY_RUN_ARGS=()
+        if [ "$DRY_RUN" = "true" ]; then
+          DRY_RUN_ARGS+=(--dry-run)
+        fi
 
         RESULT_PATH="$RUNNER_TEMP/setup-labels-result.json"
         RESULT_JSON="$(python3 "${{ github.action_path }}/setup_labels.py" \
           --config-path "$CONFIG_PATH" \
           --repo "$REPOSITORY" \
           --github-token "$SETUP_LABELS_TOKEN" \
-          --output-path "$RESULT_PATH")"
+          --output-path "$RESULT_PATH" \
+          "${DRY_RUN_ARGS[@]}")"
 
         echo "created-labels=$(jq -r '.created_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "updated-labels=$(jq -r '.updated_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "unchanged-labels=$(jq -r '.unchanged_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
         echo "skipped-labels=$(jq -r '.skipped_labels | join(",")' <<< "$RESULT_JSON")" | tee -a "$GITHUB_OUTPUT"
+        if [ "$DRY_RUN" = "true" ]; then
+          echo "Dry run enabled; no repository labels were created or updated."
+        fi
         if [ "$(jq '.errors | length' <<< "$RESULT_JSON")" -gt 0 ]; then
           jq -r '.errors[]' <<< "$RESULT_JSON" >&2
           exit 1

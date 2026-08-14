@@ -25,6 +25,11 @@ def parse_args():
     parser.add_argument("--repo", required=True)
     parser.add_argument("--github-token", required=True)
     parser.add_argument("--output-path", required=True)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report planned changes without creating or updating labels.",
+    )
     return parser.parse_args()
 
 
@@ -130,7 +135,7 @@ def build_label_plan(config_path):
     return planned, skipped, errors
 
 
-def apply_labels(repo, token, planned):
+def apply_labels(repo, token, planned, dry_run=False):
     created = []
     updated = []
     unchanged = []
@@ -145,6 +150,10 @@ def apply_labels(repo, token, planned):
         target = planned[label_name]
         current = existing.get(label_name.lower())
         if current is None:
+            if dry_run:
+                created.append(label_name)
+                continue
+
             url = f"https://api.github.com/repos/{repo}/labels"
             try:
                 api("POST", url, token, payload=target)
@@ -165,6 +174,10 @@ def apply_labels(repo, token, planned):
 
         if payload == {"new_name": label_name}:
             unchanged.append(label_name)
+            continue
+
+        if dry_run:
+            updated.append(label_name)
             continue
 
         encoded_name = urllib.parse.quote(current["name"], safe="")
@@ -189,7 +202,7 @@ def main():
     apply_errors = []
     if not plan_errors:
         created, updated, unchanged, apply_errors = apply_labels(
-            args.repo, args.github_token, planned
+            args.repo, args.github_token, planned, dry_run=args.dry_run
         )
 
     result = {
