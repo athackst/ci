@@ -642,15 +642,51 @@ jobs:
           exit "$BATS_STATUS"
 
   actions-success:
+    if: ${{ always() }}
     needs:
       - actions-unit-tests
+      - actions-copier-update
+      - actions-copier-copy
+      - actions-setup-labels
       - actions-pr-labeler
       - actions-mkdocs-preset
       - actions-jekyll-preset
-      - actions-setup-labels
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
         shell: bash
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
+          set -euo pipefail
+
+          # Skipped is acceptable: actions-pr-labeler only runs on pull_request.
+          UNSUCCESSFUL_JOBS="$(jq -r '
+            to_entries[]
+            | select(.value.result != "success" and .value.result != "skipped")
+            | "\(.key): \(.value.result)"
+          ' <<< "$NEEDS_JSON")"
+
+          {
+            echo "## Action Test Results"
+            echo ""
+            echo "| Job | Result |"
+            echo "| --- | --- |"
+            jq -r '
+              to_entries[]
+              | "| `\(.key)` | \(
+                  if .value.result == "success" then ":white_check_mark:"
+                  elif .value.result == "skipped" then ":fast_forward:"
+                  else ":x:" end
+                ) \(.value.result) |"
+            ' <<< "$NEEDS_JSON"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$UNSUCCESSFUL_JOBS" ]; then
+            echo "Action tests did not all pass:"
+            printf '%s\n' "$UNSUCCESSFUL_JOBS"
+            exit 1
+          fi
+
           echo "All action tests passed."
