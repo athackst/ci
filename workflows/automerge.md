@@ -54,6 +54,8 @@ jobs:
 - When precheck admits the event, the workflow summary reports whether
   auto-merge was enabled or disabled, the PR was merged, or no automerge change
   was made.
-- Callers should use per-PR concurrency that cancels an in-progress run only
-  when the `automerge` label is removed. The final live-label check remains the
-  merge authorization boundary in `poll` mode.
+- Callers should use per-PR concurrency for automerge-relevant events, isolate
+  unrelated label events so they cannot replace a pending automerge run, and
+  cancel an in-progress run only when the `automerge` label is removed. The
+  final live-label check remains the merge authorization boundary in `poll`
+  mode.

@@ -11,7 +11,8 @@ on:
       - ready_for_review
 
 concurrency:
-  group: "pr-automerge-${{ github.event.pull_request.number || github.ref }}"
+  # Unrelated label events must not replace a pending automerge run.
+  group: "${{ (github.event.label.name == 'automerge' || github.event.action == 'ready_for_review') && format('pr-automerge-{0}', github.event.pull_request.number || github.ref) || format('pr-automerge-unrelated-{0}', github.run_id) }}"
   cancel-in-progress: ${{ github.event.action == 'unlabeled' && github.event.label.name == 'automerge' }}
 
 jobs:

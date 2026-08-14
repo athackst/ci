@@ -55,8 +55,8 @@ flowchart LR
   pass and immediately before merging.
 - Reports whether auto-merge was enabled or disabled, the PR was merged, or no
   automerge change was made.
-- Uses per-PR concurrency and cancels an in-progress run only when the
-  `automerge` label is removed. Unrelated label changes do not interrupt
-  polling.
+- Uses per-PR concurrency for automerge-relevant events and isolates unrelated
+  label events so they cannot replace a pending automerge run. It cancels an
+  in-progress run only when the `automerge` label is removed.
 - Uses `secrets.CI_BOT_TOKEN` as the reusable workflow `token` secret.
 - The reusable workflow never checks out or runs pull request code.

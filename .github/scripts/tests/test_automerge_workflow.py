@@ -6,6 +6,15 @@ import yaml
 
 WORKFLOW_PATH = Path(__file__).resolve().parents[2] / "workflows" / "automerge.yml"
 CALLER_PATH = Path(__file__).resolve().parents[2] / "workflows" / "pr_automerge.yml"
+TEMPLATE_CALLER_PATH = (
+    Path(__file__).resolve().parents[2]
+    / ".."
+    / "copier"
+    / "template"
+    / ".github"
+    / "workflows"
+    / "pr_automerge.yml.jinja"
+)
 
 
 class AutomergeWorkflowTests(unittest.TestCase):
@@ -14,6 +23,7 @@ class AutomergeWorkflowTests(unittest.TestCase):
         workflow = yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
         cls.jobs = workflow["jobs"]
         cls.caller = yaml.safe_load(CALLER_PATH.read_text(encoding="utf-8"))
+        cls.caller_template = TEMPLATE_CALLER_PATH.read_text(encoding="utf-8")
 
     def step(self, job_id, step_id):
         return next(
@@ -37,6 +47,20 @@ class AutomergeWorkflowTests(unittest.TestCase):
 
         self.assertIn("github.event.action == 'unlabeled'", cancel_condition)
         self.assertIn("github.event.label.name == 'automerge'", cancel_condition)
+
+    def test_caller_isolates_unrelated_label_events(self):
+        group = self.caller["concurrency"]["group"]
+
+        self.assertIn("github.event.label.name == 'automerge'", group)
+        self.assertIn("github.event.action == 'ready_for_review'", group)
+        self.assertIn(
+            "format('pr-automerge-unrelated-{0}', github.run_id)",
+            group,
+        )
+        self.assertIn(
+            "format('pr-automerge-unrelated-{0}', github.run_id)",
+            self.caller_template,
+        )
 
     def test_origin_compares_head_and_target_repositories(self):
         origin = self.step("precheck", "origin")
