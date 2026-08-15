@@ -32,35 +32,28 @@ class AutomergeWorkflowTests(unittest.TestCase):
             if step.get("id") == step_id
         )
 
-    def test_precheck_handles_automerge_label_and_ready_for_review_events(self):
+    def test_precheck_handles_all_reconciliation_events(self):
         precheck = self.jobs["precheck"]
         condition = precheck["if"]
 
         self.assertIn("github.event.pull_request.state == 'open'", condition)
         self.assertIn("github.event.action == 'labeled'", condition)
         self.assertIn("github.event.action == 'unlabeled'", condition)
-        self.assertIn("github.event.label.name == 'automerge'", condition)
         self.assertIn("github.event.action == 'ready_for_review'", condition)
 
-    def test_caller_only_cancels_when_automerge_label_is_removed(self):
-        cancel_condition = self.caller["concurrency"]["cancel-in-progress"]
+    def test_caller_cancels_older_runs_for_latest_pr_state(self):
+        concurrency = self.caller["concurrency"]
 
-        self.assertIn("github.event.action == 'unlabeled'", cancel_condition)
-        self.assertIn("github.event.label.name == 'automerge'", cancel_condition)
-
-    def test_caller_isolates_unrelated_label_events(self):
-        group = self.caller["concurrency"]["group"]
-
-        self.assertIn("github.event.label.name == 'automerge'", group)
-        self.assertIn("github.event.action == 'ready_for_review'", group)
-        self.assertIn(
-            "format('pr-automerge-unrelated-{0}', github.run_id)",
-            group,
+        self.assertEqual(
+            concurrency["group"],
+            "pr-automerge-${{ github.event.pull_request.number || github.ref }}",
         )
+        self.assertIs(True, concurrency["cancel-in-progress"])
         self.assertIn(
-            "format('pr-automerge-unrelated-{0}', github.run_id)",
+            "group: \"pr-automerge-${{ github.event.pull_request.number || github.ref }}\"",
             self.caller_template,
         )
+        self.assertIn("cancel-in-progress: true", self.caller_template)
 
     def test_origin_compares_head_and_target_repositories(self):
         origin = self.step("precheck", "origin")
@@ -86,6 +79,7 @@ class AutomergeWorkflowTests(unittest.TestCase):
     def test_precheck_selects_authorized_mode_and_native_operation(self):
         precheck = self.jobs["precheck"]
         decision = self.step("precheck", "decision")
+        native_auto_merge = self.step("precheck", "native-auto-merge")
 
         self.assertEqual(set(precheck["outputs"]), {"mode", "operation", "reason"})
         self.assertEqual(precheck["outputs"]["mode"], "${{ steps.decision.outputs.mode }}")
@@ -107,7 +101,13 @@ class AutomergeWorkflowTests(unittest.TestCase):
             decision["run"],
         )
         self.assertIn('REASON="PR is draft."', decision["run"])
-        self.assertIn('REASON="Automerge label is missing."', decision["run"])
+        self.assertIn('REASON="Automerge state is already reconciled."', decision["run"])
+        self.assertEqual(
+            native_auto_merge["env"]["GH_TOKEN"],
+            "${{ secrets.token }}",
+        )
+        self.assertIn("--json autoMergeRequest", native_auto_merge["run"])
+        self.assertIn("HAS_AUTO_MERGE", decision["run"])
         self.assertIn('MODE="poll"', decision["run"])
         self.assertIn('MODE="native"', decision["run"])
         self.assertIn('OPERATION="enable"', decision["run"])

@@ -43,7 +43,8 @@ flowchart LR
 ## Behavior
 
 - Subscribes to `labeled`, `unlabeled`, and `ready_for_review` pull request
-  activity. The reusable workflow ignores closed PRs and unrelated labels.
+  activity. Each event can reconcile the live PR state; closed PRs are
+  ignored.
 - Reconciles an existing `automerge` label when a draft PR becomes ready for
   review.
 - Passes the Copier `automerge_mode` answer to the reusable Automerge workflow.
@@ -55,8 +56,7 @@ flowchart LR
   pass and immediately before merging.
 - Reports whether auto-merge was enabled or disabled, the PR was merged, or no
   automerge change was made.
-- Uses per-PR concurrency for automerge-relevant events and isolates unrelated
-  label events so they cannot replace a pending automerge run. It cancels an
-  in-progress run only when the `automerge` label is removed.
+- Uses per-PR concurrency and lets the latest label or review event reconcile
+  the live PR state. A newer event cancels an older run, including polling.
 - Uses `secrets.CI_BOT_TOKEN` as the reusable workflow `token` secret.
 - The reusable workflow never checks out or runs pull request code.

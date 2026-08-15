@@ -34,8 +34,8 @@ jobs:
 ## Advanced
 
 - Designed for callers triggered by open-PR `labeled`, `unlabeled`, and
-  `ready_for_review` events. Label events for labels other than `automerge` are
-  ignored before automerge processing begins.
+  `ready_for_review` events. Every event reconciles the live `automerge` label
+  and native auto-merge state.
 - A `ready_for_review` event reconciles an existing `automerge` label, allowing
   a PR labeled while draft to begin automerge once it is ready.
 - Only enables or performs automerge when the PR has an `automerge` label and
@@ -47,15 +47,15 @@ jobs:
   present, and then runs `gh pr merge --squash`.
 - `poll` treats neutral checks as passing.
 - `native` enables GitHub auto-merge with `gh pr merge --auto --squash`.
-- `native` disables GitHub auto-merge when the `automerge` label is removed;
-  unrelated events without the label leave manually configured state alone.
+- `native` enables GitHub auto-merge when the live `automerge` label is present
+  and disables it when the label is absent. Repeated events are no-ops when the
+  native auto-merge state is already reconciled.
 - `disabled` performs no merge operation; the fork-label safety rule still
   applies.
 - When precheck admits the event, the workflow summary reports whether
   auto-merge was enabled or disabled, the PR was merged, or no automerge change
   was made.
-- Callers should use per-PR concurrency for automerge-relevant events, isolate
-  unrelated label events so they cannot replace a pending automerge run, and
-  cancel an in-progress run only when the `automerge` label is removed. The
-  final live-label check remains the merge authorization boundary in `poll`
-  mode.
+- Callers should use per-PR concurrency with `cancel-in-progress: true`. Every
+  label or ready-for-review event may reconcile the live PR state, and a newer
+  event may restart polling. The final live-label check remains the merge
+  authorization boundary in `poll` mode.
