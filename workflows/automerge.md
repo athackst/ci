@@ -33,29 +33,11 @@ jobs:
 
 ## Advanced
 
-- Designed for callers triggered by open-PR `labeled`, `unlabeled`, and
-  `ready_for_review` events. Every event reconciles the live `automerge` label
-  and native auto-merge state.
-- A `ready_for_review` event reconciles an existing `automerge` label, allowing
-  a PR labeled while draft to begin automerge once it is ready.
-- Only enables or performs automerge when the PR has an `automerge` label and
-  its head branch is hosted in the target repository, not a fork.
-- Removes the `automerge` label from fork PRs without altering native
-  auto-merge state that was enabled manually.
-- Skips draft pull requests.
-- `poll` waits for required checks, confirms the PR is still open and has the
-  `automerge` label, and then runs `gh pr merge --squash`.
-- `poll` treats neutral checks as passing.
-- `native` enables GitHub auto-merge with `gh pr merge --auto --squash`.
-- `native` enables GitHub auto-merge when the live PR is open and has the
-  `automerge` label, and requests disabling it when the label is absent.
-  Repeated events may issue the same native auto-merge request again.
-- `disabled` performs no merge operation; the fork-label safety rule still
-  applies.
-- When precheck admits the event, the workflow summary reports whether
-  auto-merge was enabled or disabled, the PR was merged, or no automerge change
-  was made.
-- Callers should use per-PR concurrency with `cancel-in-progress: true`. Every
-  label or ready-for-review event may reconcile the live PR state, and a newer
-  event may restart polling. The final live-state-and-label check remains the
-  merge authorization boundary in `poll` mode.
+- Callers should trigger on `labeled`, `unlabeled`, and `ready_for_review`, with
+  per-PR concurrency and `cancel-in-progress: true`.
+- Automerge requires a non-draft PR with the `automerge` label and a head branch
+  in the target repository. The label is removed from fork PRs.
+- `poll` waits for required checks, treats neutral checks as passing, and
+  confirms the PR is still open and labeled immediately before merging.
+- `native` enables GitHub auto-merge. Removing the label does not disable
+  auto-merge that was enabled manually or by an earlier run.

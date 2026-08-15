@@ -82,16 +82,12 @@ class AutomergeWorkflowTests(unittest.TestCase):
         )
         self.assertIn("--remove-label automerge", origin["run"])
 
-    def test_precheck_selects_authorized_mode_and_native_operation(self):
+    def test_precheck_selects_authorized_mode(self):
         precheck = self.jobs["precheck"]
         decision = self.step("precheck", "decision")
 
-        self.assertEqual(set(precheck["outputs"]), {"mode", "operation", "reason"})
+        self.assertEqual(set(precheck["outputs"]), {"mode", "reason"})
         self.assertEqual(precheck["outputs"]["mode"], "${{ steps.decision.outputs.mode }}")
-        self.assertEqual(
-            precheck["outputs"]["operation"],
-            "${{ steps.decision.outputs.operation }}",
-        )
         self.assertEqual(
             precheck["outputs"]["reason"],
             "${{ steps.decision.outputs.reason }}",
@@ -107,11 +103,10 @@ class AutomergeWorkflowTests(unittest.TestCase):
             decision["run"],
         )
         self.assertIn('REASON="PR is draft."', decision["run"])
-        self.assertIn('REASON="Automerge state is already reconciled."', decision["run"])
+        self.assertIn('REASON="Automerge state is not active."', decision["run"])
         self.assertIn('MODE="poll"', decision["run"])
         self.assertIn('MODE="native"', decision["run"])
-        self.assertIn('OPERATION="enable"', decision["run"])
-        self.assertIn('OPERATION="disable"', decision["run"])
+        self.assertNotIn("OPERATION", decision["run"])
 
     def test_merge_job_uses_precheck_outputs(self):
         merge = self.jobs["merge"]
@@ -120,25 +115,17 @@ class AutomergeWorkflowTests(unittest.TestCase):
         self.assertEqual(merge["needs"], "precheck")
         self.assertEqual(
             merge["if"],
-            "${{ needs.precheck.result == 'success' }}",
+            "${{ needs.precheck.result == 'success' && needs.precheck.outputs.mode != '' }}",
         )
         self.assertEqual(
             native_merge["if"],
             "${{ needs.precheck.outputs.mode == 'native' }}",
         )
-        self.assertEqual(
-            native_merge["env"]["OPERATION"],
-            "${{ needs.precheck.outputs.operation }}",
-        )
         self.assertIn("--auto --squash", native_merge["run"])
-        self.assertIn("--disable-auto", native_merge["run"])
+        self.assertNotIn("--disable-auto", native_merge["run"])
         self.assertIn("--json state", native_merge["run"])
         self.assertIn('if [ "$PR_STATE" != "OPEN" ]', native_merge["run"])
         self.assertIn("merge-summary=Enabled auto-merge.", native_merge["run"])
-        self.assertIn(
-            "merge-summary=Disabled auto-merge after automerge label was removed.",
-            native_merge["run"],
-        )
 
     def test_poll_job_uses_precheck_mode(self):
         merge = self.jobs["merge"]
