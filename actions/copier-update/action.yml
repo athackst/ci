@@ -10,6 +10,10 @@ inputs:
     description: Optional Copier template ref to update from.
     required: false
     default: ""
+  template-source:
+    description: Optional Copier template source override.
+    required: false
+    default: ""
 
 outputs:
   answers-found:
@@ -45,6 +49,7 @@ runs:
       env:
         ANSWERS_FILE: ${{ inputs.answers-file }}
         VCS_REF: ${{ inputs.vcs-ref }}
+        TEMPLATE_SOURCE: ${{ inputs.template-source }}
       run: |
         set -euo pipefail
 
@@ -54,6 +59,7 @@ runs:
         bash "${{ github.action_path }}/run_copier_update.sh" \
           --answers-file "$ANSWERS_FILE" \
           --vcs-ref "$VCS_REF" \
+          --template-source "$TEMPLATE_SOURCE" \
           --result-file "$RESULT_FILE"
         UPDATE_STATUS=$?
         set -e
