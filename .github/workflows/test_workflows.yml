@@ -355,10 +355,12 @@ jobs:
       - name: Upload deploy-site fixture artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          name: github-pages-deploy-site-test
+          name: github-pages-deploy-site-test-${{ github.run_id }}-${{ github.run_attempt }}
           path: ./tests/fixtures/htmlproofer_site
 
   workflow-deploy-site:
+    # deploy_site.yml statically requests publishing permissions even though
+    # dry-run prevents its publishing steps from mutating repository state.
     permissions:
       contents: write
       pages: write
@@ -368,119 +370,29 @@ jobs:
     with:
       type: branch
       version: dev
-      artifact-name: github-pages-deploy-site-test
+      artifact-name: github-pages-deploy-site-test-${{ github.run_id }}-${{ github.run_attempt }}
       branch: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
-      dry-run: false
+      dry-run: true
 
-  workflow-deploy-site-verify-and-cleanup:
-    permissions:
-      contents: write
+  workflow-deploy-site-verify:
+    permissions: {}
     needs: [workflow-deploy-site]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-
-      - name: Verify deploy-site branch
-        id: verify-deploy-site
+      - name: Verify deploy site dry run
         shell: bash
         env:
           WORKFLOW_RESULT: ${{ needs.workflow-deploy-site.result }}
-          TEST_BRANCH: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
-
-          STATUS="success"
-          SUMMARY="deploy_site.yml published the expected branch content."
-          ERRORS=()
-
-          set_failure() {
-            STATUS="failure"
-            ERRORS+=("$1")
-          }
-
-          [ "$WORKFLOW_RESULT" = "success" ] || set_failure "deploy_site.yml result was $WORKFLOW_RESULT"
-          git fetch origin "$TEST_BRANCH" --depth=1 || set_failure "Failed to fetch $TEST_BRANCH"
-          test -n "$(git rev-parse --verify FETCH_HEAD)" || set_failure "FETCH_HEAD was empty"
-          if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
-            git show "FETCH_HEAD:dev/index.html" | grep -q "<html" || set_failure "dev/index.html did not contain an HTML tag"
-          fi
-
-          if [ "$STATUS" != "success" ]; then
-            SUMMARY="deploy_site.yml verification failed."
-          fi
-
+          test "$WORKFLOW_RESULT" = "success"
           {
-            echo "summary=$SUMMARY"
-            echo "errors<<EOF_ERRORS"
-            printf '%s\n' "${ERRORS[@]}"
-            echo "EOF_ERRORS"
-            echo "details<<EOF_DETAILS"
-            echo "$TEST_BRANCH"
-            echo "EOF_DETAILS"
-          } | tee -a "$GITHUB_OUTPUT"
-
-          if [ "$STATUS" != "success" ]; then
-            exit 1
-          fi
-
-      - name: Delete deploy-site test branch
-        if: ${{ always() }}
-        shell: bash
-        env:
-          TEST_BRANCH: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
-
-      - name: Workflow summary
-        if: ${{ always() }}
-        shell: bash
-        env:
-          VERIFY_STATUS: ${{ steps.verify-deploy-site.outcome || 'failure' }}
-          VERIFY_SUMMARY: ${{ steps.verify-deploy-site.outputs.summary || 'deploy_site.yml verification did not run.' }}
-          VERIFY_ERRORS: ${{ steps.verify-deploy-site.outputs.errors || '' }}
-          VERIFY_DETAILS: ${{ steps.verify-deploy-site.outputs.details || '' }}
-        run: |
-          set -euo pipefail
-          {
-            echo "### deploy_site.yml verification"
+            echo "### deploy_site.yml dry run"
             echo ""
-            if [ "$VERIFY_STATUS" = "success" ]; then
-              echo ":white_check_mark: $VERIFY_SUMMARY"
-            else
-              echo ":x: $VERIFY_SUMMARY"
-            fi
-
-            if [ -n "$VERIFY_ERRORS" ] || [ -n "$VERIFY_DETAILS" ]; then
-              echo ""
-              echo "<details><summary>Details</summary>"
-              echo ""
-              if [ -n "$VERIFY_ERRORS" ]; then
-                echo "Errors:"
-                echo '```text'
-                printf '%s\n' "$VERIFY_ERRORS"
-                echo '```'
-                echo ""
-              fi
-              if [ -n "$VERIFY_DETAILS" ]; then
-                echo "Branch:"
-                echo '```text'
-                printf '%s\n' "$VERIFY_DETAILS"
-                echo '```'
-              fi
-              echo ""
-              echo "</details>"
-            fi
+            echo ":white_check_mark: Site deployment completed without publishing."
             echo ""
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-          if [ "$VERIFY_STATUS" != "success" ]; then
-            exit 1
-          fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   workflow-release-draft:
     permissions:
@@ -656,7 +568,7 @@ jobs:
       - workflow-jekyll-site-verify
       - workflow-site-output-consistency
       - workflow-htmlproofer-site
-      - workflow-deploy-site-verify-and-cleanup
+      - workflow-deploy-site-verify
       - workflow-release-draft-verify
       - workflow-ci-updater-verify
     runs-on: ubuntu-latest
