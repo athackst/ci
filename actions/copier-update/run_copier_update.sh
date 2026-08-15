@@ -4,6 +4,7 @@ set -euo pipefail
 
 ANSWERS_FILE=""
 VCS_REF=""
+TEMPLATE_SOURCE=""
 RESULT_FILE=""
 
 while [ "$#" -gt 0 ]; do
@@ -14,6 +15,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --vcs-ref)
       VCS_REF="$2"
+      shift 2
+      ;;
+    --template-source)
+      TEMPLATE_SOURCE="$2"
       shift 2
       ;;
     --result-file)
@@ -66,6 +71,18 @@ if [ ! -f "$ANSWERS_FILE" ]; then
   write_result false "" '[]' '[]'
   echo "Required Copier answers file not found: $ANSWERS_FILE"
   exit 1
+fi
+
+if [ -n "$TEMPLATE_SOURCE" ]; then
+  if ! grep -q '^_src_path:' "$ANSWERS_FILE"; then
+    echo "Copier answers file does not contain _src_path: $ANSWERS_FILE" >&2
+    exit 1
+  fi
+
+  escaped_template_source="${TEMPLATE_SOURCE//\\/\\\\}"
+  escaped_template_source="${escaped_template_source//&/\\&}"
+  escaped_template_source="${escaped_template_source//|/\\|}"
+  sed -i "s|^_src_path:.*$|_src_path: $escaped_template_source|" "$ANSWERS_FILE"
 fi
 
 copier_args=(update --trust -a "$ANSWERS_FILE" -A --defaults)

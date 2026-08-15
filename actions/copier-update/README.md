@@ -19,6 +19,7 @@ Install Copier and update a project from its answers file.
 | --- | --- | --- |
 | `answers-file` | (optional) Copier answers file to use for the update. | `.copier-answers.yml` |
 | `vcs-ref` | (optional) Copier template ref to update from. Copier selects the template version when omitted. | `""` |
+| `template-source` | (optional) Copier template source to use instead of the `_src_path` recorded in the answers file. | `""` |
 
 ## Outputs
 
@@ -35,5 +36,6 @@ Install Copier and update a project from its answers file.
 
 - The configured answers file must exist.
 - The action runs `copier update` with trusted template tasks, recorded answers, and default responses.
+- `template-source` replaces the answers file's recorded `_src_path` when Copier updates the project.
 - Merge conflicts produce a failed action result and remain available through the conflict outputs.
 - `command` is available for workflow summaries and manual recovery instructions.
