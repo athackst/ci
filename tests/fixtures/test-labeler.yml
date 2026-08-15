@@ -1,6 +1,0 @@
-labels:
-  test-label:
-    - changed-files:
-      - any-glob-to-any-file: ["**"]
-    - description: "This is just a test"
-    - color: "cfd3d7"
