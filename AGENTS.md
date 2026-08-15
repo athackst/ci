@@ -87,6 +87,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - `test_workflows.yml`: reusable workflow behavior checks.
 - `test_templates.yml`: Copier template rendering, lint, and freshness checks.
 - Action-specific tests belong under `actions/<action>/tests/`.
+- Workflow definition tests belong under `tests/workflows/`.
 - Workflow support-script tests belong under `.github/scripts/tests/`.
 - Copier template-specific tests belong under `copier/tests/`.
 - Repository-level and cross-cutting Bats tests belong under `tests/bats/`.

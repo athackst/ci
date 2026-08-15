@@ -4,7 +4,12 @@ import unittest
 import yaml
 
 
-WORKFLOW_PATH = Path(__file__).resolve().parents[2] / "workflows" / "deploy_site.yml"
+WORKFLOW_PATH = (
+    Path(__file__).resolve().parents[2]
+    / ".github"
+    / "workflows"
+    / "deploy_site.yml"
+)
 
 
 class DeploySiteWorkflowTests(unittest.TestCase):

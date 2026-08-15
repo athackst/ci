@@ -4,11 +4,11 @@ import unittest
 import yaml
 
 
-WORKFLOW_PATH = Path(__file__).resolve().parents[2] / "workflows" / "automerge.yml"
-CALLER_PATH = Path(__file__).resolve().parents[2] / "workflows" / "pr_automerge.yml"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "automerge.yml"
+CALLER_PATH = REPO_ROOT / ".github" / "workflows" / "pr_automerge.yml"
 TEMPLATE_CALLER_PATH = (
-    Path(__file__).resolve().parents[2]
-    / ".."
+    REPO_ROOT
     / "copier"
     / "template"
     / ".github"

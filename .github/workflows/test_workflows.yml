@@ -20,9 +20,13 @@ jobs:
         with:
           files: ".github/workflows/*.yml"
 
-      - name: Test workflow scripts
+      - name: Test workflow support scripts
         shell: bash
         run: python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"
+
+      - name: Test workflow definitions
+        shell: bash
+        run: python3 -m unittest discover -s tests/workflows -p "test_*.py"
 
   workflow-mkdocs-site:
     permissions:
