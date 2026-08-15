@@ -391,62 +391,6 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
-        shell: bash
-        env:
-          TEST_BRANCH: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          ENCODED_BRANCH="${TEST_BRANCH//\//%2F}"
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${ENCODED_BRANCH}" || true
-
-      - name: Workflow summary
-        if: ${{ always() }}
-        shell: bash
-        env:
-          VERIFY_STATUS: ${{ steps.verify-deploy-site.outcome || 'failure' }}
-          VERIFY_SUMMARY: ${{ steps.verify-deploy-site.outputs.summary || 'deploy_site.yml verification did not run.' }}
-          VERIFY_ERRORS: ${{ steps.verify-deploy-site.outputs.errors || '' }}
-          VERIFY_DETAILS: ${{ steps.verify-deploy-site.outputs.details || '' }}
-        run: |
-          set -euo pipefail
-          {
-            echo "### deploy_site.yml verification"
-            echo ""
-            if [ "$VERIFY_STATUS" = "success" ]; then
-              echo ":white_check_mark: $VERIFY_SUMMARY"
-            else
-              echo ":x: $VERIFY_SUMMARY"
-            fi
-
-            if [ -n "$VERIFY_ERRORS" ] || [ -n "$VERIFY_DETAILS" ]; then
-              echo ""
-              echo "<details><summary>Details</summary>"
-              echo ""
-              if [ -n "$VERIFY_ERRORS" ]; then
-                echo "Errors:"
-                echo '```text'
-                printf '%s\n' "$VERIFY_ERRORS"
-                echo '```'
-                echo ""
-              fi
-              if [ -n "$VERIFY_DETAILS" ]; then
-                echo "Branch:"
-                echo '```text'
-                printf '%s\n' "$VERIFY_DETAILS"
-                echo '```'
-              fi
-              echo ""
-              echo "</details>"
-            fi
-            echo ""
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-          if [ "$VERIFY_STATUS" != "success" ]; then
-            exit 1
-          fi
-
   workflow-release-draft:
     permissions:
       contents: read
