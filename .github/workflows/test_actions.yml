@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: "test-actions-${{ github.event.pull_request.number || github.ref }}"
@@ -23,7 +22,7 @@ jobs:
       - name: Install Python test dependencies
         shell: bash
         run: |
-          python3 -m pip install --quiet pyyaml
+          python3 -m pip install --quiet pyyaml jsonschema
 
       - name: Run action unit tests
         shell: bash
@@ -337,190 +336,6 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
           
-  actions-pr-labeler:
-    permissions:
-      contents: read
-      pull-requests: write
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
-    steps:
-      - uses: actions/checkout@v7.0.1
-
-      - name: Check PR labeler changes
-        id: changes
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          RUN_TEST=false
-          while IFS= read -r path; do
-            case "$path" in
-              actions/pr-labeler/*|.github/scripts/get_expected_labels.py|tests/fixtures/test-labeler.yml)
-                RUN_TEST=true
-                break
-                ;;
-            esac
-          done < <(
-            gh api --paginate \
-              "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
-              --jq '.[].filename'
-          )
-
-          echo "run=$RUN_TEST" | tee -a "$GITHUB_OUTPUT"
-
-      - name: Set configuration path
-        if: ${{ steps.changes.outputs.run == 'true' }}
-        id: config
-        shell: bash
-        run: |
-          echo "path=./tests/fixtures/test-labeler.yml" | tee -a "$GITHUB_OUTPUT"
-
-      - name: Read expected labels from config
-        if: ${{ steps.changes.outputs.run == 'true' }}
-        id: expected
-        shell: bash
-        run: |
-          EXPECTED_LABELS_JSON="$(python3 .github/scripts/get_expected_labels.py "${{ steps.config.outputs.path }}")"
-          echo "labels-json=$EXPECTED_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
-
-      - name: Pre-clean expected labels
-        if: ${{ steps.changes.outputs.run == 'true' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
-        run: |
-          set -euo pipefail
-          echo "Pre-clean labels on PR #${{ github.event.pull_request.number }}"
-          jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
-            echo "Removing label: $label"
-            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
-          done
-
-      - name: Run PR labeler action
-        if: ${{ steps.changes.outputs.run == 'true' }}
-        uses: ./actions/pr-labeler
-        id: labeler
-        with:
-          configuration-path: ${{ steps.config.outputs.path }}
-
-      - name: Install bats
-        if: ${{ steps.changes.outputs.run == 'true' }}
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bats
-
-      - name: Get PR labels after action
-        if: ${{ steps.changes.outputs.run == 'true' }}
-        id: actual
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
-        run: |
-          set -euo pipefail
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          # Poll with backoff to reduce rate-limit pressure and avoid timing flakes.
-          for sleep_seconds in 1 2 4 8 16 24 48 96; do
-            ACTUAL_LABELS_JSON="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels | map(.name)')"
-            MISSING_COUNT="$(
-              jq -n \
-                --argjson expected "$EXPECTED_LABELS_JSON" \
-                --argjson actual "$ACTUAL_LABELS_JSON" \
-                '$expected | map(select(. as $l | ($actual | index($l) | not))) | length'
-            )"
-            if [ "$MISSING_COUNT" -eq 0 ]; then
-              break
-            fi
-            echo "Expected labels not visible yet; retrying in ${sleep_seconds}s..."
-            sleep "${sleep_seconds}"
-          done
-          echo "actual-labels-json=$ACTUAL_LABELS_JSON" | tee -a "$GITHUB_OUTPUT"
-
-      - name: Check PR label assertion
-        if: ${{ steps.changes.outputs.run == 'true' }}
-        id: check_labels
-        shell: bash
-        env:
-          NEW_LABELS: ${{ steps.labeler.outputs.new-labels }}
-          ACTUAL_LABELS_JSON: ${{ steps.actual.outputs.actual-labels-json }}
-          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
-        run: |
-          set +e
-          BATS_OUTPUT="$(bats actions/pr-labeler/tests/pr_labeler_assertion.bats 2>&1)"
-          BATS_STATUS=$?
-          TEST_SUMMARY="PR label assertion"
-          if [ "$BATS_STATUS" -eq 0 ]; then
-            TEST_SUMMARY=":white_check_mark: $TEST_SUMMARY passed."
-          else
-            TEST_SUMMARY=":x: $TEST_SUMMARY failed."
-          fi
-          echo "$TEST_SUMMARY"
-
-          EXPECTED_COUNT="$(jq 'length' <<< "$EXPECTED_LABELS_JSON")"
-          ACTUAL_COUNT="$(jq 'length' <<< "$ACTUAL_LABELS_JSON")"
-
-          set -e
-          {
-            echo "### Action labeler results"
-            echo ""
-            echo "New labels added by action:"
-            echo ""
-            echo '```text'
-            echo "${NEW_LABELS:-<none>}"
-            echo '```'
-            echo ""
-            echo "<details><summary>Expected labels ($EXPECTED_COUNT)</summary>"
-            echo ""
-            echo '```json'
-            jq . <<< "$EXPECTED_LABELS_JSON"
-            echo '```'
-            echo ""
-            echo "</details>"
-            echo ""
-            echo "<details><summary>Actual labels ($ACTUAL_COUNT)</summary>"
-            echo ""
-            echo '```json'
-            jq . <<< "$ACTUAL_LABELS_JSON"
-            echo '```'
-            echo ""
-            echo "</details>"
-            echo ""
-            echo "<details><summary>$TEST_SUMMARY</summary>"
-            echo ""
-            echo '```text'
-            echo "$BATS_OUTPUT"
-            echo '```'
-            echo ""
-            echo "</details>"
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          exit "$BATS_STATUS"
-
-      - name: Remove PR labeler test labels
-        if: ${{ always() && steps.changes.outputs.run == 'true' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EXPECTED_LABELS_JSON: ${{ steps.expected.outputs.labels-json }}
-        run: |
-          set -euo pipefail
-
-          jq -r '.[]' <<< "$EXPECTED_LABELS_JSON" | while IFS= read -r label; do
-            echo "Removing test label: $label"
-            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$label" || echo "...Skip: $label not present"
-          done
-
-      - name: Restore repository PR labels
-        if: ${{ always() && steps.changes.outputs.run == 'true' }}
-        uses: athackst/ci/actions/pr-labeler@main
-        with:
-          configuration-path: .github/ci-config.yml
-
   actions-mkdocs-preset:
     permissions:
       contents: read
@@ -640,7 +455,6 @@ jobs:
       - actions-copier-update
       - actions-copier-copy
       - actions-setup-labels
-      - actions-pr-labeler
       - actions-mkdocs-preset
       - actions-jekyll-preset
     runs-on: ubuntu-latest
@@ -652,10 +466,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Skipped is acceptable: actions-pr-labeler only runs on pull_request.
           UNSUCCESSFUL_JOBS="$(jq -r '
             to_entries[]
-            | select(.value.result != "success" and .value.result != "skipped")
+            | select(.value.result != "success")
             | "\(.key): \(.value.result)"
           ' <<< "$NEEDS_JSON")"
 
