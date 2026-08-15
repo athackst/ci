@@ -359,9 +359,12 @@ jobs:
           path: ./tests/fixtures/htmlproofer_site
 
   workflow-deploy-site:
+    # deploy_site.yml statically requests publishing permissions even though
+    # dry-run prevents its publishing steps from mutating repository state.
     permissions:
-      contents: read
-      pages: read
+      contents: write
+      pages: write
+      id-token: write
     needs: [workflow-deploy-site-fixture]
     uses: ./.github/workflows/deploy_site.yml
     with:
