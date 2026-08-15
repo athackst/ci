@@ -78,14 +78,28 @@ prepare_update_fixture() {
 
 run_update() {
   local vcs_ref="$1"
+  local template_source="${2:-}"
 
   run bash -c '
     cd "$1"
     bash "$2" \
       --answers-file .copier-answers.yml \
       --vcs-ref "$3" \
-      --result-file "$4"
-  ' _ "$CONSUMER_DIR" "$ACTION_SCRIPT" "$vcs_ref" "$RESULT_FILE"
+      --template-source "$4" \
+      --result-file "$5"
+  ' _ "$CONSUMER_DIR" "$ACTION_SCRIPT" "$vcs_ref" "$template_source" "$RESULT_FILE"
+}
+
+@test "template source override is used and persisted" {
+  prepare_update_fixture
+  sed -i 's|^_src_path:.*$|_src_path: /missing/template|' "$CONSUMER_DIR/.copier-answers.yml"
+
+  run_update v1.1.0 "$TEMPLATE_DIR"
+
+  [ "$status" -eq 0 ]
+  grep -Fqx "message: updated" "$CONSUMER_DIR/message.txt"
+  grep -Fqx "_src_path: $TEMPLATE_DIR" "$CONSUMER_DIR/.copier-answers.yml"
+  grep -Fq "_commit: v1.1.0" "$CONSUMER_DIR/.copier-answers.yml"
 }
 
 @test "missing answers file fails with empty state" {
