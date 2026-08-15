@@ -43,13 +43,13 @@ jobs:
 - Removes the `automerge` label from fork PRs without altering native
   auto-merge state that was enabled manually.
 - Skips draft pull requests.
-- `poll` waits for required checks, confirms the `automerge` label is still
-  present, and then runs `gh pr merge --squash`.
+- `poll` waits for required checks, confirms the PR is still open and has the
+  `automerge` label, and then runs `gh pr merge --squash`.
 - `poll` treats neutral checks as passing.
 - `native` enables GitHub auto-merge with `gh pr merge --auto --squash`.
-- `native` enables GitHub auto-merge when the live `automerge` label is present
-  and disables it when the label is absent. Repeated events are no-ops when the
-  native auto-merge state is already reconciled.
+- `native` enables GitHub auto-merge when the live PR is open and has the
+  `automerge` label, and requests disabling it when the label is absent.
+  Repeated events may issue the same native auto-merge request again.
 - `disabled` performs no merge operation; the fork-label safety rule still
   applies.
 - When precheck admits the event, the workflow summary reports whether
@@ -57,5 +57,5 @@ jobs:
   was made.
 - Callers should use per-PR concurrency with `cancel-in-progress: true`. Every
   label or ready-for-review event may reconcile the live PR state, and a newer
-  event may restart polling. The final live-label check remains the merge
-  authorization boundary in `poll` mode.
+  event may restart polling. The final live-state-and-label check remains the
+  merge authorization boundary in `poll` mode.

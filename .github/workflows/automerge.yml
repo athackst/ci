@@ -67,23 +67,15 @@ jobs:
           GH_TOKEN: ${{ secrets.token }}
         run: |
           set -euo pipefail
-          HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
-          echo "has-automerge=$HAS_AUTOMERGE" | tee -a "$GITHUB_OUTPUT"
+          HAS_AUTOMERGE_LABEL="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
+          echo "has-automerge-label=$HAS_AUTOMERGE_LABEL" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Check native auto-merge state
-        id: native-auto-merge
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token }}
-        run: |
-          set -euo pipefail
-          HAS_AUTO_MERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json autoMergeRequest --jq 'if .autoMergeRequest == null then "false" else "true" end')"
-          echo "has-auto-merge=$HAS_AUTO_MERGE" | tee -a "$GITHUB_OUTPUT"
-
-      - name: Check PR origin
+      - name: Check PR origin and remove fork automerge label
         id: origin
         shell: bash
         env:
+          GH_TOKEN: ${{ secrets.token }}
+          HAS_AUTOMERGE_LABEL: ${{ steps.automerge-label.outputs.has-automerge-label }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           REPOSITORY: ${{ github.repository }}
         run: |
@@ -94,34 +86,30 @@ jobs:
           fi
           echo "is-self=$IS_SELF" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Remove automerge label from fork PR
-        id: remove-fork-label
-        if: ${{ steps.automerge-label.outputs.has-automerge == 'true' && steps.origin.outputs.is-self != 'true' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.token }}
-        run: |
-          set -euo pipefail
-          echo "Removing automerge label from fork PR #${{ github.event.pull_request.number }}."
-          gh pr edit "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --remove-label automerge
+          AUTOMERGE_LABEL_REMOVED=false
+          if [ "$HAS_AUTOMERGE_LABEL" = "true" ] && [ "$IS_SELF" != "true" ]; then
+            echo "Removing automerge label from fork PR #${{ github.event.pull_request.number }}."
+            gh pr edit "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --remove-label automerge
+            AUTOMERGE_LABEL_REMOVED=true
+          fi
+          echo "automerge-label-removed=$AUTOMERGE_LABEL_REMOVED" | tee -a "$GITHUB_OUTPUT"
 
       - name: Select automerge operation
         id: decision
         shell: bash
         env:
           CONFIGURED_MODE: ${{ steps.automerge-mode.outputs.mode }}
-          HAS_AUTOMERGE: ${{ steps.automerge-label.outputs.has-automerge }}
-          HAS_AUTO_MERGE: ${{ steps.native-auto-merge.outputs.has-auto-merge }}
+          HAS_AUTOMERGE_LABEL: ${{ steps.automerge-label.outputs.has-automerge-label }}
           IS_DRAFT: ${{ github.event.pull_request.draft }}
           IS_SELF: ${{ steps.origin.outputs.is-self }}
-          LABEL_REMOVAL_OUTCOME: ${{ steps.remove-fork-label.outcome }}
+          AUTOMERGE_LABEL_REMOVED: ${{ steps.origin.outputs.automerge-label-removed }}
         run: |
           set -euo pipefail
           MODE=""
           OPERATION=""
           REASON=""
 
-          if [ "$LABEL_REMOVAL_OUTCOME" = "success" ]; then
+          if [ "$AUTOMERGE_LABEL_REMOVED" = "true" ]; then
             REASON="Automerge label was removed because pull request head repository is a fork."
           elif [ "$CONFIGURED_MODE" = "disabled" ]; then
             REASON="Automerge mode is disabled."
@@ -129,12 +117,12 @@ jobs:
             REASON="Pull request head repository is a fork."
           elif [ "$IS_DRAFT" = "true" ]; then
             REASON="PR is draft."
-          elif [ "$CONFIGURED_MODE" = "poll" ] && [ "$HAS_AUTOMERGE" = "true" ]; then
+          elif [ "$CONFIGURED_MODE" = "poll" ] && [ "$HAS_AUTOMERGE_LABEL" = "true" ]; then
             MODE="poll"
-          elif [ "$CONFIGURED_MODE" = "native" ] && [ "$HAS_AUTOMERGE" = "true" ] && [ "$HAS_AUTO_MERGE" != "true" ]; then
+          elif [ "$CONFIGURED_MODE" = "native" ] && [ "$HAS_AUTOMERGE_LABEL" = "true" ]; then
             MODE="native"
             OPERATION="enable"
-          elif [ "$CONFIGURED_MODE" = "native" ] && [ "$HAS_AUTOMERGE" != "true" ] && [ "$HAS_AUTO_MERGE" = "true" ]; then
+          elif [ "$CONFIGURED_MODE" = "native" ] && [ "$HAS_AUTOMERGE_LABEL" != "true" ]; then
             MODE="native"
             OPERATION="disable"
           else
@@ -163,6 +151,12 @@ jobs:
           OPERATION: ${{ needs.precheck.outputs.operation }}
         run: |
           set -euo pipefail
+          PR_STATE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json state --jq '.state')"
+          if [ "$PR_STATE" != "OPEN" ]; then
+            echo "merge-summary=Skipped native auto-merge because PR is not open." | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           case "$OPERATION" in
             enable)
               echo "Enabling native automerge for PR #${{ github.event.pull_request.number }}."
@@ -203,11 +197,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Check that the PR still has the automerge label before merging
-          HAS_AUTOMERGE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json labels --jq 'any(.labels[]?; .name == "automerge")')"
-          echo "has-automerge=$HAS_AUTOMERGE" | tee -a "$GITHUB_OUTPUT"
+          # Check that the PR is still open and has the automerge label before merging
+          PR_DATA="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json state,labels)"
+          PR_STATE="$(printf '%s' "$PR_DATA" | jq -r '.state')"
+          HAS_AUTOMERGE_LABEL="$(printf '%s' "$PR_DATA" | jq -r 'any(.labels[]?; .name == "automerge")')"
+          echo "pr-state=$PR_STATE" | tee -a "$GITHUB_OUTPUT"
+          echo "has-automerge-label=$HAS_AUTOMERGE_LABEL" | tee -a "$GITHUB_OUTPUT"
 
-          if [ "$HAS_AUTOMERGE" != "true" ]; then
+          if [ "$PR_STATE" != "OPEN" ]; then
+            echo "merge-summary=Skipped merge because the PR is no longer open." | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$HAS_AUTOMERGE_LABEL" != "true" ]; then
             echo "merge-summary=Skipped merge because the automerge label was removed." | tee -a "$GITHUB_OUTPUT"
             exit 0
           fi

@@ -59,27 +59,32 @@ class AutomergeWorkflowTests(unittest.TestCase):
         origin = self.step("precheck", "origin")
 
         self.assertEqual(
+            origin["env"]["HAS_AUTOMERGE_LABEL"],
+            "${{ steps.automerge-label.outputs.has-automerge-label }}",
+        )
+        self.assertEqual(
             origin["env"]["HEAD_REPOSITORY"],
             "${{ github.event.pull_request.head.repo.full_name }}",
         )
+        self.assertEqual(origin["env"]["GH_TOKEN"], "${{ secrets.token }}")
         self.assertEqual(origin["env"]["REPOSITORY"], "${{ github.repository }}")
         self.assertIn('[ "$HEAD_REPOSITORY" = "$REPOSITORY" ]', origin["run"])
         self.assertIn("is-self=$IS_SELF", origin["run"])
+        self.assertIn("automerge-label-removed=$AUTOMERGE_LABEL_REMOVED", origin["run"])
 
-    def test_precheck_removes_automerge_label_from_forks(self):
-        removal = self.step("precheck", "remove-fork-label")
+    def test_origin_removes_automerge_label_from_forks(self):
+        origin = self.step("precheck", "origin")
 
+        self.assertIn('if [ "$HAS_AUTOMERGE_LABEL" = "true" ]', origin["run"])
         self.assertIn(
-            "steps.automerge-label.outputs.has-automerge == 'true'",
-            removal["if"],
+            '&& [ "$IS_SELF" != "true" ]; then',
+            origin["run"],
         )
-        self.assertIn("steps.origin.outputs.is-self != 'true'", removal["if"])
-        self.assertIn("--remove-label automerge", removal["run"])
+        self.assertIn("--remove-label automerge", origin["run"])
 
     def test_precheck_selects_authorized_mode_and_native_operation(self):
         precheck = self.jobs["precheck"]
         decision = self.step("precheck", "decision")
-        native_auto_merge = self.step("precheck", "native-auto-merge")
 
         self.assertEqual(set(precheck["outputs"]), {"mode", "operation", "reason"})
         self.assertEqual(precheck["outputs"]["mode"], "${{ steps.decision.outputs.mode }}")
@@ -95,6 +100,7 @@ class AutomergeWorkflowTests(unittest.TestCase):
             'REASON="Automerge label was removed because pull request head repository is a fork."',
             decision["run"],
         )
+        self.assertIn("AUTOMERGE_LABEL_REMOVED", decision["run"])
         self.assertIn('REASON="Automerge mode is disabled."', decision["run"])
         self.assertIn(
             'REASON="Pull request head repository is a fork."',
@@ -102,12 +108,6 @@ class AutomergeWorkflowTests(unittest.TestCase):
         )
         self.assertIn('REASON="PR is draft."', decision["run"])
         self.assertIn('REASON="Automerge state is already reconciled."', decision["run"])
-        self.assertEqual(
-            native_auto_merge["env"]["GH_TOKEN"],
-            "${{ secrets.token }}",
-        )
-        self.assertIn("--json autoMergeRequest", native_auto_merge["run"])
-        self.assertIn("HAS_AUTO_MERGE", decision["run"])
         self.assertIn('MODE="poll"', decision["run"])
         self.assertIn('MODE="native"', decision["run"])
         self.assertIn('OPERATION="enable"', decision["run"])
@@ -132,6 +132,8 @@ class AutomergeWorkflowTests(unittest.TestCase):
         )
         self.assertIn("--auto --squash", native_merge["run"])
         self.assertIn("--disable-auto", native_merge["run"])
+        self.assertIn("--json state", native_merge["run"])
+        self.assertIn('if [ "$PR_STATE" != "OPEN" ]', native_merge["run"])
         self.assertIn("merge-summary=Enabled auto-merge.", native_merge["run"])
         self.assertIn(
             "merge-summary=Disabled auto-merge after automerge label was removed.",
@@ -157,8 +159,9 @@ class AutomergeWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("steps.current-label", poll_merge["if"])
         self.assertNotIn("steps.current-label", poll_merge["run"])
-        self.assertIn("gh pr view", poll_merge["run"])
-        self.assertIn('if [ "$HAS_AUTOMERGE" != "true" ]', poll_merge["run"])
+        self.assertIn("--json state,labels", poll_merge["run"])
+        self.assertIn('if [ "$PR_STATE" != "OPEN" ]', poll_merge["run"])
+        self.assertIn('if [ "$HAS_AUTOMERGE_LABEL" != "true" ]', poll_merge["run"])
         self.assertIn("merge-summary=Merged PR.", poll_merge["run"])
 
     def test_summary_runs_after_merge_steps(self):
