@@ -108,8 +108,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 - Keep `Usage` to the minimal working example first.
 - Omit `Permissions` when no token scope guidance is needed.
 - Omit `Examples` when `Usage` already covers the practical case.
-- Keep `Advanced` concise and limited to non-obvious behavior that affects correct usage.
-- `Advanced` should describe user-facing behavior and constraints, not internal implementation details.
+- `Advanced` should include only non-obvious user-facing behavior or constraints needed for correct use; omit implementation details and behavior already clear from `Usage`, inputs, or permissions.
 
 ## Reusable workflow documentation format
 
@@ -133,8 +132,7 @@ Reusable workflow documentation files are located in `workflows/`.
 - `Usage` examples should show `uses: athackst/ci/.github/workflows/<file>.yml@main`.
 - Omit `Permissions` when no caller guidance is needed.
 - Omit `Examples` when `Usage` already covers the practical case.
-- Keep `Advanced` concise and limited to non-obvious behavior that affects correct usage.
-- `Advanced` should describe user-facing behavior and constraints, not internal implementation details.
+- `Advanced` should include only non-obvious user-facing behavior or constraints needed for correct use; omit implementation details and behavior already clear from `Usage`, inputs, or permissions.
 
 ## Security / Safety
 
