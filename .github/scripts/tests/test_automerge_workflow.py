@@ -41,19 +41,19 @@ class AutomergeWorkflowTests(unittest.TestCase):
         self.assertIn("github.event.action == 'unlabeled'", condition)
         self.assertIn("github.event.action == 'ready_for_review'", condition)
 
-    def test_caller_cancels_older_runs_for_latest_pr_state(self):
+    def test_caller_queues_label_events_without_cancelling_required_checks(self):
         concurrency = self.caller["concurrency"]
 
         self.assertEqual(
             concurrency["group"],
             "pr-automerge-${{ github.event.pull_request.number || github.ref }}",
         )
-        self.assertIs(True, concurrency["cancel-in-progress"])
+        self.assertIs(False, concurrency["cancel-in-progress"])
         self.assertIn(
             "group: \"pr-automerge-${{ github.event.pull_request.number || github.ref }}\"",
             self.caller_template,
         )
-        self.assertIn("cancel-in-progress: true", self.caller_template)
+        self.assertIn("cancel-in-progress: false", self.caller_template)
 
     def test_origin_compares_head_and_target_repositories(self):
         origin = self.step("precheck", "origin")

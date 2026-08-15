@@ -60,6 +60,7 @@ Consumer repos should call workflows from this repo at `@main` unless explicitly
 
 - Label-driven: PRs with `automerge` label are auto-merged.
 - Duplicate runs are acceptable if they preserve eventual merge behavior.
+- Automerge callers use per-PR concurrency with `cancel-in-progress: false` so label bursts do not leave required checks cancelled. Poll mode relies on its final live PR state and label check for merge safety.
 
 ## Commenting Policy
 

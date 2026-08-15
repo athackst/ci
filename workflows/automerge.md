@@ -34,10 +34,12 @@ jobs:
 ## Advanced
 
 - Callers should trigger on `labeled`, `unlabeled`, and `ready_for_review`, with
-  per-PR concurrency and `cancel-in-progress: true`.
+  per-PR concurrency and `cancel-in-progress: false`. This avoids cancelled
+  required checks when several label events arrive together.
 - Automerge requires a non-draft PR with the `automerge` label and a head branch
   in the target repository. The label is removed from fork PRs.
 - `poll` waits for required checks, treats neutral checks as passing, and
-  confirms the PR is still open and labeled immediately before merging.
+  confirms the PR is still open and labeled immediately before merging, so
+  queued label events do not need to cancel an active poll for safety.
 - `native` enables GitHub auto-merge. Removing the label does not disable
   auto-merge that was enabled manually or by an earlier run.
