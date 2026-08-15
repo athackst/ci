@@ -12,11 +12,17 @@ jobs:
       token: ${{ secrets.CI_BOT_TOKEN }}
 ```
 
+## Inputs
+
+| Name | Description | Default |
+| --- | --- | --- |
+| `dry-run` | (optional) Report planned label changes without creating or updating labels. | `false` |
+
 ## Secrets
 
 | Name | Description |
 | --- | --- |
-| `token` | (optional) Token used to create and update repository labels. Falls back to `${{ github.token }}`. |
+| `token` | (optional) Token used to create and update repository labels. Falls back to `${{ github.token }}`; dry runs only read existing labels. |
 
 ## Outputs
 
@@ -29,11 +35,13 @@ jobs:
 
 ## Permissions
 
-- Requires `issues: write` to create and update repository labels.
+- Requires `issues: read` for dry runs and `issues: write` to create or update
+  repository labels.
 - Uses `contents: read` to check out the shared config.
 
 ## Advanced
 
 - Always reads `.github/ci-config.yml`.
 - Delegates label metadata updates to the `setup-labels` composite action.
+- With `dry-run: true`, reports the planned changes without mutating repository labels.
 - Writes a final workflow summary with created, updated, unchanged, and skipped labels.

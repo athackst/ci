@@ -394,6 +394,41 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
+  workflow-setup-labeler:
+    # setup_labeler.yml statically requests label mutation permission even
+    # though dry-run prevents repository labels from being changed.
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/setup_labeler.yml
+    with:
+      dry-run: true
+
+  workflow-setup-labeler-verify:
+    permissions: {}
+    needs: [workflow-setup-labeler]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify setup labeler dry run
+        shell: bash
+        env:
+          WORKFLOW_RESULT: ${{ needs.workflow-setup-labeler.result }}
+          CREATED_LABELS: ${{ needs.workflow-setup-labeler.outputs.created-labels }}
+          UPDATED_LABELS: ${{ needs.workflow-setup-labeler.outputs.updated-labels }}
+          UNCHANGED_LABELS: ${{ needs.workflow-setup-labeler.outputs.unchanged-labels }}
+          SKIPPED_LABELS: ${{ needs.workflow-setup-labeler.outputs.skipped-labels }}
+        run: |
+          set -euo pipefail
+          test "$WORKFLOW_RESULT" = "success"
+          test -n "$CREATED_LABELS$UPDATED_LABELS$UNCHANGED_LABELS$SKIPPED_LABELS"
+          {
+            echo "### setup_labeler.yml dry run"
+            echo ""
+            echo ":white_check_mark: Label changes were planned with read-only permissions."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
   workflow-release-draft:
     permissions:
       contents: read
@@ -569,6 +604,7 @@ jobs:
       - workflow-site-output-consistency
       - workflow-htmlproofer-site
       - workflow-deploy-site-verify
+      - workflow-setup-labeler-verify
       - workflow-release-draft-verify
       - workflow-ci-updater-verify
     runs-on: ubuntu-latest
