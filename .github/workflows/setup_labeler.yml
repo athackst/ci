@@ -2,9 +2,15 @@ name: Setup Labeler
 
 on:
   workflow_call:
+    inputs:
+      dry-run:
+        description: Report planned label changes without creating or updating labels.
+        type: boolean
+        required: false
+        default: false
     secrets:
       token:
-        description: Optional token override for repository label setup.
+        description: Optional token override for reading or updating repository labels.
         required: false
     outputs:
       created-labels:
@@ -40,6 +46,7 @@ jobs:
         with:
           github-token: ${{ secrets.token || github.token }}
           configuration-path: .github/ci-config.yml
+          dry-run: ${{ inputs.dry-run }}
 
       - name: Workflow summary
         if: ${{ always() }}
@@ -49,6 +56,8 @@ jobs:
           UPDATED_LABELS: ${{ steps.setup-labels.outputs.updated-labels }}
           UNCHANGED_LABELS: ${{ steps.setup-labels.outputs.unchanged-labels }}
           SKIPPED_LABELS: ${{ steps.setup-labels.outputs.skipped-labels }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           set -euo pipefail
 
@@ -72,7 +81,9 @@ jobs:
             echo "## Setup Labeler"
             echo ""
 
-            if [ "${{ job.status }}" = "success" ]; then
+            if [ "$DRY_RUN" = "true" ] && [ "$JOB_STATUS" = "success" ]; then
+              echo "Dry run completed; no repository labels were changed."
+            elif [ "$JOB_STATUS" = "success" ]; then
               echo "Repository label setup completed."
             else
               echo "Repository label setup did not complete successfully."
