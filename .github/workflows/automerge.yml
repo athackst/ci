@@ -153,7 +153,7 @@ jobs:
           gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
           echo "merge-summary=Enabled auto-merge." | tee -a "$GITHUB_OUTPUT"
 
-      - name: GitHub Checks
+      - name: Poll for automerge ready using GitHub checks
         if: ${{ needs.precheck.outputs.mode == 'poll' }}
         id: checks
         uses: wechuli/allcheckspassed@v2
@@ -167,7 +167,7 @@ jobs:
           checks_exclude: ".*automerge.*$"
           treat_neutral_as_passed: "true"
 
-      - name: Merge labeled PR after checks pass
+      - name: Merge PR after GitHub checks pass
         id: poll-merge
         if: ${{ needs.precheck.outputs.mode == 'poll' && steps.checks.outcome == 'success' }}
         shell: bash
