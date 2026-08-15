@@ -38,6 +38,11 @@ on:
         type: string
         required: false
         default: ""
+      template-source:
+        description: Optional Copier template source override.
+        type: string
+        required: false
+        default: ""
       answers-file:
         description: Copier answers file to use for the update.
         type: string
@@ -48,12 +53,21 @@ on:
         description: Optional token override for checkout, push, and PR operations.
         required: false
     outputs:
+      answers-found:
+        description: Whether the configured Copier answers file was found.
+        value: ${{ jobs.update.outputs.answers-found }}
+      command:
+        description: Shell-safe Copier command used for the update.
+        value: ${{ jobs.update.outputs.command }}
       changed:
         description: Whether template changes were produced by Copier.
         value: ${{ jobs.update.outputs.changed }}
       changed-files:
         description: Newline-delimited list of Copier-managed files changed by the update.
         value: ${{ jobs.update.outputs.changed-files }}
+      conflicts-found:
+        description: Whether Copier produced merge conflicts.
+        value: ${{ jobs.update.outputs.conflicts-found }}
       pr-branch:
         description: Branch name used for the update PR; empty when no PR is created.
         value: ${{ jobs.update.outputs.pr-branch }}
@@ -65,8 +79,11 @@ jobs:
   update:
     runs-on: ubuntu-latest
     outputs:
+      answers-found: ${{ steps.update.outputs.answers-found }}
+      command: ${{ steps.update.outputs.command }}
       changed: ${{ steps.update.outputs.changed }}
       changed-files: ${{ steps.update.outputs.changed-files }}
+      conflicts-found: ${{ steps.update.outputs.conflicts-found }}
       pr-branch: ${{ steps.pr.outputs.pull-request-branch }}
       pr-url: ${{ steps.pr.outputs.pull-request-url }}
     env:
@@ -85,6 +102,7 @@ jobs:
         with:
           answers-file: ${{ inputs.answers-file }}
           vcs-ref: ${{ inputs.template-ref }}
+          template-source: ${{ inputs.template-source }}
 
       - name: Log update diff
         if: ${{ always() && steps.update.outputs.changed == 'true' }}
