@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       mode: ${{ steps.decision.outputs.mode }}
-      operation: ${{ steps.decision.outputs.operation }}
       reason: ${{ steps.decision.outputs.reason }}
     steps:
       - name: Check automerge mode
@@ -94,7 +93,7 @@ jobs:
           fi
           echo "automerge-label-removed=$AUTOMERGE_LABEL_REMOVED" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Select automerge operation
+      - name: Configure automerge mode
         id: decision
         shell: bash
         env:
@@ -106,7 +105,6 @@ jobs:
         run: |
           set -euo pipefail
           MODE=""
-          OPERATION=""
           REASON=""
 
           if [ "$AUTOMERGE_LABEL_REMOVED" = "true" ]; then
@@ -121,34 +119,28 @@ jobs:
             MODE="poll"
           elif [ "$CONFIGURED_MODE" = "native" ] && [ "$HAS_AUTOMERGE_LABEL" = "true" ]; then
             MODE="native"
-            OPERATION="enable"
-          elif [ "$CONFIGURED_MODE" = "native" ] && [ "$HAS_AUTOMERGE_LABEL" != "true" ]; then
-            MODE="native"
-            OPERATION="disable"
           else
-            REASON="Automerge state is already reconciled."
+            REASON="Automerge state is not active."
           fi
 
           echo "mode=$MODE" | tee -a "$GITHUB_OUTPUT"
-          echo "operation=$OPERATION" | tee -a "$GITHUB_OUTPUT"
           echo "reason=$REASON" | tee -a "$GITHUB_OUTPUT"
 
   merge:
     needs: precheck
-    if: ${{ needs.precheck.result == 'success' }}
+    if: ${{ needs.precheck.result == 'success' && needs.precheck.outputs.mode != '' }}
     permissions:
       contents: write
       pull-requests: write
       checks: read
     runs-on: ubuntu-latest
     steps:
-      - name: Enable/disable native auto-merge for labeled PR
+      - name: Enable native auto-merge for labeled PR
         if: ${{ needs.precheck.outputs.mode == 'native' }}
         id: native-merge
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token }}
-          OPERATION: ${{ needs.precheck.outputs.operation }}
         run: |
           set -euo pipefail
           PR_STATE="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json state --jq '.state')"
@@ -157,22 +149,9 @@ jobs:
             exit 0
           fi
 
-          case "$OPERATION" in
-            enable)
-              echo "Enabling native automerge for PR #${{ github.event.pull_request.number }}."
-              gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
-              echo "merge-summary=Enabled auto-merge." | tee -a "$GITHUB_OUTPUT"
-              ;;
-            disable)
-              echo "Disabling native automerge for PR #${{ github.event.pull_request.number }}."
-              gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --disable-auto
-              echo "merge-summary=Disabled auto-merge after automerge label was removed." | tee -a "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "Unsupported native automerge operation: $OPERATION"
-              exit 1
-              ;;
-          esac
+          echo "Enabling native automerge for PR #${{ github.event.pull_request.number }}."
+          gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --auto --squash
+          echo "merge-summary=Enabled auto-merge." | tee -a "$GITHUB_OUTPUT"
 
       - name: GitHub Checks
         if: ${{ needs.precheck.outputs.mode == 'poll' }}
