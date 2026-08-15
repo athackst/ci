@@ -28,6 +28,7 @@ jobs:
 | `commit-message` | (optional) Commit message for template updates. | `chore: apply Copier template update` |
 | `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
 | `template-ref` | (optional) Copier template ref to update from. Copier selects the template version when omitted. | `""` |
+| `template-source` | (optional) Copier template source override. | `""` |
 | `answers-file` | (optional) Copier answers file to use for the update. | `.copier-answers.yml` |
 
 ## Secrets
@@ -40,8 +41,11 @@ jobs:
 
 | Name | Description |
 | --- | --- |
+| `answers-found` | Whether the configured Copier answers file was found. |
+| `command` | Shell-safe Copier command used for the update. |
 | `changed` | Whether template changes were produced by Copier. |
 | `changed-files` | Newline-delimited list of Copier-managed files changed by the update. |
+| `conflicts-found` | Whether Copier produced merge conflicts. |
 | `pr-branch` | Branch name used for the update PR; empty when no PR is created. |
 | `pr-url` | URL for the updater PR; empty when no PR is created. |
 
@@ -54,6 +58,7 @@ jobs:
 ## Advanced
 
 - `checkout-ref` selects the destination state and `template-ref` selects the Copier template version applied to it.
+- `template-source` replaces the answers file's recorded `_src_path` when Copier updates the project.
 - Requires the configured Copier answers file to exist.
 - Detects and applies every change produced by Copier in the fresh checkout.
 - Logs the managed-file status, diffstat, and diff and includes the changed file list in successful update summaries.

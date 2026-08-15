@@ -23,6 +23,11 @@ on:
         type: string
         required: false
         default: HEAD
+      template-source:
+        description: Optional CI template source override.
+        type: string
+        required: false
+        default: ""
       answers-file:
         description: Copier answers file to use for the CI template update.
         type: string
@@ -33,12 +38,21 @@ on:
         description: Optional token override for checkout, push, and PR operations.
         required: false
     outputs:
+      answers-found:
+        description: Whether the configured Copier answers file was found.
+        value: ${{ jobs.update.outputs.answers-found }}
+      command:
+        description: Shell-safe Copier command used for the update.
+        value: ${{ jobs.update.outputs.command }}
       changed:
         description: Whether template changes were produced by Copier.
         value: ${{ jobs.update.outputs.changed }}
       changed-files:
         description: Newline-delimited list of Copier-managed files changed by the update.
         value: ${{ jobs.update.outputs.changed-files }}
+      conflicts-found:
+        description: Whether Copier produced merge conflicts.
+        value: ${{ jobs.update.outputs.conflicts-found }}
       branch:
         description: Branch name used for the update PR; empty when no PR is created.
         value: ${{ jobs.update.outputs.pr-branch }}
@@ -58,6 +72,7 @@ jobs:
       commit-message: "chore: apply CI template update"
       checkout-ref: ${{ inputs.checkout-ref }}
       template-ref: ${{ inputs.template-ref }}
+      template-source: ${{ inputs.template-source }}
       answers-file: ${{ inputs.answers-file }}
     secrets:
       token: ${{ secrets.token }}

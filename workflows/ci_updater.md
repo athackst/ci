@@ -20,6 +20,7 @@ jobs:
 | `pr-branch` | (optional) Branch name used for template updates. | `ci/update-ci-template` |
 | `checkout-ref` | (optional) Git ref to check out before applying template updates. | `""` |
 | `template-ref` | (optional) CI template ref to apply. | `HEAD` |
+| `template-source` | (optional) CI template source override. Use with `template-ref` to resolve a commit from a fork. | `""` |
 | `answers-file` | (optional) Copier answers file used for the CI template update. | `.copier-answers.ci.yml` |
 
 ## Secrets
@@ -32,8 +33,11 @@ jobs:
 
 | Name | Description |
 | --- | --- |
+| `answers-found` | Whether the configured Copier answers file was found. |
+| `command` | Shell-safe Copier command used for the update. |
 | `changed` | Whether template changes were produced by Copier. |
 | `changed-files` | Newline-delimited list of Copier-managed files changed by the update. |
+| `conflicts-found` | Whether Copier produced merge conflicts. |
 | `branch` | Branch name used for the update PR; empty when no PR is created. |
 | `pr-url` | URL for the updater PR; empty when no PR is created. |
 
@@ -48,6 +52,7 @@ jobs:
 - Wraps [`copier_update.yml`](copier_update.md) with CI-template defaults for existing consumers.
 - Updates are enabled by default. Set the repository variable `CI_UPDATE_ENABLED` to `false` to skip non-dry-run updates intentionally.
 - `checkout-ref` selects the consumer state and `template-ref` selects the CI template version applied to it.
+- `template-source` allows dry-run validation against an exact commit from another repository, including a fork PR head.
 - Uses the configured Copier answers file for the CI template update.
 - Detects and applies every change produced by Copier in the fresh checkout.
 - Updater PRs use the title `chore: update CI template`, commit message `chore: apply CI template update`, and labels `automerge` and `skip-changelog`.
