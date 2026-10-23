@@ -11,14 +11,18 @@ jobs:
   workflow-validation:
     permissions:
       contents: read
+      checks: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
 
       - name: actionlint
-        uses: raven-actions/actionlint@v2.2.0
+        uses: reviewdog/action-actionlint@v1
         with:
-          files: ".github/workflows/*.yml"
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: error
+          actionlint_flags: ".github/workflows/*.yml"
 
       - name: Test workflow support scripts
         shell: bash
