@@ -2,8 +2,6 @@
 
 setup() {
   out_dir="$(mktemp -d)"
-  [ -n "${ACTIONLINT:-}" ]
-  [ -x "${ACTIONLINT}" ]
   manifest_path="${BATS_TEST_DIRNAME}/../../copier_update_paths.txt"
   [ -f "${manifest_path}" ]
 }
@@ -80,12 +78,6 @@ collect_copier_managed_paths() {
 
   run grep -q "DRAFT_RELEASE_ID" "${wf_dir}/release_draft.yml"
   [ "$status" -ne 0 ]
-
-  run "$ACTIONLINT" "${wf_dir}"/*.yml
-  if [ "$status" -ne 0 ]; then
-    echo "$output"
-    false
-  fi
 }
 
 @test "copier skips site workflow when disabled" {
@@ -102,9 +94,6 @@ collect_copier_managed_paths() {
   [ -f "${answers_file}" ]
 
   run grep -q "site_generator: none" "${answers_file}"
-  [ "$status" -eq 0 ]
-
-  run "$ACTIONLINT" "${wf_dir}"/*.yml
   [ "$status" -eq 0 ]
 }
 
@@ -126,9 +115,6 @@ collect_copier_managed_paths() {
 
   run grep -q "site_generator: jekyll" "${answers_file}"
   [ "$status" -eq 0 ]
-
-  run "$ACTIONLINT" "${wf_dir}"/*.yml
-  [ "$status" -eq 0 ]
 }
 
 @test "copier skips release draft workflow when do_releases is false" {
@@ -146,9 +132,6 @@ collect_copier_managed_paths() {
 
   run grep -q "do_releases: false" "${answers_file}"
   [ "$status" -eq 0 ]
-
-  run "$ACTIONLINT" "${wf_dir}"/*.yml
-  [ "$status" -eq 0 ]
 }
 
 @test "copier renders native automerge mode" {
@@ -160,9 +143,6 @@ collect_copier_managed_paths() {
   [ "$status" -eq 0 ]
 
   run grep -q "automerge-mode: native" "${wf_dir}/pr_automerge.yml"
-  [ "$status" -eq 0 ]
-
-  run "$ACTIONLINT" "${wf_dir}"/*.yml
   [ "$status" -eq 0 ]
 }
 

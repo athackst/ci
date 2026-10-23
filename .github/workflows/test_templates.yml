@@ -99,15 +99,8 @@ jobs:
         run: |
           python3 -m pip install --quiet copier
 
-      - name: Download actionlint
-        id: get_actionlint
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-        shell: bash
-
       - name: Verify Copier template outputs
         shell: bash
-        env:
-            ACTIONLINT: ${{ steps.get_actionlint.outputs.executable }}
         run: |
           set +e
           BATS_OUTPUT="$(bats copier/tests/copier_template_outputs.bats 2>&1)"
@@ -138,11 +131,66 @@ jobs:
 
           exit "$BATS_STATUS"
 
+  lint-rendered-workflows:
+    name: Lint Templates (${{ matrix.site_generator }}, releases=${{ matrix.do_releases }}, automerge=${{ matrix.automerge_mode }})
+    permissions:
+      contents: read
+      checks: write
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - site_generator: mkdocs
+            do_releases: true
+            automerge_mode: poll
+          - site_generator: none
+            do_releases: true
+            automerge_mode: poll
+          - site_generator: jekyll
+            do_releases: true
+            automerge_mode: poll
+          - site_generator: mkdocs
+            do_releases: false
+            automerge_mode: poll
+          - site_generator: mkdocs
+            do_releases: true
+            automerge_mode: native
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Install Copier
+        shell: bash
+        run: python3 -m pip install --quiet --requirement actions/copier-copy/requirements.txt
+
+      - name: Render template
+        shell: bash
+        env:
+          SITE_GENERATOR: ${{ matrix.site_generator }}
+          DO_RELEASES: ${{ matrix.do_releases }}
+          AUTOMERGE_MODE: ${{ matrix.automerge_mode }}
+        run: |
+          copier copy --trust --defaults --vcs-ref=HEAD \
+            --data "site_generator=${SITE_GENERATOR}" \
+            --data "do_releases=${DO_RELEASES}" \
+            --data "automerge_mode=${AUTOMERGE_MODE}" \
+            . rendered-template
+
+      - name: Lint generated workflows
+        uses: reviewdog/action-actionlint@v1
+        with:
+          reporter: github-check
+          tool_name: templates-${{ matrix.site_generator }}-${{ matrix.do_releases }}-${{ matrix.automerge_mode }}
+          filter_mode: nofilter
+          fail_level: error
+          actionlint_flags: "rendered-template/.github/workflows/*.yml"
+
   templates-success:
     if: ${{ always() }}
     needs:
       - copier-freshness
       - test-copier
+      - lint-rendered-workflows
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate upstream job results
