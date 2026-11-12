@@ -40,6 +40,12 @@ class AutomergeWorkflowTests(unittest.TestCase):
         self.assertIn("github.event.action == 'labeled'", condition)
         self.assertIn("github.event.action == 'unlabeled'", condition)
         self.assertIn("github.event.action == 'ready_for_review'", condition)
+        self.assertIn("github.event.action == 'synchronize'", condition)
+
+    def test_callers_trigger_on_new_commits(self):
+        for path in (CALLER_PATH, TEMPLATE_CALLER_PATH):
+            caller = yaml.safe_load(path.read_text(encoding="utf-8"))
+            self.assertIn("synchronize", caller[True]["pull_request_target"]["types"])
 
     def test_caller_queues_label_events_without_cancelling_required_checks(self):
         concurrency = self.caller["concurrency"]
@@ -146,10 +152,19 @@ class AutomergeWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("steps.current-label", poll_merge["if"])
         self.assertNotIn("steps.current-label", poll_merge["run"])
-        self.assertIn("--json state,labels", poll_merge["run"])
+        self.assertIn("--json state,labels,headRefOid", poll_merge["run"])
         self.assertIn('if [ "$PR_STATE" != "OPEN" ]', poll_merge["run"])
         self.assertIn('if [ "$HAS_AUTOMERGE_LABEL" != "true" ]', poll_merge["run"])
         self.assertIn("merge-summary=Merged PR.", poll_merge["run"])
+
+    def test_poll_only_merges_the_checked_commit(self):
+        checks = self.step("merge", "checks")
+        poll_merge = self.step("merge", "poll-merge")
+        self.assertEqual(
+            poll_merge["env"]["EXPECTED_HEAD_SHA"], checks["with"]["commit_sha"]
+        )
+        self.assertIn('if [ "$HEAD_SHA" != "$EXPECTED_HEAD_SHA" ]', poll_merge["run"])
+        self.assertIn('--match-head-commit "$EXPECTED_HEAD_SHA"', poll_merge["run"])
 
     def test_summary_runs_after_merge_steps(self):
         merge = self.jobs["merge"]
