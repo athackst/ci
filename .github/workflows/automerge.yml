@@ -14,7 +14,7 @@ on:
 
 jobs:
   precheck:
-    if: ${{ github.event.pull_request.state == 'open' && (github.event.action == 'labeled' || github.event.action == 'unlabeled' || github.event.action == 'ready_for_review') }}
+    if: ${{ github.event.pull_request.state == 'open' && (github.event.action == 'labeled' || github.event.action == 'unlabeled' || github.event.action == 'ready_for_review' || github.event.action == 'synchronize') }}
     permissions:
       contents: read
       pull-requests: write
@@ -173,13 +173,15 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
 
           # Check that the PR is still open and has the automerge label before merging
-          PR_DATA="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json state,labels)"
+          PR_DATA="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json state,labels,headRefOid)"
           PR_STATE="$(printf '%s' "$PR_DATA" | jq -r '.state')"
           HAS_AUTOMERGE_LABEL="$(printf '%s' "$PR_DATA" | jq -r 'any(.labels[]?; .name == "automerge")')"
+          HEAD_SHA="$(printf '%s' "$PR_DATA" | jq -r '.headRefOid')"
           echo "pr-state=$PR_STATE" | tee -a "$GITHUB_OUTPUT"
           echo "has-automerge-label=$HAS_AUTOMERGE_LABEL" | tee -a "$GITHUB_OUTPUT"
 
@@ -193,7 +195,12 @@ jobs:
             exit 0
           fi
 
-          gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --squash
+          if [ "$HEAD_SHA" != "$EXPECTED_HEAD_SHA" ]; then
+            echo "merge-summary=Skipped merge because the PR head changed; a newer run will poll the updated commit." | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --squash --match-head-commit "$EXPECTED_HEAD_SHA"
           echo "merge-summary=Merged PR." | tee -a "$GITHUB_OUTPUT"
 
       - name: Workflow summary
