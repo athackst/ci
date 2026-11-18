@@ -70,11 +70,16 @@ class DeploySiteWorkflowTests(unittest.TestCase):
         export = next(step for step in self.jobs["prepare-versioned"]["steps"] if step.get("name") == "Export versioned site")
         self.assertNotIn("if", export)
 
-    def test_deployments_are_serialized(self):
-        self.assertEqual(self.workflow["concurrency"], {
-            "group": "site-deployment-${{ github.repository }}",
-            "cancel-in-progress": False,
-        })
+    def test_pending_production_deployments_are_queued_without_cancellation(self):
+        concurrency = self.workflow["concurrency"]
+        self.assertEqual(concurrency["queue"], "max")
+        self.assertFalse(concurrency["cancel-in-progress"])
+
+    def test_dry_runs_cannot_displace_production_deployments(self):
+        self.assertEqual(
+            self.workflow["concurrency"]["group"],
+            "site-deployment-${{ github.repository }}-${{ inputs.dry-run && format('dry-run-{0}', github.run_id) || 'production' }}",
+        )
 
     def test_export_contains_all_versions_aliases_metadata_and_no_source_tree(self):
         export = next(step for step in self.jobs["prepare-versioned"]["steps"] if step.get("name") == "Export versioned site")

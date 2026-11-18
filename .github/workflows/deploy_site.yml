@@ -39,8 +39,9 @@ on:
         required: false
 
 concurrency:
-  group: site-deployment-${{ github.repository }}
+  group: site-deployment-${{ github.repository }}-${{ inputs.dry-run && format('dry-run-{0}', github.run_id) || 'production' }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   deploy-action:

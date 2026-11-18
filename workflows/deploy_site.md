@@ -42,7 +42,7 @@ jobs:
 - Preparation needs only repository contents permissions; Pages configuration and deployment run in the deployment job.
 - Set the repository Pages source to **GitHub Actions**. Existing branch-configured sites can also accept Actions deployments when the workflow runs from the configured source branch or the deployment environment protection rules permit its ref.
 - Builds must use the base URL for their version directory; deployment does not rewrite site URLs.
-- Deployment runs are serialized per repository to protect version history and publishing order.
+- Production deployments are serialized per repository, with up to 100 pending runs retained instead of replacing queued releases. Dry runs use separate, run-specific concurrency groups so they cannot displace production deployments.
 - On release-triggered versioned publishes, the workflow adds the `latest` alias automatically.
 - `dry-run: true` prepares version updates locally without pushing or deploying, and uploads the complete site for inspection under `versioned-<artifact-name>`. Unversioned dry runs skip deployment.
 

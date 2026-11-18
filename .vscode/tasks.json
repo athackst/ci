@@ -14,6 +14,16 @@
             "type": "shell",
             "command": "pytest -v actions",
             "problemMatcher": []
+        },
+        {
+            "label": "test workflows",
+            "type": "shell",
+            "command": "python3 -m unittest discover -s tests/workflows -p 'test_*.py' -v",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": []
         }
     ]
 }
