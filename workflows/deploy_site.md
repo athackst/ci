@@ -1,27 +1,28 @@
 # Deploy Site
 
-Deploy a built site artifact either to GitHub Pages or to a versioned branch.
+Deploy a built site artifact through GitHub Pages Actions, preserving version history in a branch when a version is supplied.
 
 ## Usage
 
 ```yaml
 jobs:
   deploy-site:
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     uses: athackst/ci/.github/workflows/deploy_site.yml@main
-    with:
-      type: action
 ```
 
 ## Inputs
 
 | Name | Description | Default |
 | --- | --- | --- |
-| `type` | (optional) Deployment mode. Use `action` for GitHub Pages artifact deploys or `branch` for versioned branch publishing. | `action` |
 | `enablement` | (optional) Try to enable GitHub Pages for the repository before deploying. | `false` |
-| `version` | (optional) Version identifier to publish, for example `dev` or `1.2.3`. Required for `type: branch`. | `""` |
+| `version` | (optional) Version identifier to publish, for example `dev` or `1.2.3`. When empty, deploys the original artifact directly. | `""` |
 | `artifact-name` | (optional) Artifact name containing the built site content. | `github-pages` |
-| `branch` | (optional) Deployment branch for `type: branch`. | `gh-pages` |
-| `dry-run` | (optional) Disable the publish step while still running workflow setup and artifact preparation. | `false` |
+| `branch` | (optional) Branch storing published versions. | `gh-pages` |
+| `dry-run` | (optional) Prepare version updates and artifacts without pushing or deploying. | `false` |
 
 ## Secrets
 
@@ -36,26 +37,18 @@ jobs:
 
 ## Advanced
 
-- `type: action` uses `actions/deploy-pages` and is intended for unversioned GitHub Pages deploys.
-- `type: branch` extracts the built artifact and publishes it with `PrimerPages/versite`.
+- Version preparation downloads the built-site artifact and uses versite to update the version branch, including older versions, aliases, redirects, and `versions.json`.
+- The complete updated branch is packaged and deployed through GitHub Pages Actions. Packaging exports the exact local commit produced by versite, without another fetch.
+- Preparation needs only repository contents permissions; Pages configuration and deployment run in the deployment job.
+- Set the repository Pages source to **GitHub Actions**. Existing branch-configured sites can also accept Actions deployments when the workflow runs from the configured source branch or the deployment environment protection rules permit its ref.
+- Builds must use the base URL for their version directory; deployment does not rewrite site URLs.
+- Deployment runs are serialized per repository to protect version history and publishing order.
 - On release-triggered versioned publishes, the workflow adds the `latest` alias automatically.
-- `dry-run: true` skips the final publish step for both deployment modes.
+- `dry-run: true` prepares version updates locally without pushing or deploying, and uploads the complete site for inspection under `versioned-<artifact-name>`. Unversioned dry runs skip deployment.
 
 ## Examples
 
-Deploy the standard Pages artifact:
-
-```yaml
-jobs:
-  deploy-site:
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-    uses: athackst/ci/.github/workflows/deploy_site.yml@main
-```
-
-Publish versioned docs to a branch:
+Publish versioned docs through GitHub Pages Actions while retaining `gh-pages` history:
 
 ```yaml
 jobs:
@@ -66,7 +59,5 @@ jobs:
       id-token: write
     uses: athackst/ci/.github/workflows/deploy_site.yml@main
     with:
-      type: branch
       version: dev
-      branch: gh-pages
 ```

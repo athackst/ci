@@ -376,7 +376,6 @@ jobs:
     needs: [workflow-deploy-site-fixture]
     uses: ./.github/workflows/deploy_site.yml
     with:
-      type: branch
       version: dev
       artifact-name: github-pages-deploy-site-test-${{ github.run_id }}-${{ github.run_attempt }}
       branch: ci-test/deploy-site-${{ github.run_id }}-${{ github.run_attempt }}
@@ -388,6 +387,23 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
+      - name: Download complete versioned site
+        uses: actions/download-artifact@v8
+        with:
+          name: versioned-github-pages-deploy-site-test-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ./versioned-artifact
+
+      - name: Verify versioned site contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p versioned-site
+          tar --extract --file versioned-artifact/artifact.tar --directory versioned-site
+          test -f versioned-site/dev/index.html
+          test -f versioned-site/versions.json
+          test -f versioned-site/index.html
+          test ! -e versioned-site/.git
+
       - name: Verify deploy site dry run
         shell: bash
         env:
