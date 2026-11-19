@@ -21,6 +21,8 @@ jobs:
       contents: read
       pages: read
     uses: ./.github/workflows/jekyll_site.yml
+    with:
+      version: ${{ github.event.release.tag_name || 'dev' }}
 
   test-site:
     needs: build-site
