@@ -4,9 +4,9 @@ on:
   workflow_call:
     inputs:
       type:
-        description: "Whether to deploy via branch or action"
+        description: "(Deprecated) Ignored; deployment always uses GitHub Pages Actions"
         type: string
-        default: "action"
+        default: ""
         required: false
       enablement:
         description: "Try to enable Pages for the repository if it is not already enabled."
@@ -38,22 +38,31 @@ on:
         description: Optional token override used by configure-pages.
         required: false
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+concurrency:
+  group: site-deployment-${{ github.repository }}-${{ inputs.dry-run && format('dry-run-{0}', github.run_id) || 'production' }}
+  cancel-in-progress: false
+  queue: max
 
 jobs:
   deploy-action:
-    # Use artifact deploy when publishing an unversioned Pages site.
-    if: ${{ !inputs.dry-run && inputs.type == 'action' && inputs.version == '' }}
+    permissions:
+      pages: write
+      id-token: write
+    needs: prepare-versioned
+    if: >-
+      ${{ !cancelled() && !inputs.dry-run &&
+          (inputs.version == '' || needs.prepare-versioned.result == 'success') }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Warn about deprecated type input
+        if: ${{ inputs.version == '' && inputs.type != '' }}
+        run: echo "::warning::The 'type' input is deprecated and ignored. Remove it; this workflow deploys through GitHub Pages Actions."
+
       - name: Setup Pages
-        if: ${{ inputs.enablement }}
+        if: ${{ inputs.enablement && !inputs.dry-run }}
         uses: actions/configure-pages@v6
         with:
           token: ${{ secrets.token || github.token }}
@@ -62,22 +71,35 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: ${{ inputs.version != '' && format('versioned-{0}', inputs.artifact-name) || inputs.artifact-name }}
 
-  deploy-branch:
-    if: ${{ inputs.type == 'branch' && inputs.version != '' }}
+      - name: Workflow summary
+        if: ${{ always() }}
+        env:
+          DEPLOYMENT_OUTCOME: ${{ steps.deployment.outcome }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          {
+            echo "### Pages Deployment"
+            echo "- Result: $DEPLOYMENT_OUTCOME"
+            echo "- URL: $PAGE_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  prepare-versioned:
+    permissions:
+      contents: write
+    if: ${{ inputs.version != '' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Warn about deprecated type input
+        if: ${{ inputs.type != '' }}
+        run: echo "::warning::The 'type' input is deprecated and ignored. Remove it; this workflow deploys through GitHub Pages Actions."
+
       - name: Checkout
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-
-      - name: Setup Pages
-        if: ${{ inputs.enablement }}
-        uses: actions/configure-pages@v6
-        with:
-          token: ${{ secrets.token || github.token }}
-          enablement: ${{ inputs.enablement }}
 
       - name: Download artifact
         uses: actions/download-artifact@v8
@@ -148,3 +170,32 @@ jobs:
           branch: ${{ inputs.branch }}
           site-dir: _site
           push: ${{ !inputs.dry-run }}
+
+      - name: Export versioned site
+        shell: bash
+        env:
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/versioned-site"
+          git archive --format=tar "$BRANCH" | tar --extract --directory "$RUNNER_TEMP/versioned-site"
+
+      - name: Upload complete versioned site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: versioned-${{ inputs.artifact-name }}
+          path: ${{ runner.temp }}/versioned-site
+
+      - name: Workflow summary
+        if: ${{ always() }}
+        env:
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ inputs.branch }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          {
+            echo "### Versioned Site"
+            echo "- Version: $VERSION"
+            echo "- Branch: $BRANCH"
+            echo "- Dry run: $DRY_RUN"
+          } >> "$GITHUB_STEP_SUMMARY"
