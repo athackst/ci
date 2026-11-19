@@ -10,6 +10,12 @@
       "latest"
     ],
     "properties": {},
+    "title": "v0.12.0",
+    "version": "v0.12.0"
+  },
+  {
+    "aliases": [],
+    "properties": {},
     "title": "v0.11.0",
     "version": "v0.11.0"
   }
