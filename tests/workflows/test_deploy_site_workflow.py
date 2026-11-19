@@ -48,7 +48,7 @@ class DeploySiteWorkflowTests(unittest.TestCase):
     def test_complete_artifact_has_distinct_name_and_is_used_for_deployment(self):
         upload = next(step for step in self.jobs["prepare-versioned"]["steps"] if step.get("uses") == "actions/upload-pages-artifact@v5")
         deploy = next(step for step in self.jobs["deploy-action"]["steps"] if step.get("uses") == "actions/deploy-pages@v5")
-        self.assertNotIn("if", upload)
+        self.assertEqual(upload["if"], "${{ github.ref == 'refs/heads/main' || inputs.dry-run }}")
         self.assertEqual(upload["with"]["name"], "versioned-${{ inputs.artifact-name }}")
         self.assertEqual(upload["with"]["path"], "${{ runner.temp }}/versioned-site")
         self.assertEqual(deploy["with"]["artifact_name"], "${{ inputs.version != '' && format('versioned-{0}', inputs.artifact-name) || inputs.artifact-name }}")
@@ -68,7 +68,7 @@ class DeploySiteWorkflowTests(unittest.TestCase):
                 else:
                     self.assertNotIn("inputs.type", yaml.safe_dump(step))
         export = next(step for step in self.jobs["prepare-versioned"]["steps"] if step.get("name") == "Export versioned site")
-        self.assertNotIn("if", export)
+        self.assertEqual(export["if"], "${{ github.ref == 'refs/heads/main' || inputs.dry-run }}")
 
     def test_pending_production_deployments_are_queued_without_cancellation(self):
         concurrency = self.workflow["concurrency"]
@@ -126,6 +126,47 @@ class DeploySiteWorkflowTests(unittest.TestCase):
             self.assertFalse((site / ".git").exists())
             self.assertFalse((site / "source-only.txt").exists())
             self.assertEqual(git("branch", "--show-current").stdout.strip(), "main")
+
+    def test_pages_deployment_is_only_allowed_from_main(self):
+        self.assertNotIn("request-main-deployment", self.jobs)
+        for job in self.jobs.values():
+            self.assertNotIn("actions", job["permissions"])
+        condition = self.jobs["deploy-action"]["if"]
+        for ref in ("refs/heads/main", "refs/heads/feature", "refs/tags/v2.0.0"):
+            for version in ("", "v2.0.0"):
+                for result in ("success", "failure", "skipped"):
+                    for dry_run in (False, True):
+                        for cancelled in (False, True):
+                            expected = not cancelled and not dry_run and ref == "refs/heads/main" and (not version or result == "success")
+                            expr = condition.removeprefix("${{").removesuffix("}}")
+                            for key, value in {"cancelled()": cancelled, "inputs.dry-run": dry_run, "inputs.version": version, "github.ref": ref, "needs.prepare-versioned.result": result}.items():
+                                expr = expr.replace(key, repr(value))
+                            expr = " ".join(expr.split()).replace("!", "not ").replace("&&", " and ").replace("||", " or ")
+                            with self.subTest(ref=ref, version=version, result=result, dry_run=dry_run, cancelled=cancelled):
+                                self.assertEqual(bool(eval(expr, {"__builtins__": {}})), expected)
+
+    def test_main_preserves_latest_default_when_updating_dev(self):
+        step = next(step for step in self.jobs["prepare-versioned"]["steps"] if step["name"] == "Pick default target")
+        for has_latest in (False, True):
+            with self.subTest(has_latest=has_latest), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                remote = root / "remote"
+                remote.mkdir()
+                def git(*args, cwd=remote):
+                    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+                git("init", "-b", "gh-pages")
+                git("config", "user.name", "Test")
+                git("config", "user.email", "test@example.com")
+                (remote / "index.html").write_text("Root")
+                if has_latest:
+                    (remote / "latest").mkdir()
+                    (remote / "latest/index.html").write_text("Release")
+                git("add", ".")
+                git("commit", "-m", "Site history")
+                git("clone", str(remote), str(root / "checkout"))
+                output = root / "outputs"
+                subprocess.run(["bash", "-c", step["run"]], cwd=root / "checkout", check=True, capture_output=True, env={**os.environ, "ALIAS": "", "BRANCH": "gh-pages", "VERSION": "dev", "GITHUB_OUTPUT": str(output)})
+                self.assertEqual(output.read_text(), "value=latest\n" if has_latest else "value=dev\n")
 
 
 if __name__ == "__main__":

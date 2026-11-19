@@ -40,10 +40,12 @@ jobs:
 - Version preparation downloads the built-site artifact and uses versite to update the version branch, including older versions, aliases, redirects, and `versions.json`.
 - The complete updated branch is packaged and deployed through GitHub Pages Actions. Packaging exports the exact local commit produced by versite, without another fetch.
 - Preparation needs only repository contents permissions; Pages configuration and deployment run in the deployment job.
-- Set the repository Pages source to **GitHub Actions**. Existing branch-configured sites can also accept Actions deployments when the workflow runs from the configured source branch or the deployment environment protection rules permit its ref.
+- Set the repository Pages source to **GitHub Actions** and allow `main` in the `github-pages` environment. Only runs from `refs/heads/main` can enter the Pages deployment job; version preparation can run from other refs.
 - Builds must use the base URL for their version directory; deployment does not rewrite site URLs.
 - Production deployments are serialized per repository, with up to 100 pending runs retained instead of replacing queued releases. Dry runs use separate, run-specific concurrency groups so they cannot displace production deployments.
-- On release-triggered versioned publishes, the workflow adds the `latest` alias automatically.
+- On release-triggered versioned publishes, the workflow adds the `latest` alias automatically and pushes the updated version branch. Runs outside `main` skip complete-site packaging and Pages deployment.
+- This reusable workflow does not dispatch follow-up builds. The generated [Site workflow](../copier/site.md) dispatches itself on `main` after release preparation succeeds. Other callers must arrange their own main-branch run to publish prepared releases.
+- The subsequent main build updates `dev`, preserves release history and the `latest` default, and deploys the complete updated branch. Version preparation and Pages deployment share the production queue.
 - `dry-run: true` prepares version updates locally without pushing or deploying, and uploads the complete site for inspection under `versioned-<artifact-name>`. Unversioned dry runs skip deployment.
 
 ## Examples
