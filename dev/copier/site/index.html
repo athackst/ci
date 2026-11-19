@@ -1395,6 +1395,7 @@
   <li>Pushes to <code class="language-plaintext highlighter-rouge">main</code></li>
   <li>Pull requests</li>
   <li>Release <code class="language-plaintext highlighter-rouge">published</code> events</li>
+  <li>Manual requests (<code class="language-plaintext highlighter-rouge">workflow_dispatch</code>) on <code class="language-plaintext highlighter-rouge">main</code></li>
 </ul>
 
 <h2 id="calls">Calls</h2>
@@ -1451,6 +1452,8 @@ contract.</p>
     cache --&gt; cache_actions["Actions&lt;br/&gt;cache/restore, cache/save"]
     deploy --&gt; pages_deploy["Actions&lt;br/&gt;configure-pages, deploy-pages,&lt;br/&gt;checkout, download-artifact"]
     deploy --&gt; versite["Action&lt;br/&gt;PrimerPages/versite"]
+    deploy --&gt;|release preparation succeeds| dispatch["site.yml&lt;br/&gt;request-main-deployment"]
+    dispatch --&gt;|workflow_dispatch on main| template
 
     classDef template fill:#e0f2fe,stroke:#0284c7
     classDef workflow fill:#ede9fe,stroke:#7c3aed
@@ -1466,24 +1469,32 @@ contract.</p>
   <li><code class="language-plaintext highlighter-rouge">build-site</code>: <code class="language-plaintext highlighter-rouge">contents: read</code>, plus <code class="language-plaintext highlighter-rouge">pages: read</code> for GitHub Pages location resolution</li>
   <li><code class="language-plaintext highlighter-rouge">test-site</code>: <code class="language-plaintext highlighter-rouge">contents: read</code></li>
   <li><code class="language-plaintext highlighter-rouge">deploy-site</code>: <code class="language-plaintext highlighter-rouge">contents: write</code>, <code class="language-plaintext highlighter-rouge">pages: write</code>, <code class="language-plaintext highlighter-rouge">id-token: write</code></li>
+  <li><code class="language-plaintext highlighter-rouge">request-main-deployment</code>: <code class="language-plaintext highlighter-rouge">actions: write</code> to dispatch Site on <code class="language-plaintext highlighter-rouge">main</code> after release preparation succeeds</li>
 </ul>
 
 <h2 id="behavior">Behavior</h2>
 
 <ul>
   <li>On pull requests, builds the configured site and runs HTMLProofer without deploying.</li>
-  <li>On <code class="language-plaintext highlighter-rouge">main</code> pushes, builds and deploys the configured site.</li>
+  <li>On <code class="language-plaintext highlighter-rouge">main</code> pushes and manual requests, builds and deploys the configured site.</li>
   <li><code class="language-plaintext highlighter-rouge">build-site</code> is responsible for building the site artifact and exposing the site metadata used by <code class="language-plaintext highlighter-rouge">test-site</code> and <code class="language-plaintext highlighter-rouge">deploy-site</code>.</li>
   <li><code class="language-plaintext highlighter-rouge">test-site</code> runs HTMLProofer against the built artifact and reports link failures without blocking deployment.</li>
   <li>When releases are enabled, both MkDocs and Jekyll publish versioned docs: <code class="language-plaintext highlighter-rouge">main</code> publishes <code class="language-plaintext highlighter-rouge">dev</code>, and release events publish the release tag plus <code class="language-plaintext highlighter-rouge">latest</code>.</li>
   <li><code class="language-plaintext highlighter-rouge">deploy-site</code> handles the publish step:
     <ul>
       <li>non-versioned sites deploy the built artifact with GitHub Pages actions</li>
-      <li>versioned sites publish with <code class="language-plaintext highlighter-rouge">PrimerPages/versite</code> via branch</li>
+      <li>versioned sites update <code class="language-plaintext highlighter-rouge">gh-pages</code> with <code class="language-plaintext highlighter-rouge">PrimerPages/versite</code>, then deploy the complete branch through GitHub Pages Actions</li>
+      <li>release runs update their version and <code class="language-plaintext highlighter-rouge">latest</code> alias without deploying from the tag</li>
       <li><code class="language-plaintext highlighter-rouge">dry-run</code> disables the publish step for either deployment mode</li>
     </ul>
   </li>
 </ul>
+
+<p><code class="language-plaintext highlighter-rouge">request-main-deployment</code> runs in <code class="language-plaintext highlighter-rouge">site.yml</code> after <code class="language-plaintext highlighter-rouge">deploy-site</code> succeeds on a published release. It dispatches Site on <code class="language-plaintext highlighter-rouge">main</code>, without waiting for HTMLProofer. The dispatched main build updates <code class="language-plaintext highlighter-rouge">dev</code>, preserves release history and the <code class="language-plaintext highlighter-rouge">latest</code> default, and deploys the complete site. Unversioned release runs dispatch a main rebuild without retaining the tagged site.</p>
+
+<p>Set the Pages source to <strong>GitHub Actions</strong> and allow <code class="language-plaintext highlighter-rouge">main</code> in the <code class="language-plaintext highlighter-rouge">github-pages</code> environment. Release tags do not need environment access. Check the dispatched Site run for the deployment result; retry it with <strong>Run workflow</strong> on <code class="language-plaintext highlighter-rouge">main</code> if needed.</p>
+
+<p>The reusable deployment workflow queues version updates and publication together. Site queues whole production runs, including builds, so an older main build cannot publish after a newer build. The queue retains up to 100 pending runs, including main builds dispatched by releases. PR runs stay outside the production queue; newer PR build and HTMLProofer jobs cancel older jobs of the same kind for that PR. HTMLProofer remains independent and does not block version updates, dispatch, or deployment.</p>
 
 
                 <!-- Pagination links -->

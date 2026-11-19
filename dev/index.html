@@ -1421,7 +1421,8 @@ entrypoint workflows plus a shared CI config.</p>
   <li><code class="language-plaintext highlighter-rouge">none</code> is the default and skips site workflow generation entirely.</li>
   <li><code class="language-plaintext highlighter-rouge">mkdocs</code> uses <code class="language-plaintext highlighter-rouge">mkdocs_site.yml</code>.</li>
   <li><code class="language-plaintext highlighter-rouge">jekyll</code> uses <code class="language-plaintext highlighter-rouge">jekyll_site.yml</code>.</li>
-  <li>MkDocs and Jekyll site workflows run on <code class="language-plaintext highlighter-rouge">main</code> pushes and release publishes.</li>
+  <li>MkDocs and Jekyll site workflows run on <code class="language-plaintext highlighter-rouge">main</code> pushes, release publishes, and manual requests.</li>
+  <li>Release runs update version history and request a main build, which deploys the complete site without requiring release tags in the Pages environment rules. HTMLProofer does not block publication. See <a href="/ci/dev/copier/site/">Site</a>.</li>
 </ul>
 
 <p><code class="language-plaintext highlighter-rouge">automerge_mode</code></p>
