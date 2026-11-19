@@ -50,7 +50,7 @@ jobs:
       id-token: write
     needs: prepare-versioned
     if: >-
-      ${{ !cancelled() && !inputs.dry-run &&
+      ${{ !cancelled() && !inputs.dry-run && github.ref == 'refs/heads/main' &&
           (inputs.version == '' || needs.prepare-versioned.result == 'success') }}
     environment:
       name: github-pages
@@ -149,12 +149,13 @@ jobs:
           VERSION: ${{ steps.settings.outputs.version }}
         run: |
           set -euo pipefail
+          DEFAULT_TARGET="${ALIAS:-latest}"
           if [ -n "$BRANCH" ] && git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
             git fetch origin "$BRANCH" --depth=1
 
-            # If the alias exists on the branch, use it as default-to.
-            if git show "origin/${BRANCH}:${ALIAS}/index.html" >/dev/null 2>&1; then
-              echo "value=${ALIAS}" >> "$GITHUB_OUTPUT"
+            # Keep latest as the default when main updates dev after a release.
+            if git show "origin/${BRANCH}:${DEFAULT_TARGET}/index.html" >/dev/null 2>&1; then
+              echo "value=${DEFAULT_TARGET}" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           fi
@@ -172,6 +173,7 @@ jobs:
           push: ${{ !inputs.dry-run }}
 
       - name: Export versioned site
+        if: ${{ github.ref == 'refs/heads/main' || inputs.dry-run }}
         shell: bash
         env:
           BRANCH: ${{ inputs.branch }}
@@ -181,6 +183,7 @@ jobs:
           git archive --format=tar "$BRANCH" | tar --extract --directory "$RUNNER_TEMP/versioned-site"
 
       - name: Upload complete versioned site
+        if: ${{ github.ref == 'refs/heads/main' || inputs.dry-run }}
         uses: actions/upload-pages-artifact@v5
         with:
           name: versioned-${{ inputs.artifact-name }}
